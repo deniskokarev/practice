@@ -21,8 +21,8 @@ public class ProdCons {
 	}
 	static class Q<T> {
 		Queue<T> queue;
-		int nProducers;
-		int nConsumers;
+		volatile int nProducers;
+		volatile int nConsumers;
 		public Q(Queue<T> q, int np, int nc) {
 			queue = q;
 			nProducers = np;
