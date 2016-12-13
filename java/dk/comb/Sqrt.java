@@ -1,4 +1,4 @@
-package den.comb;
+package dk.comb;
 
 import java.util.Scanner;
 
