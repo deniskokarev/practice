@@ -28,7 +28,7 @@ output
 7 8 56
 
  */
-public class CF727C {
+public class CF743C {
 	/**
 	 * solution result
 	 */
