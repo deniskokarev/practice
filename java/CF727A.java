@@ -57,6 +57,8 @@ public class CF727A {
 			StringBuffer sb = new StringBuffer();
 			if (rc) {
 				sb.append("YES\n");
+				sb.append(steps.size());
+				sb.append('\n');
 				for (Long i:steps) {
 					sb.append(i);
 					sb.append(" ");
