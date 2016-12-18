@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import org.junit.Test;
 import dk.struct.*;
@@ -58,7 +60,7 @@ public class AttrTreapTest {
 	}
 	
 	@Test
-	public void testCreateAndCount() {
+	public void createAndCount() {
 		try (BufferedReader reader = getResource1()) {
 			String line;
 			AttrTreap<Integer, Val> root = null;
@@ -75,7 +77,7 @@ public class AttrTreapTest {
 	}
 
 	@Test
-	public void testFindAll() {
+	public void findAll() {
 		try (BufferedReader reader = getResource1()) {
 			String line;
 			AttrTreap<Integer, Val> root = null;
@@ -94,7 +96,7 @@ public class AttrTreapTest {
 		}
 	}
 	@Test
-	public void testDeleteAndNotFind() {
+	public void deleteAndNotFind() {
 		try (BufferedReader reader = getResource1()) {
 			String line;
 			AttrTreap<Integer, Val> root = null;
@@ -103,12 +105,14 @@ public class AttrTreapTest {
 				AttrTreap<Integer, Val> node = new AttrTreap<>(i++, new Val(line));
 				root = AttrTreap.insertNode(root, node);
 			}
+			//System.out.println("Original Tree:");
 			//System.out.println(root.treeToString());
 			for (i--; i>0; i--) {
 				AttrTreap<Integer, Val> node = AttrTreap.findNode(root, Integer.valueOf(i));
 				assertNotNull("must find before deletion", node);
 				root = AttrTreap.deleteKey(root, Integer.valueOf(i));
-				assertEquals("total count must reduce", root.value.getAttr(), Integer.valueOf(i));
+				assertNotNull("tree must stay populated until last node gets deleted", root);
+				//assertEquals("total count must reduce", root.value.getAttr(), Integer.valueOf(i));
 				node = AttrTreap.findNode(root, Integer.valueOf(i));
 				assertNull("must not find after deletion", node);
 			}
@@ -117,5 +121,27 @@ public class AttrTreapTest {
 		} catch(IOException ex) {
 			fail(ex.toString());
 		}
+	}
+	@Test
+	public void deleteInRandomOrder() {
+		AttrTreap<Integer, Val> root = null;
+		final int size = 1<<18;		// 256K
+		int i;
+		ArrayList<Integer> keysToDel = new ArrayList<>();
+		for (i=0; i<size; i++) {
+			Integer key = Integer.valueOf(i);
+			keysToDel.add(key);
+			AttrTreap<Integer, Val> node = new AttrTreap<>(key, new Val(Integer.toString(i)));
+			root = AttrTreap.insertNode(root, node);
+		}
+		Collections.shuffle(keysToDel);
+		for (Integer k:keysToDel) {
+			assertNotNull("tree must stay populated until last node gets deleted", root);
+			assertEquals("root node must have correct count of members", root.value.getAttr().intValue(), i);
+			root = AttrTreap.deleteKey(root, k);
+			i--;
+		}
+		root = AttrTreap.deleteKey(root, Integer.valueOf(i));
+		assertNull("root must be null after we delete everything", root);
 	}
 }

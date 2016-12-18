@@ -2,7 +2,7 @@ package dk.struct;
 
 /**
  * BinaryTree/Heap hybrid with Attrubute-aware values. I.e. each value has an attrubute, which aggregates
- * attributes of left and right nodes below. If the attribute was simply the number of elements then
+ * attributes of left and right children. If the attribute was simply the number of elements then
  * root would have the total count
  * @author kokarev
  *
@@ -13,59 +13,8 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	public int priority; // specifies which level on the tree the element is added to
 	public K key;
 	public V value;
-	protected AttrTreap<K,V> left, right;
-	
-	/**
-	 * Merge l and r nodes into a common root node
-	 * @param l
-	 * @param r
-	 * @return new root
-	 */
-	static <K extends Comparable<K>, A, V extends AttrValue<A>> AttrTreap<K,V> mergeNode(AttrTreap<K,V> l, AttrTreap<K,V> r) {
-		if (l == null) {
-			return r;
-		} else if (r == null) {
-			return l;
-		} else if (l.priority > r.priority) {
-			l.right = mergeNode(l.right, r);
-			l.value.updateAttr((l.left!=null)?l.left.value:null, l.right.value);
-			return l;
-		} else {
-			r.left = mergeNode(l, r.left);
-			r.value.updateAttr(r.left.value, (r.right!=null)?r.right.value:null);
-			return r;
-		}
-	}
-
-	/**
-	 * Split root node into two subtrees - lr.left and lr.right depending on the key
-	 * @param root - what we're splitting 
-	 * @param splitKey - split criteria, i.e. what stays to the left and what stays to the right of key 
-	 * @param lr - recipient node for for the split
-	 */
-	static <K extends Comparable<K>, A, V extends AttrValue<A>> void splitNode(AttrTreap<K,V> root, K splitKey, AttrTreap<K,V> lr) {
-		if (root == null) {
-			return;
-		} else {
-			int cmp = root.key.compareTo(splitKey);
-			AttrTreap<K,V> llrr = new AttrTreap<K,V>(0, null, null);
-			if (cmp < 0) {
-				splitNode(root.right, splitKey, llrr);
-				root.right = llrr.left;
-				lr.left = root;
-				lr.right = llrr.right;
-			} else {
-				splitNode(root.left, splitKey, llrr);
-				root.left = llrr.right;
-				lr.right = root;
-				lr.left = llrr.left;
-			}
-			if (lr.left != null)
-				lr.left.value.updateAttr((lr.left.left!=null)?lr.left.left.value:null, (lr.left.right!=null)?lr.left.right.value:null);
-			if (lr.right != null)
-				lr.right.value.updateAttr((lr.right.left!=null)?lr.right.left.value:null, (lr.right.right!=null)?lr.right.right.value:null);
-		}
-	}
+	public AttrTreap<K,V> left, right;	// don't wonna use array 
+	protected final static int LEFT = 0, RIGHT = 1;
 
 	public String toString() {
 		StringBuffer sb = new StringBuffer("[");
@@ -110,6 +59,86 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 		return sb.toString();
 	}
 
+	static <K extends Comparable<K>, A, V extends AttrValue<A>> void updateNodeAttr(AttrTreap<K,V> node) {
+		if (node.value != null)
+			node.value.updateAttr((node.left!=null)?node.left.value:null, (node.right!=null)?node.right.value:null);
+	}
+	
+	/**
+	 * Merge l and r nodes into a common root node
+	 * @param l
+	 * @param r
+	 * @return new root
+	 */
+	static <K extends Comparable<K>, A, V extends AttrValue<A>> AttrTreap<K,V> mergeNode(AttrTreap<K,V> l, AttrTreap<K,V> r) {
+		if (l == null) {
+			return r;
+		} else if (r == null) {
+			return l;
+		} else if (l.priority > r.priority) {
+			l.right = mergeNode(l.right, r);
+			updateNodeAttr(l);
+			return l;
+		} else {
+			r.left = mergeNode(l, r.left);
+			updateNodeAttr(r);
+			return r;
+		}
+	}
+
+	/**
+	 * Split root node into two subtrees depending on the key
+	 * @param root - what we're splitting 
+	 * @param splitKey - split criteria, i.e. what stays to the left and what stays to the right of key 
+	 * @param l[lDir] - recipient for the left subtree 
+	 * @param r[rDir] - recipient for right subtree
+	 */
+	static <K extends Comparable<K>, A, V extends AttrValue<A>> void splitNode(AttrTreap<K,V> root, K splitKey, AttrTreap<K,V> l, int lDir, AttrTreap<K,V> r, int rDir) {
+		int cmp = root.key.compareTo(splitKey);
+		if (cmp <= 0) {
+			if (root.right != null) {
+				splitNode(root.right, splitKey, root, RIGHT, r, rDir);
+			} else {
+				if (rDir == LEFT)
+					r.left = null;
+				else
+					r.right = null;
+				updateNodeAttr(r);
+			}
+			if (lDir == LEFT)
+				l.left = root;
+			else
+				l.right = root;
+			updateNodeAttr(l);
+		} else {
+			if (root.left != null) {
+				splitNode(root.left, splitKey, l, lDir, root, LEFT);
+			} else {
+				if (lDir == LEFT)
+					l.left = null;
+				else
+					l.right = null;
+				updateNodeAttr(l);
+			}
+			if (rDir == LEFT)
+				r.left = root;
+			else
+				r.right = root;
+			updateNodeAttr(r);
+		}
+	}
+
+	/**
+	 * Split a tree into two subtrees depending on the key
+	 * @param root - what we're splitting 
+	 * @param splitKey - split criteria, i.e. what stays to the left and what stays to the right of key 
+	 * @param newRoot.left - gets left part of the split where keys <= splitKey
+	 * @param newRoot.right - gets right part of the split where keys > splitKey
+	 */
+	public static <K extends Comparable<K>, A, V extends AttrValue<A>> void splitTree(AttrTreap<K,V> root, K splitKey, AttrTreap<K,V> newRoot) {
+		splitNode(root, splitKey, newRoot, LEFT, newRoot, RIGHT);
+	}
+	
 	/**
 	 * Add element into treap
 	 * @param root - current root node
@@ -123,16 +152,14 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 			int cmp = root.key.compareTo(node.key);
 			if (node.priority > root.priority) {
 				// insert at this level
-				splitNode(root, node.key, node);
-				node.value.updateAttr((node.left!=null)?node.left.value:null, (node.right!=null)?node.right.value:null);
+				splitTree(root, node.key, node);
 				return node;
 			} else {
-				if (cmp > 0) {
+				if (cmp > 0)
 					root.left = insertNode(root.left, node);
-				} else {
+				else
 					root.right = insertNode(root.right, node);
-				}
-				root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
+				updateNodeAttr(root);
 				return root;
 			}
 		}
@@ -153,11 +180,11 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 				return mergeNode(root.left, root.right);
 			} else if (cmp > 0) {
 				root.left = deleteKey(root.left, k);
-				root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
+				updateNodeAttr(root);
 				return root;
 			} else {
 				root.right = deleteKey(root.right, k);
-				root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
+				updateNodeAttr(root);
 				return root;
 			}
 		}
