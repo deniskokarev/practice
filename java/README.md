@@ -1,7 +1,7 @@
 For CodeForces tasks add this to your code autocompletion:
-# <command>, - Preferences
-# Java/Editor/Templates/New...
-# use it by pressing <Alt>+/
+* <command>, - Preferences
+* Java/Editor/Templates/New...
+* use it by pressing <Alt>+/
 
 ```java
 import java.io.PrintStream;
