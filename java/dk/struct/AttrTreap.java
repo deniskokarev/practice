@@ -13,9 +13,11 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	public int priority; // specifies which level on the tree the element is added to
 	public K key;
 	public V value;
-	public AttrTreap<K,V> left, right;	// don't wonna use array 
-	protected final static int LEFT = 0, RIGHT = 1;
+	public AttrTreap<K,V> left, right;
 
+	/**
+	 * display only this node
+	 */
 	public String toString() {
 		StringBuffer sb = new StringBuffer("[");
 		if (left != null)
@@ -37,7 +39,7 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 		return sb.toString();
 	}
 	
-	protected void treeToStringHelper(int level, StringBuffer sb) {
+	void treeToStringHelper(int level, StringBuffer sb) {
 		if (left != null)
 			left.treeToStringHelper(level+1, sb);
 		for (int i=0; i<level; i++)
@@ -53,12 +55,20 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 			right.treeToStringHelper(level+1, sb);
 	}
 	
+	/**
+	 * display entire subtree
+	 * @return
+	 */
 	public String treeToString() {
 		StringBuffer sb = new StringBuffer();
 		treeToStringHelper(0, sb);
 		return sb.toString();
 	}
 
+	/**
+	 * to be used every time any of the children changes (to update node attribute)
+	 * @param node
+	 */
 	static <K extends Comparable<K>, A, V extends AttrValue<A>> void updateNodeAttr(AttrTreap<K,V> node) {
 		if (node.value != null)
 			node.value.updateAttr((node.left!=null)?node.left.value:null, (node.right!=null)?node.right.value:null);
@@ -90,40 +100,28 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	 * Split root node into two subtrees depending on the key
 	 * @param root - what we're splitting 
 	 * @param splitKey - split criteria, i.e. what stays to the left and what stays to the right of key 
-	 * @param l[lDir] - recipient for the left subtree 
-	 * @param r[rDir] - recipient for right subtree
+	 * @param l.right - recipient for the left subtree 
+	 * @param r.left - recipient for right subtree
 	 */
-	static <K extends Comparable<K>, A, V extends AttrValue<A>> void splitNode(AttrTreap<K,V> root, K splitKey, AttrTreap<K,V> l, int lDir, AttrTreap<K,V> r, int rDir) {
+	static <K extends Comparable<K>, A, V extends AttrValue<A>> void splitNode(AttrTreap<K,V> root, K splitKey, AttrTreap<K,V> l, AttrTreap<K,V> r) {
 		int cmp = root.key.compareTo(splitKey);
 		if (cmp <= 0) {
 			if (root.right != null) {
-				splitNode(root.right, splitKey, root, RIGHT, r, rDir);
+				splitNode(root.right, splitKey, root, r);
 			} else {
-				if (rDir == LEFT)
-					r.left = null;
-				else
-					r.right = null;
+				r.left = null;
 				updateNodeAttr(r);
 			}
-			if (lDir == LEFT)
-				l.left = root;
-			else
-				l.right = root;
+			l.right = root;
 			updateNodeAttr(l);
 		} else {
 			if (root.left != null) {
-				splitNode(root.left, splitKey, l, lDir, root, LEFT);
+				splitNode(root.left, splitKey, l, root);
 			} else {
-				if (lDir == LEFT)
-					l.left = null;
-				else
-					l.right = null;
+				l.right = null;
 				updateNodeAttr(l);
 			}
-			if (rDir == LEFT)
-				r.left = root;
-			else
-				r.right = root;
+			r.left = root;
 			updateNodeAttr(r);
 		}
 	}
@@ -136,7 +134,10 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	 * @param newRoot.right - gets right part of the split where keys > splitKey
 	 */
 	public static <K extends Comparable<K>, A, V extends AttrValue<A>> void splitTree(AttrTreap<K,V> root, K splitKey, AttrTreap<K,V> newRoot) {
-		splitNode(root, splitKey, newRoot, LEFT, newRoot, RIGHT);
+		splitNode(root, splitKey, newRoot, newRoot);
+		AttrTreap<K,V> tmp = newRoot.left;
+		newRoot.left = newRoot.right;
+		newRoot.right = tmp;
 	}
 	
 	/**
@@ -211,11 +212,23 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 		}
 	}
 
+	/**
+	 * create a node with specified priority
+	 * @param p - a level where the node to be inserted into our binary tree, the greater value means higher
+	 * @param k - the associated key
+	 * @param v - the associated value
+	 */
 	public AttrTreap(int p, K k, V v) {
 		priority = p;
 		key = k;
 		value = v;		
 	}
+	
+	/**
+	 * create a node with randomly selected priority to be placed roughly half-way from the top/bottom
+	 * @param k - the associated key
+	 * @param v - the associated value
+	 */
 	public AttrTreap(K k, V v) {
 		this((int)(Math.random()*Integer.MAX_VALUE), k, v);
 	}
