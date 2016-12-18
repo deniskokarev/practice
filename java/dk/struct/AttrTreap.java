@@ -147,16 +147,19 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	public static <K extends Comparable<K>, A, V extends AttrValue<A>> AttrTreap<K,V> deleteKey(AttrTreap<K,V> root, K k) {
 		if (root == null) {
 			return null;
-		} else if (root.key.equals(k)) {
-			return mergeNode(root.left, root.right);
-		} else if (root.key.compareTo(k) > 0) {
-			root.left = deleteKey(root.left, k);
-			root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
-			return root;
 		} else {
-			root.right = deleteKey(root.right, k);
-			root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
-			return root;
+			int cmp = root.key.compareTo(k);
+			if (cmp == 0) {
+				return mergeNode(root.left, root.right);
+			} else if (cmp > 0) {
+				root.left = deleteKey(root.left, k);
+				root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
+				return root;
+			} else {
+				root.right = deleteKey(root.right, k);
+				root.value.updateAttr((root.left!=null)?root.left.value:null, (root.right!=null)?root.right.value:null);
+				return root;
+			}
 		}
 	}
 
@@ -169,12 +172,15 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	public static <K extends Comparable<K>, A, V extends AttrValue<A>> AttrTreap<K,V> findNode(AttrTreap<K,V> root, K k) {
 		if (root == null) {
 			return null;
-		} else if (root.key.equals(k)) {
-			return root;
-		} else if (root.key.compareTo(k) > 0) {
-			return findNode(root.left, k);
 		} else {
-			return findNode(root.right, k);
+			int cmp = root.key.compareTo(k);
+			if (cmp == 0) {
+				return root;
+			} else if (root.key.compareTo(k) > 0) {
+				return findNode(root.left, k);
+			} else {
+				return findNode(root.right, k);
+			}
 		}
 	}
 
