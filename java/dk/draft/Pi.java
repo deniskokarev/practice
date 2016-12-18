@@ -1,4 +1,4 @@
-package dk.comb;
+package dk.draft;
 
 /**
  * compute Pi

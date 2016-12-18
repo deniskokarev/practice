@@ -1,4 +1,4 @@
-package dk.comb;
+package dk.draft;
 
 import java.util.Scanner;
 
