@@ -1,3 +1,11 @@
+#dk.struct.AttrTreap
+is an attributive [Treap](https://en.wikipedia.org/wiki/Treap) - a binary search tree with randomly assigned node levels.
+May become useful one day. 
+
+#dk.struct.test
+the related JUnit test cases
+
+#Hints
 For CodeForces tasks add this to your code autocompletion:
 * <command>, - Preferences
 * Java/Editor/Templates/New...
