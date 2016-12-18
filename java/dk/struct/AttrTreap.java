@@ -2,7 +2,8 @@ package dk.struct;
 
 /**
  * BinaryTree/Heap hybrid with Attrubute-aware values. I.e. each value has an attrubute, which aggregates
- * attributes of left and right nodes below.
+ * attributes of left and right nodes below. If the attribute was simply the number of elements then
+ * root would have the total count
  * @author kokarev
  *
  * @param <K> - type of key as in a normal binary tree
@@ -111,9 +112,9 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 
 	/**
 	 * Add element into treap
-	 * @param p
-	 * @param v
-	 * @return
+	 * @param root - current root node
+	 * @param node - node to be inserted
+	 * @return new root node
 	 */
 	public static <K extends Comparable<K>,A, V extends AttrValue<A>> AttrTreap<K,V> insertNode(AttrTreap<K,V> root, AttrTreap<K,V> node) {
 		if (root == null) {
@@ -138,8 +139,9 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 	}
 	
 	/**
-	 * delete root
-	 * @param root
+	 * Find node with key k and delete it
+	 * @param root - root node
+	 * @param k - search criteria
 	 * @return new root node
 	 */
 	public static <K extends Comparable<K>, A, V extends AttrValue<A>> AttrTreap<K,V> deleteKey(AttrTreap<K,V> root, K k) {
@@ -158,6 +160,12 @@ public class AttrTreap<K extends Comparable<K>, V extends AttrValue<?>> {
 		}
 	}
 
+	/**
+	 * Find node
+	 * @param root - root node
+	 * @param k - search criteria
+	 * @return any node with matching search criteria 
+	 */
 	public static <K extends Comparable<K>, A, V extends AttrValue<A>> AttrTreap<K,V> findNode(AttrTreap<K,V> root, K k) {
 		if (root == null) {
 			return null;
