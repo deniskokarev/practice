@@ -16,6 +16,7 @@ public class ABBADiv1 {
 	 */
 	public static class Answer {
 		String rc;
+
 		public Answer(String rc) {
 			this.rc = rc;
 		}
@@ -32,55 +33,60 @@ public class ABBADiv1 {
 	public static class Input {
 		String src;
 		String tgt;
+
 		public Input(Scanner sc) {
 			src = sc.nextLine();
 			tgt = sc.nextLine();
 		}
 	};
+
 	/*
 	 * BEGIN tc portion
 	 */
 	static void rev(char validData[], int sz) {
-		for(int i = 0; i < sz / 2; i++) {
-		    char temp = validData[i];
-		    validData[i] = validData[sz - i - 1];
-		    validData[sz - i - 1] = temp;
-		}	
+		for (int i = 0; i < sz / 2; i++) {
+			char temp = validData[i];
+			validData[i] = validData[sz - i - 1];
+			validData[sz - i - 1] = temp;
+		}
 	}
-    static boolean eq(char a[], int aSz, char b[], int bSz) {
-        boolean rc = false;
-        if (aSz == bSz) {
-            int i;
-            for (i=0; i<aSz && a[i] == b[i]; i++);
-            rc = (i==aSz);
-        }
-        return rc;
-    }
-    static boolean ifPossible(char s[], int sSz, char tgt[], int tgtSz) {
-        if (eq(s, sSz, tgt, tgtSz)) {
-            return true;
-        }
-        if (sSz < tgtSz)
-            return false;
-        boolean rc = false;
-        if (s[sSz-1] == 'A')
-			rc = ifPossible(s, sSz-1, tgt, tgtSz);       
-        if (!rc && s[0] == 'B') {
-        	rev(s, sSz);
-        	rc = ifPossible(s, sSz-1, tgt, tgtSz);
-        	rev(s, sSz);
-        }
-        return rc;
-    }
-    static public String canObtain(String from, String to) {
-    	char tgt[] = from.toCharArray();
-    	char src[] = to.toCharArray(); 
-        return ifPossible(src, src.length, tgt, tgt.length)?"Possible":"Impossible";
-    }
+
+	static boolean eq(char a[], int aSz, char b[], int bSz) {
+		boolean rc = false;
+		if (aSz == bSz) {
+			int i;
+			for (i = 0; i < aSz && a[i] == b[i]; i++)
+				;
+			rc = (i == aSz);
+		}
+		return rc;
+	}
+
+	static boolean ifPossible(char s[], int sSz, char tgt[], int tgtSz) {
+		if (eq(s, sSz, tgt, tgtSz)) {
+			return true;
+		}
+		if (sSz < tgtSz)
+			return false;
+		boolean rc = false;
+		if (s[sSz - 1] == 'A')
+			rc = ifPossible(s, sSz - 1, tgt, tgtSz);
+		if (!rc && s[0] == 'B') {
+			rev(s, sSz);
+			rc = ifPossible(s, sSz - 1, tgt, tgtSz);
+			rev(s, sSz);
+		}
+		return rc;
+	}
+
+	static public String canObtain(String from, String to) {
+		char tgt[] = from.toCharArray();
+		char src[] = to.toCharArray();
+		return ifPossible(src, src.length, tgt, tgt.length) ? "Possible" : "Impossible";
+	}
 	/*
 	 * END tc portion
 	 */
-
 
 	/**
 	 * solver function
