@@ -1,4 +1,6 @@
 import java.io.PrintStream;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -107,7 +109,7 @@ public class CF749C {
 		}
 	}
 
-	static int findFirst(char where[], int from, char what) {
+	static int findFirst(byte where[], int from, byte what) {
 		int sz = where.length;
 		for (int i=0; i<sz; i++)
 			if (where[(from+i)%sz] == what)
@@ -115,37 +117,78 @@ public class CF749C {
 		return -1;
 	}
 	
+	static class GraphNode {
+		char party;		// R or D
+		int selfNext;
+		int oppositeNext;
+		public GraphNode(char p) {
+			party = p;
+			selfNext = -1;
+			oppositeNext = -1;
+		}
+	}
+	
+	static GraphNode[] buildGraph(String in) {
+		int sz = in.length();
+		GraphNode g[] = new GraphNode[sz];
+		List<Integer> rq = new LinkedList<>();
+		List<Integer> dq = new LinkedList<>();
+		int lastR = -1;
+		int lastD = -1;
+		for (int j=0; j<2*sz; j++) {
+			int i = j%sz;
+			switch(in.charAt(i)) {
+			case 'R':
+				if (g[i] == null)
+					g[i] = new GraphNode('R');
+				if (dq.size() > 0) {
+					if (g[dq.get(0)].oppositeNext == -1)
+						g[dq.get(0)].oppositeNext = i;
+					dq.remove(0);
+				}
+				if (lastR >= 0)
+					g[lastR].selfNext = i;
+				rq.add(i);
+				lastR = i;
+				break;
+			case 'D':
+				if (g[i] == null)
+					g[i] = new GraphNode('D');
+				if (rq.size() > 0) {
+					if (g[rq.get(0)].oppositeNext == -1)
+						g[rq.get(0)].oppositeNext = i;
+					rq.remove(0);
+				}
+				if (lastD >= 0)
+					g[lastD].selfNext = i;
+				dq.add(i);
+				lastD = i;
+				break;
+			}
+		}
+		return g;
+	}
 	/**
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		char ring[] = in.in.toCharArray();
-		int sz = ring.length;
-		int rdidx[] = new int[256];
-		for (int i=0; i<rdidx.length; i++)
-			rdidx[i] = -1;
-		rdidx['R'] = findFirst(ring, 0, 'R');
-		rdidx['D'] = findFirst(ring, 0, 'D');
-		boolean more = true;
 		char winner = '-';
-		do {
+		GraphNode ring[] = buildGraph(in.in);
+		System.out.println("DEBUG:");
+		for (GraphNode g:ring)
+			System.out.println(g.party+":"+g.selfNext+":"+g.oppositeNext);
+		int sz = ring.length;
+		vote: while (true) {
 			for (int i=0; i<sz; i++) {
-				char p = ring[i];
-				if (p == ' ')
+				GraphNode g = ring[i];
+				if (g.party == ' ')
 					continue;
-				char op = oppositeParty(p);
-				int opi = rdidx[op];
-				if (opi < 0) {
-					winner = p;
-					more = false;
-					break;
-				} else {
-					ring[opi] = ' ';
-					opi = findFirst(ring, opi+1, op);
-					rdidx[op] = opi;
-				}
+				int on = g.oppositeNext;
+				ring[on].party = ' ';
+				g.oppositeNext = ring[on].selfNext;
+				break vote;
 			}
-		} while(more);
+		}
 		Answer ans = new Answer(winner);
 		return ans;
 	}
