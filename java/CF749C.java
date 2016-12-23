@@ -107,20 +107,16 @@ public class CF749C {
 		}
 	}
 
-	static int findFirst(byte where[], int from, byte what) {
-		int sz = where.length;
-		for (int i=0; i<sz; i++)
-			if (where[(from+i)%sz] == what)
-				return (from+i)%sz;
-		return -1;
-	}
-	
 	static class GraphNode {
 		char party;		// R or D
+		int next;
+		int prev;
 		int selfNext;
 		int selfPrev;
 		public GraphNode(char p) {
 			party = p;
+			next = -1;
+			prev = -1;
 			selfNext = -1;
 			selfPrev = -1;
 		}
@@ -131,6 +127,7 @@ public class CF749C {
 		GraphNode g[] = new GraphNode[sz];
 		int lastR = -1;
 		int lastD = -1;
+		int prev = -1;
 		for (int j=0; j<2*sz; j++) {
 			int i = j%sz;
 			switch(in.charAt(i)) {
@@ -153,9 +150,14 @@ public class CF749C {
 				lastD = i;
 				break;
 			}
+			g[i].next = (i+1)%sz;
+			if (prev >= 0)
+				g[i].prev = prev;
+			prev = i;
 		}
 		return g;
 	}
+
 	/**
 	 * solver function
 	 */
@@ -168,7 +170,6 @@ public class CF749C {
 			for (GraphNode g:ring)
 				System.out.println(g.party+":"+g.selfNext+":"+g.selfPrev);
 		}
-		int sz = ring.length;
 		int head[] = new int[256];
 		for (int i=0; i<head.length; i++)
 			head[i] = -1;
@@ -181,25 +182,23 @@ public class CF749C {
 			return new Answer('D');
 		if (head['D'] == -1)
 			return new Answer('R');
+		int i=0;
 		vote: while (true) {
-			for (int i=0; i<sz; i++) {
-				GraphNode g = ring[i];
-				if (g.party == '_')
-					continue;
-				char op = oppositeParty(g.party);
-				int hop = head[op];
-				while (hop != ring[hop].selfNext && hop < ring[hop].selfNext && hop < i)
-					hop = ring[hop].selfNext;
-				if (hop == ring[hop].selfNext) {
-					winner = g.party;
-					break vote;
-				} else {
-					ring[ring[hop].selfPrev].selfNext = ring[hop].selfNext;
-					ring[ring[hop].selfNext].selfPrev = ring[hop].selfPrev;
-					head[op] = ring[hop].selfNext;
-					ring[hop].party = '_';
-				}
+			GraphNode g = ring[i];
+			char op = oppositeParty(g.party);
+			int hop = head[op];
+			if (hop == ring[hop].selfNext) {
+				winner = g.party;
+				break vote;
+			} else {
+				ring[ring[hop].selfPrev].selfNext = ring[hop].selfNext;
+				ring[ring[hop].selfNext].selfPrev = ring[hop].selfPrev;
+				head[op] = ring[hop].selfNext;
+				ring[ring[hop].prev].next = ring[hop].next;
+				ring[ring[hop].next].prev = ring[hop].prev;
 			}
+			head[g.party] = g.selfNext;
+			i = g.next;
 		}
 		return new Answer(winner);
 	}
