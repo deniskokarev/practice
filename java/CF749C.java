@@ -1,6 +1,4 @@
 import java.io.PrintStream;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -120,19 +118,17 @@ public class CF749C {
 	static class GraphNode {
 		char party;		// R or D
 		int selfNext;
-		int oppositeNext;
+		int selfPrev;
 		public GraphNode(char p) {
 			party = p;
 			selfNext = -1;
-			oppositeNext = -1;
+			selfPrev = -1;
 		}
 	}
 	
 	static GraphNode[] buildGraph(String in) {
 		int sz = in.length();
 		GraphNode g[] = new GraphNode[sz];
-		List<Integer> rq = new LinkedList<>();
-		List<Integer> dq = new LinkedList<>();
 		int lastR = -1;
 		int lastD = -1;
 		for (int j=0; j<2*sz; j++) {
@@ -141,27 +137,19 @@ public class CF749C {
 			case 'R':
 				if (g[i] == null)
 					g[i] = new GraphNode('R');
-				if (dq.size() > 0) {
-					if (g[dq.get(0)].oppositeNext == -1)
-						g[dq.get(0)].oppositeNext = i;
-					dq.remove(0);
-				}
-				if (lastR >= 0)
+				if (lastR >= 0) {
 					g[lastR].selfNext = i;
-				rq.add(i);
+					g[i].selfPrev = lastR;
+				}
 				lastR = i;
 				break;
 			case 'D':
 				if (g[i] == null)
 					g[i] = new GraphNode('D');
-				if (rq.size() > 0) {
-					if (g[rq.get(0)].oppositeNext == -1)
-						g[rq.get(0)].oppositeNext = i;
-					rq.remove(0);
-				}
-				if (lastD >= 0)
+				if (lastD >= 0) {
 					g[lastD].selfNext = i;
-				dq.add(i);
+					g[i].selfPrev = lastD;
+				}
 				lastD = i;
 				break;
 			}
@@ -174,23 +162,46 @@ public class CF749C {
 	public static Answer solve(Input in) {
 		char winner = '-';
 		GraphNode ring[] = buildGraph(in.in);
-		System.out.println("DEBUG:");
-		for (GraphNode g:ring)
-			System.out.println(g.party+":"+g.selfNext+":"+g.oppositeNext);
+		boolean debug = false;
+		if (debug) {
+			System.out.println("DEBUG:");
+			for (GraphNode g:ring)
+				System.out.println(g.party+":"+g.selfNext+":"+g.selfPrev);
+		}
 		int sz = ring.length;
+		int head[] = new int[256];
+		for (int i=0; i<head.length; i++)
+			head[i] = -1;
+		for (int i=0; i<ring.length; i++) {
+			GraphNode g = ring[i];
+			if (head[g.party] == -1)
+				head[g.party] = i;
+		}
+		if (head['R'] == -1)
+			return new Answer('D');
+		if (head['D'] == -1)
+			return new Answer('R');
 		vote: while (true) {
 			for (int i=0; i<sz; i++) {
 				GraphNode g = ring[i];
-				if (g.party == ' ')
+				if (g.party == '_')
 					continue;
-				int on = g.oppositeNext;
-				ring[on].party = ' ';
-				g.oppositeNext = ring[on].selfNext;
-				break vote;
+				char op = oppositeParty(g.party);
+				int hop = head[op];
+				while (hop != ring[hop].selfNext && hop < ring[hop].selfNext && hop < i)
+					hop = ring[hop].selfNext;
+				if (hop == ring[hop].selfNext) {
+					winner = g.party;
+					break vote;
+				} else {
+					ring[ring[hop].selfPrev].selfNext = ring[hop].selfNext;
+					ring[ring[hop].selfNext].selfPrev = ring[hop].selfPrev;
+					head[op] = ring[hop].selfNext;
+					ring[hop].party = '_';
+				}
 			}
 		}
-		Answer ans = new Answer(winner);
-		return ans;
+		return new Answer(winner);
 	}
 
 	/**
