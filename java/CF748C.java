@@ -86,26 +86,11 @@ public class CF748C {
 		}
 	};
 
-	static class Point implements Cloneable {
+	static class Dir implements Cloneable {
 		int x, y;
-		int next, prev;
-		Point(int x, int y) {
+		Dir(int x, int y) {
 			this.x = x;
 			this.y = y;
-			this.next = -1;
-			this.prev = -1;
-		}
-		@Override
-		public Point clone() {
-			return new Point(x, y);
-		}
-		void moveFwd(Point dir) {
-			x += dir.x;
-			y += dir.y;
-		}
-		void moveBwd(Point dir) {
-			x -= dir.x;
-			y -= dir.y;
 		}
 	}
 	
@@ -114,42 +99,35 @@ public class CF748C {
 	 */
 	public static class Input {
 		int ndir;
-		Point dir[];
-		Point point[];
+		Dir dir[];
 		public Input(Scanner sc) {
 			ndir = sc.nextInt();
 			sc.nextLine();
 			String ln = sc.nextLine();
-			dir = new Point[ln.length()];
-			point = new Point[ln.length()+1];
+			dir = new Dir[ln.length()];
 			int i = 0;
-			point[0] = new Point(0, 0);
 			for (char c:ln.toCharArray()) {
 				switch (c) {
 				case 'R':
-					dir[i] = new Point(1, 0);
+					dir[i] = new Dir(1, 0);
 					break;
 				case 'U':
-					dir[i] = new Point(0, 1);
+					dir[i] = new Dir(0, 1);
 					break;
 				case 'L':
-					dir[i] = new Point(-1, 0);
+					dir[i] = new Dir(-1, 0);
 					break;
 				case 'D':
-					dir[i] = new Point(0, -1);
+					dir[i] = new Dir(0, -1);
 					break;
 				}
-				point[i+1] = point[i].clone();
-				point[i+1].moveFwd(dir[i]);
-				point[i].next = i+1;
-				point[i+1].prev = i;
 				i++;
 			}
 		}
 	};
 	
 	static int canMoveMonoFrom(Input in, int i) {
-		Point d[] = in.dir;
+		Dir d[] = in.dir;
 		int dX = 0;
 		int dY = 0;
 		while (i < d.length && dX * d[i].x >= 0 && dY * d[i].y >= 0) {
