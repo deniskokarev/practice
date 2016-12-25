@@ -120,17 +120,27 @@ public class CF748B {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		Map<Character, Character> m = new HashMap<>();
+		char map[] = new char[257];
 		for (int i=0; i<in.s1.length(); i++) {
 			char c1 = min(in.s1.charAt(i), in.s2.charAt(i));
 			char c2 = max(in.s1.charAt(i), in.s2.charAt(i));
-			if (c1 != c2) {
-				if (!m.containsKey(c1))
-					m.put(c1, c2);
-				else if (m.get(c1) != c2)
+			c1++;
+			c2++;
+			if (map[c1] == 0 || map[c1] == c2) {
+				map[c1] = c2;
+				if (map[c2] == 0 || map[c2] == c1) {
+					map[c2] = c1;
+				} else {
 					return new Answer(null, false);
+				}
+			} else {
+				return new Answer(null, false);
 			}
 		}
+		Map<Character, Character> m = new HashMap<>();
+		for (int i=1; i<map.length; i++)
+			if (map[i] > i)
+				m.put((char)(i-1), (char) (map[i]-1));
 		Answer ans = new Answer(m, true);
 		return ans;
 	}
