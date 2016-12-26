@@ -6,8 +6,8 @@ public class CF747A {
 	 * solution result
 	 */
 	public static class Answer {
-		int r, d;
-		public Answer(int r, int d) {
+		long r, d;
+		public Answer(long r, long d) {
 			this.r = r;
 			this.d = d;
 		}
@@ -32,16 +32,13 @@ public class CF747A {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		int d = 0;
-		int r;
-		while (true) {
-			int us = d*d/4+in.n;
-			int s = (int)Math.sqrt(us);
-			if (s*s == us) {
-				r = s-d/2;
+		long d = 0;
+		long r = -1;
+		while (d < in.n) {
+			r = (long)(Math.sqrt(d*d/4.0+in.n)-d/2.0);
+			if (r*(r+d) == in.n)
 				break;
-			}
-			d += 2;
+			d++;
 		}
 		Answer ans = new Answer(r, d);
 		return ans;
