@@ -38,62 +38,43 @@ public class CF746D {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
+		int qA = (in.a+in.k-1)/in.k;
+		int qB = in.b;
 		char res[] = new char[in.n];
-		int qAMin = in.a/in.k-1;
-		int qBMin = in.b/in.k-1;
-		res[0] = 'N';
-		res[1] = 'O';
-		res[2] = 0;
-		for (int q=Math.max(qAMin, qBMin); q<=Math.min(in.a, in.b); q++) {
-			if (q < 1)
-				continue;
-			int na = in.a/q;
-			int nb = in.b/q;
-			if (na < 1 || na > in.k || nb < 1 || nb > in.k)
-				continue;
-			int qB = q;
-			int qA = q;
-			if (in.b%q > 0)
-				qB++;
-			if (in.a%q > 0)
-				qA++;
-			if (qB>qA) {
-				// begin with B
-				int cnt;
-				cnt = 0;
-				for (int i=0; i<qB && cnt<in.b; i++) {
-					for (int j=0; j<nb && cnt<in.b; j++) {
-						res[i*(na+nb)+j] = 'B';
-						cnt++;
-					}
-				}
-				cnt = 0;
-				for (int i=0; i<qA && cnt<in.a; i++) {
-					for (int j=0; j<na && cnt<in.a; j++) {
-						res[i*(na+nb)+nb+j] = 'G';
-						cnt++;
-					}
-				}
-			} else {
-				// begin with A
-				int cnt;
-				cnt = 0;
-				for (int i=0; i<qA && cnt<in.a; i++) {
-					for (int j=0; j<na && cnt<in.a; j++) {
-						res[i*(na+nb)+j] = 'G';
-						cnt++;
-					}
-				}
-				cnt = 0;
-				for (int i=0; i<qB && cnt<in.b; i++) {
-					for (int j=0; j<nb && cnt<in.b; j++) {
-						res[i*(na+nb)+na+j] = 'B';
-						cnt++;
-					}
-				}
+		while (qA <= in.a && qB >=(in.b+in.k-1)/in.k) {
+			int na = (qA > 0) ? in.a/qA : 0; 
+			int nb = (qB > 0) ? in.b/qB : 0;
+			if (qB-qA==1) {
+				int a, b;
+				for (b=0; b<qB; b++)
+					for (int j=0; j<nb; j++)
+						res[b*(na+nb)+j] = 'B';
+				for (int j=0; j<in.b%nb; j++)
+					res[b*(na+nb)+j] = 'B';
+				for (a=0; a<qA; a++)
+					for (int j=0; j<na; j++)
+						res[a*(na+nb)+nb+j] = 'G';
+				for (int j=0; j<in.a%na; j++)
+					res[a*(na+nb)+nb+j] = 'G';
+				return new Answer(new String(res));
+			} else if (qA-qB==1 || qA==qB) {
+				int a, b;
+				for (a=0; a<qA; a++)
+					for (int j=0; j<na; j++)
+						res[a*(na+nb)+j] = 'G';
+				for (int j=0; j<in.a%na; j++)
+					res[a*(na+nb)+j] = 'G';
+				for (b=0; b<qB; b++)
+					for (int j=0; j<nb; j++)
+						res[b*(na+nb)+na+j] = 'B';
+				for (int j=0; j<in.b%nb; j++)
+					res[b*(na+nb)+na+j] = 'B';
+				return new Answer(new String(res));
 			}
+			qA++;
+			qB--;
 		}
-		return new Answer(new String(res));
+		return new Answer("NO");
 	}
 
 	/**
