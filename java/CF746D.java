@@ -34,28 +34,31 @@ public class CF746D {
 		}
 	};
 	
-	static String fill(char res[], int qA, int qB, Input in) {
-		int n[] = new int[]{in.a, in.b};
-		// upper estimate of letters in interval
-		int v[] = new int[]{(qA > 0) ? (in.a+qA-1)/qA : 0, (qB > 0) ? (in.b+qB-1)/qB : 0};
+	/**
+	 * fill the string with qA and qB intervals of 'G' and 'B' letters respectively
+	 * qA and qB may not differ by more than 1
+	 * @param qA 'G' letter intervals
+	 * @param qB 'B' letter intervals
+	 * @param a total number of 'G' letters
+	 * @param b total number of 'B' letters
+	 * @return that filled string
+	 */
+	static String fill(int qA, int qB, int a, int b) {
+		// upper estimate of letters in the interval
+		int v[] = new int[]{(qA > 0) ? (a+qA-1)/qA : 0, (qB > 0) ? (b+qB-1)/qB : 0};
 		// number of intervals we have to fill with v[] letters
 		// after which we have to start filling with one letter less
-		int o[] = new int[]{(qA > 0) ? in.a%qA : 0, (qB > 0) ? in.b%qB : 0};
+		int r[] = new int[]{(qA > 0) ? a%qA : 0, (qB > 0) ? b%qB : 0};
 		char c[] = new char[]{'G', 'B'};
-		int go;
-		if (qB>qA)
-			go = 1;
-		else
-			go = 0;
+		int go = (qB>qA) ? 1 : 0;	// what sequence do we start with
+		char res[] = new char[a+b];
 		int cnt = 0;
-		while (cnt < in.n) {
-			for (int i=0; i<v[go] && n[go]>0; i++) {
+		while (cnt < res.length) {
+			for (int i=0; i<v[go]; i++)
 				res[cnt++] = c[go];
-				n[go]--;
-			}
-			if (o[go] > 0) {
-				o[go]--;
-				if (o[go] == 0)
+			if (r[go] > 0) {
+				r[go]--;
+				if (r[go] == 0)
 					v[go]--;
 			}
 			go ^= 1;
@@ -69,31 +72,24 @@ public class CF746D {
 	public static Answer solve(Input in) {
 		// number of a intervals has to be between (in.a+in.k-1)/in.k and in.a
 		// number of b intervals has to be between (in.b+in.k-1)/in.k and in.b
-		// need to find an overlapping interval within +-1
+		// need to find an overlapping count satisfying both within +-1 tolerance
 		int qAMin = (in.a+in.k-1)/in.k;
 		int qAMax = in.a;
 		int qBMin = (in.b+in.k-1)/in.k;
 		int qBMax = in.b;
-		char res[] = new char[in.n];
 		if (qAMin < qBMin) {
 			if (qBMax<=qAMax) {
 				// <---a--->
 				//  <--b-->
-				int qA = qBMin;
-				int qB = qBMin;
-				return new Answer(fill(res, qA, qB, in));
+				return new Answer(fill(qBMin, qBMin, in.a, in.b));
 			} else if (qBMin<=qAMax) {
 				// <--a-->
 				//     <--b-->
-				int qA = qBMin;
-				int qB = qBMin;
-				return new Answer(fill(res, qA, qB, in));
+				return new Answer(fill(qBMin, qBMin, in.a, in.b));
 			} else if (qBMin==qAMax+1) {
 				// <--a-->
 				//        <--b-->
-				int qA = qAMax;
-				int qB = qBMin;
-				return new Answer(fill(res, qA, qB, in));
+				return new Answer(fill(qAMax, qBMin, in.a, in.b));
 			} else {
 				// <--a-->
 				//          <--b-->
@@ -103,21 +99,15 @@ public class CF746D {
 			if (qAMax<=qBMax) {
 				//  <--a-->
 				// <---b--->
-				int qA = qAMin;
-				int qB = qAMin;
-				return new Answer(fill(res, qA, qB, in));
+				return new Answer(fill(qAMin, qAMin, in.a, in.b));
 			} else if (qAMin<=qBMax) {
 				//     <--a-->
 				// <--b-->
-				int qA = qAMin;
-				int qB = qAMin;
-				return new Answer(fill(res, qA, qB, in));
+				return new Answer(fill(qAMin, qAMin, in.a, in.b));
 			} else if (qAMin==qBMax+1) {
 				//        <--a-->
 				// <--b-->
-				int qA = qAMin;
-				int qB = qBMax;
-				return new Answer(fill(res, qA, qB, in));
+				return new Answer(fill(qAMin, qBMax, in.a, in.b));
 			} else {
 				//          <--a-->
 				// <--b-->
