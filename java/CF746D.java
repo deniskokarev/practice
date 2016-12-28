@@ -36,38 +36,21 @@ public class CF746D {
 	static String fill(char res[], int qA, int qB, Input in) {
 		int na = (qA > 0) ? (in.a+qA-1)/qA : 0; 
 		int nb = (qB > 0) ? (in.b+qB-1)/qB : 0;
-		if (qB>qA) {
-			int a, b;
-			if (nb>0) {
-				for (b=0; b<in.b/nb; b++)
-					for (int j=0; j<nb; j++)
-						res[b*(na+nb)+j] = 'B';
-				for (int j=0; j<in.b%nb; j++)
-					res[b*(na+nb)+j] = 'B';
+		int n[] = new int[]{in.a, in.b};
+		int v[] = new int[]{na, nb};
+		char c[] = new char[]{'G', 'B'};
+		int go;
+		if (qB>qA)
+			go = 1;
+		else
+			go = 0;
+		int cnt = 0;
+		while (cnt < in.n) {
+			for (int i=0; i<v[go] && n[go]>0; i++) {
+				res[cnt++] = c[go];
+				n[go]--;
 			}
-			if (na>0) {
-				for (a=0; a<in.a/na; a++)
-					for (int j=0; j<na; j++)
-						res[a*(na+nb)+nb+j] = 'G';
-				for (int j=0; j<in.a%na; j++)
-					res[a*(na+nb)+nb+j] = 'G';
-			}
-		} else {
-			int a, b;
-			if (na>0) {
-				for (a=0; a<in.a/na; a++)
-					for (int j=0; j<na; j++)
-						res[a*(na+nb)+j] = 'G';
-				for (int j=0; j<in.a%na; j++)
-					res[a*(na+nb)+j] = 'G';
-			}
-			if (nb>0) {
-				for (b=0; b<in.b/nb; b++)
-					for (int j=0; j<nb; j++)
-						res[b*(na+nb)+na+j] = 'B';
-				for (int j=0; j<in.b%nb; j++)
-					res[b*(na+nb)+na+j] = 'B';
-			}
+			go ^= 1;
 		}
 		return new String(res);
 	}
@@ -78,38 +61,60 @@ public class CF746D {
 	public static Answer solve(Input in) {
 		// number of a intervals has to be between (in.a+in.k-1)/in.k and in.a
 		// number of b intervals has to be between (in.b+in.k-1)/in.k and in.b
-		// need to find an interval count that is within +-1
+		// need to find an overlapping interval within +-1
 		int qAMin = (in.a+in.k-1)/in.k;
 		int qAMax = in.a;
 		int qBMin = (in.b+in.k-1)/in.k;
 		int qBMax = in.b;
 		char res[] = new char[in.n];
-		if (qAMin>qBMin && qAMax<qBMax) {
-			//   <-a->
-			// <---b--->
-			int qA = qAMin;
-			int qB = qAMin;
-			return new Answer(fill(res, qA, qB, in));
-		} else if (qBMin>qAMin && qBMax<qAMax) {
-			// <---a--->
-			//   <-b->
-			int qA = qBMin;
-			int qB = qBMin;
-			return new Answer(fill(res, qA, qB, in));
-		} else if (qBMax+1>=qAMin && qAMax>qBMin) {
-			// <--b-->
-			//        <--a-->
-			int qA = qAMin;
-			int qB = qBMax;
-			return new Answer(fill(res, qA, qB, in));
-		} else if (qAMax+1>=qBMin && qBMax>qAMin) {
-			// <--a-->
-			//        <--b-->
-			int qA = qAMax;
-			int qB = qBMin;
-			return new Answer(fill(res, qA, qB, in));
+		if (qAMin < qBMin) {
+			if (qBMax<=qAMax) {
+				// <---a--->
+				//  <--b-->
+				int qA = qBMin;
+				int qB = qBMin;
+				return new Answer(fill(res, qA, qB, in));
+			} else if (qBMin<=qAMax) {
+				// <--a-->
+				//     <--b-->
+				int qA = qBMin;
+				int qB = qBMin;
+				return new Answer(fill(res, qA, qB, in));
+			} else if (qBMin==qAMax+1) {
+				// <--a-->
+				//        <--b-->
+				int qA = qAMax;
+				int qB = qBMin;
+				return new Answer(fill(res, qA, qB, in));
+			} else {
+				// <--a-->
+				//          <--b-->
+				return new Answer("NO");
+			}
 		} else {
-			return new Answer("NO");
+			if (qAMax<=qBMax) {
+				//  <--a-->
+				// <---b--->
+				int qA = qAMin;
+				int qB = qAMin;
+				return new Answer(fill(res, qA, qB, in));
+			} else if (qAMin<=qBMax) {
+				//     <--a-->
+				// <--b-->
+				int qA = qAMin;
+				int qB = qAMin;
+				return new Answer(fill(res, qA, qB, in));
+			} else if (qAMin==qBMax+1) {
+				//        <--a-->
+				// <--b-->
+				int qA = qAMin;
+				int qB = qBMax;
+				return new Answer(fill(res, qA, qB, in));
+			} else {
+				//          <--a-->
+				// <--b-->
+				return new Answer("NO");
+			}
 		}
 	}
 
