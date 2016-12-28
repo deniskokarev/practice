@@ -33,11 +33,14 @@ public class CF746D {
 			b = sc.nextInt();
 		}
 	};
+	
 	static String fill(char res[], int qA, int qB, Input in) {
-		int na = (qA > 0) ? (in.a+qA-1)/qA : 0; 
-		int nb = (qB > 0) ? (in.b+qB-1)/qB : 0;
 		int n[] = new int[]{in.a, in.b};
-		int v[] = new int[]{na, nb};
+		// upper estimate of letters in interval
+		int v[] = new int[]{(qA > 0) ? (in.a+qA-1)/qA : 0, (qB > 0) ? (in.b+qB-1)/qB : 0};
+		// number of intervals we have to fill with v[] letters
+		// after which we have to start filling with one letter less
+		int o[] = new int[]{(qA > 0) ? in.a%qA : 0, (qB > 0) ? in.b%qB : 0};
 		char c[] = new char[]{'G', 'B'};
 		int go;
 		if (qB>qA)
@@ -49,6 +52,11 @@ public class CF746D {
 			for (int i=0; i<v[go] && n[go]>0; i++) {
 				res[cnt++] = c[go];
 				n[go]--;
+			}
+			if (o[go] > 0) {
+				o[go]--;
+				if (o[go] == 0)
+					v[go]--;
 			}
 			go ^= 1;
 		}
