@@ -41,13 +41,23 @@ public class CF746C {
 	 */
 	public static Answer solve(Input in) {
 		int self = Math.abs((in.x2-in.x1)*in.t2);
-		int tramAtX1[] = new int[] {(in.x1 - in.p*in.d)*in.t1, (in.x1 - in.p*in.d + 2*(in.s-in.x1))*in.t1};
-		int tramAtX2[] = new int[] {(in.x2 - in.p*in.d)*in.t1, (in.x2 - in.p*in.d + 2*(in.s-in.x2))*in.t1};
-		if (tramAtX1[0]<tramAtX2[0]) {
-			return new Answer(Math.min(self, tramAtX2[0]));
-		} else {
-			return new Answer(Math.min(self, tramAtX2[1]));
+		int t;
+		if (in.x2 < in.x1) {
+			in.d = -in.d;
+			in.p = in.s-in.p;
+			in.x1 = in.s-in.x1;
+			in.x2 = in.s-in.x2;
 		}
+		if (in.p < in.x1) {
+			t = (in.x1-in.p*in.d+(in.x2-in.x1))*in.t1;
+		} else {
+			if (in.d < 0) {
+				t = (in.x1-in.p*in.d+(in.x2-in.x1))*in.t1;					
+			} else {
+				t = (in.x1-in.p+in.s*2+(in.x2-in.x1))*in.t1;					
+			}
+		}
+		return new Answer(Math.min(self, t));
 	}
 
 	/**
