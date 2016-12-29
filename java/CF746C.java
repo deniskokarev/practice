@@ -48,7 +48,7 @@ public class CF746C {
 			in.x1 = in.s-in.x1;
 			in.x2 = in.s-in.x2;
 		}
-		if (in.p < in.x1) {
+		if (in.p <= in.x1) {
 			t = (in.x1-in.p*in.d+(in.x2-in.x1))*in.t1;
 		} else {
 			if (in.d < 0) {
