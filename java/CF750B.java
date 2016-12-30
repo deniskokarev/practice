@@ -72,9 +72,9 @@ public class CF750B {
 				return new Answer("NO");
 			if (y + in.step[i].dirY > 20000)
 				return new Answer("NO");
-			if (y % 40000 == 0 && (in.step[i].dirX > 0 || in.step[i].dirY < 0))
+			if (y % 40000 == 0 && (in.step[i].dirX != 0 || in.step[i].dirY < 0))
 				return new Answer("NO");
-			if ((y+20000) % 40000 == 0 && (in.step[i].dirX > 0 || in.step[i].dirY > 0))
+			if ((y+20000) % 40000 == 0 && (in.step[i].dirX != 0 || in.step[i].dirY > 0))
 				return new Answer("NO");
 			x += in.step[i].dirX;
 			y += in.step[i].dirY;
