@@ -68,6 +68,10 @@ public class CF750B {
 	public static Answer solve(Input in) {
 		int x = 0, y = 0;
 		for (int i=0; i<in.step.length; i++) {
+			if (y + in.step[i].dirY < 0)
+				return new Answer("NO");
+			if (y + in.step[i].dirY > 20000)
+				return new Answer("NO");
 			if (y % 40000 == 0 && (in.step[i].dirX > 0 || in.step[i].dirY < 0))
 				return new Answer("NO");
 			if ((y+20000) % 40000 == 0 && (in.step[i].dirX > 0 || in.step[i].dirY > 0))
