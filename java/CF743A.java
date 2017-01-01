@@ -60,20 +60,14 @@ public class CF743A {
 		int n;
 		int a;
 		int b;
-		int aport[];
+		char aport[];
 		public Input(Scanner sc) {
 			n = sc.nextInt();
-			int ab[] = new int[2];
-			ab[0] = sc.nextInt();
-			ab[1] = sc.nextInt();
-			Arrays.sort(ab);
-			a = ab[0]-1;
-			b = ab[1]-1;
-			aport = new int[n];
+			a = sc.nextInt();
+			b = sc.nextInt();
 			sc.nextLine();
 			String s = sc.nextLine();
-			for (int i=0; i<n; i++)
-				aport[i] = s.charAt(i);
+			aport = s.toCharArray();
 		}
 	};
 
@@ -82,25 +76,11 @@ public class CF743A {
 	 */
 	public static Answer solve(Input in) {
 		int rc;
-		int a = in.a;
-		int b = in.b;
-		if (in.aport[a] == in.aport[b]) {
+		if (in.aport[in.a-1] == in.aport[in.b-1])
 			rc = 0;
-		} else {
-			int rcB = 0;
-			int i;
-			for (i=b; i>a && in.aport[i] == in.aport[b]; i--)
-				rcB++;
-			int rcA = 0;
-			for (i=b; i<in.n && in.aport[i] == in.aport[b]; i++)
-				rcA++;
-			if (i<in.n)
-				rc = Math.min(rcA, rcB);
-			else
-				rc = rcB;
-		}
-		Answer ans = new Answer(rc);
-		return ans;
+		else
+			rc = 1;
+		return new Answer(rc);
 	}
 
 	/**
