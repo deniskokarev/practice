@@ -27,8 +27,9 @@ void delete_ringbuf(RINGBUF *buf, int sz) {
 
 int put_ringbuf(RINGBUF *buf, char c) {
     if (buf->head-buf->tail < buf->sz) {
-        buf->buf[buf->head++] = c;
-		return OK;
+        buf->buf[buf->head%buf->sz] = c;
+        buf->head++;
+        return OK;
     } else {
         return NOMEM;
     }
@@ -36,7 +37,8 @@ int put_ringbuf(RINGBUF *buf, char c) {
 
 int get_ringbuf(RINGBUF *buf, char *c) {
     if (buf->tail<buf->head) {
-        *c = buf->buf[buf->tail++];
+        *c = buf->buf[buf->tail%buf->sz];
+        buf->tail++;
         return OK;
     } else {
         return EMPTY;
@@ -47,7 +49,7 @@ int get_ringbuf(RINGBUF *buf, char *c) {
 int main(int argc, char **argv) {
     char *s = "Hello, world";
     RINGBUF buf;
-    int rc = init_ringbuf(&buf, 1024);
+    int rc = init_ringbuf(&buf, 14);
     if (!rc) {
         fprintf(stderr, "no mem\n");
         exit(-1);
@@ -58,6 +60,14 @@ int main(int argc, char **argv) {
     }
     put_ringbuf(&buf, 0);
     char c;
+    while ((rc=get_ringbuf(&buf, &c))==OK && c!=0) {
+        fputc(c, stdout);
+    }
+    fputc('\n', stdout);
+    for (i=0; i<strlen(s); i++) {
+        put_ringbuf(&buf, s[i]);        
+    }
+    put_ringbuf(&buf, 0);
     while ((rc=get_ringbuf(&buf, &c))==OK && c!=0) {
         fputc(c, stdout);
     }
