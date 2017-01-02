@@ -21,7 +21,7 @@ import java.util.Scanner;
  * Output
  * Print the minimum distance that Patrick will have to walk in order to visit both shops and return to his house.
  */
-public class p599A {
+public class CF599A {
 
 	public static void main(String[] args) {
 		try (Scanner sc = new Scanner(System.in)) {

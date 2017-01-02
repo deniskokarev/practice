@@ -28,7 +28,7 @@ Output
 Print the only integer — the minimum number of months when Petya has to water the flower so that the flower grows no less than by k centimeters. If the flower can't grow by k centimeters in a year, print -1.
 
  */
-public class p149A {
+public class CF149A {
 	static void solve(Scanner sc) {
 		long k = sc.nextLong();
 		sc.nextLine();
