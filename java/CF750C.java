@@ -20,17 +20,9 @@ public class CF750C {
 	static class Res {
 		int score;
 		int div;
-		long mn, mx;
 		Res(int score, int div) {
 			this.div = div;
 			this.score = score;
-			if (div == 1) {
-				mn = 1900+score;
-				mx = Long.MAX_VALUE;
-			} else {
-				mn = Long.MIN_VALUE;
-				mx = 1899+score;
-			}
 		}
 	}
 	/**
@@ -51,35 +43,51 @@ public class CF750C {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		long bestMx, bestMn;
-		int div;
-		bestMx = in.r[0].mx;
-		bestMn = in.r[0].mn;
-		div = in.r[0].div;
+		long mx, mn;
+		int div = in.r[0].div;
+		if (div == 1) {
+			mn = 1900;
+			mx = Integer.MAX_VALUE;
+		} else {
+			mn = Integer.MIN_VALUE;
+			mx = 1899;
+		}
+		int score = in.r[0].score;
 		for (int i=1; i<in.r.length; i++) {
-			long mx = in.r[i].mx;
-			long mn = in.r[i].mn;
+			mx += score;
+			mn += score;
 			if (div != in.r[i].div) {
 				if (div == 1) {
 					// 1->2
-					if (bestMn+in.r[i].score > 1899)
+					if (mn > 1899)
 						return new Answer("Impossible");
+					mx = Math.min(1899, mx);
 				} else {
 					// 2->1
-					if (bestMx+in.r[i].score < 1900)
+					if (mx < 1900)
 						return new Answer("Impossible");
+					mn = Math.max(1900, mn);
+				}
+				div = in.r[i].div;
+			} else {
+				if (div == 1) {
+					if (mx < 1900)
+						return new Answer("Impossible");
+					mn = Math.max(1900, mn);
+				} else {
+					if (mn > 1899)
+						return new Answer("Impossible");
+					mx = Math.min(1899, mx);
 				}
 			}
-			if (mx < Long.MAX_VALUE && bestMx > mx)
-				bestMx = mx;
-			if (mn > Long.MIN_VALUE && bestMn < mn)
-				bestMn = mn;
-			div = in.r[i].div;
+			score = in.r[i].score;
 		}
-		if (bestMx == Long.MAX_VALUE) {
+		mx += score;
+		mn += score;
+		if (mx > Integer.MAX_VALUE/2) {
 			return new Answer("Infinity");
 		} else {
-			return new Answer(Long.toString(bestMx));
+			return new Answer(Long.toString(mx));
 		}
 	}
 
