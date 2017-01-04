@@ -40,8 +40,8 @@ public class CF742B {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		ArrayList<List<Integer>> idx = new ArrayList<>(100000);
-		for (int i=0; i<100000; i++)
+		ArrayList<List<Integer>> idx = new ArrayList<>();
+		for (int i=0; i<100001; i++)
 			idx.add(null);
 		for (int i=0; i<in.a.length; i++) {
 			List<Integer> l = idx.get(in.a[i]);
