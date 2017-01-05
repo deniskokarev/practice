@@ -44,6 +44,7 @@ public class Comb {
 		for (long i=n,j=1; j<=k; i--,j++) {
 			res *= i;
 			res /= j;
+			assert(res > 0);	// 64bit overflow
 		}
 		return res;
 	}
@@ -54,6 +55,7 @@ public class Comb {
 	 * @return
 	 */
 	public static long fact(int n) {
+		assert(n < 21);	// 64bit overflow with n>=21
 		long res = 1;
 		while (n>1)
 			res *= n--;
