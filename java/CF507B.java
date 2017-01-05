@@ -40,7 +40,7 @@ Output
 
 0
  */
-public class p507B {
+public class CF507B {
 
 	static void solve(Scanner sc) {
 		// read input

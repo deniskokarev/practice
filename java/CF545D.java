@@ -25,7 +25,7 @@ wrong answer expected '6', found '3'
 
  */
 
-public class p545D {
+public class CF545D {
 
 	static <T extends Number> int place(int w, List<T> lst) {
 		class Result {
