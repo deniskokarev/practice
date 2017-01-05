@@ -9,14 +9,14 @@ public class CF742B {
 	 * solution result
 	 */
 	public static class Answer {
-		int n;
-		public Answer(int n) {
+		long n;
+		public Answer(long n) {
 			this.n = n;
 		}
 
 		@Override
 		public String toString() {
-			return Integer.toString(n);
+			return Long.toString(n);
 		}
 	};
 
@@ -40,31 +40,14 @@ public class CF742B {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		ArrayList<List<Integer>> idx = new ArrayList<>();
-		for (int i=0; i<100001; i++)
-			idx.add(null);
+		int idx[] = new int[1<<17]; // to allow all 17bits set +1
+		for (int i=0; i<in.a.length; i++)
+			idx[in.a[i]]++;
+		long cnt = 0;
 		for (int i=0; i<in.a.length; i++) {
-			List<Integer> l = idx.get(in.a[i]);
-			if (l == null) {
-				l = new LinkedList<>();
-				idx.set(in.a[i], l);
-			}
-			l.add(i);
-		}
-		int cnt = 0;
-		for (int i=0; i<in.a.length; i++) {
-			List<Integer> l;
 			int xor = in.x^in.a[i];
-			if (xor < 100000) {
-				l = idx.get(xor);
-				if (l != null) {
-					for (int j:l)
-						if (j>i)
-							cnt++;
-				}
-			}
-			l = idx.get(in.a[i]);
-			l.remove(0);
+			idx[in.a[i]]--;
+			cnt += idx[xor];
 		}
 		Answer ans = new Answer(cnt);
 		return ans;
