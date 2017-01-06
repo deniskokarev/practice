@@ -47,53 +47,36 @@ public class CF754B {
 	 */
 	static class State {
 		int x, y;
-		int p1, p2, b;
+		int p;
 		void zero() {
-			p1 = p2 = b = 0;
+			p = 0;
 		}
 	}
 	
-	static boolean check(State st, Input in) {
-		switch (in.board[st.y][st.x]) {
-		case 1:
-			st.p2++;
-			if (st.p1 > 0 && st.p1+st.p2>1)
+	static boolean check3(State st, Input in) {
+		if (in.board[st.y][st.x] == 1) {
+			st.p++;
+			if (st.p > 2)
 				return true;
-			else if (st.p2>1 && st.b>0)
-				return true;
-			break;
-		case -1:
-			st.p1 = st.p2 = 0;
-			st.b = 0;
-			break;
-		case 0:
-			if (st.p2 > 1)
-				return true;
-			if (st.b == 0) {
-				st.p1 = st.p2;
-			} else {
-				st.p1 = 0;
-			}
-			st.p2 = 0;
-			st.b++;
-			break;
+		} else {
+			st.p = 0;
 		}
 		return false;
 	}
-	
-	public static Answer solve(Input in) {
+
+	static boolean check(Input in) {
 		State st = new State();
 		for (st.y=0; st.y<4; st.y++) {
 			for (st.x=0; st.x<4; st.x++)
-				if (check(st, in))
-					return new Answer("YES");
+				if (check3(st, in))
+					return true;
 			st.zero();
 		}
 		st.zero();
 		for (st.x=0; st.x<4; st.x++) {
 			for (st.y=0; st.y<4; st.y++)
-				if (check(st, in))
-					return new Answer("YES");
+				if (check3(st, in))
+					return true;
 			st.zero();
 		}
 		st.zero();
@@ -101,8 +84,8 @@ public class CF754B {
 			for (st.y=0; st.y<4; st.y++) {
 				st.x = d+st.y;
 				if (st.x >= 0 && st.x < 4)
-					if (check(st, in))
-						return new Answer("YES");
+					if (check3(st, in))
+						return true;
 			}
 			st.zero();
 		}
@@ -111,13 +94,29 @@ public class CF754B {
 			for (st.y=0; st.y<4; st.y++) {
 				st.x = d-st.y;
 				if (st.x >= 0 && st.x < 4)
-					if (check(st, in))
-						return new Answer("YES");
+					if (check3(st, in))
+						return true;
 			}
 			st.zero();
 		}
-		Answer ans = new Answer("NO");
-		return ans;
+		return false;
+	}
+	
+	public static Answer solve(Input in) {
+		if (check(in))
+			return new Answer("YES");
+		for (int y=0; y<4; y++) {
+			for (int x=0; x<4; x++) {
+				if (in.board[y][x] == 0) {
+					in.board[y][x] = 1;
+					boolean rc = check(in);
+					in.board[y][x] = 0;
+					if (rc)
+						return new Answer("YES");
+				}
+			}
+		}
+		return new Answer("NO");
 	}
 
 	/**
