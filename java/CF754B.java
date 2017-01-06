@@ -46,33 +46,36 @@ public class CF754B {
 	 * solver function
 	 */
 	static class State {
-		int x, y, res, lres;
-		int p, o, e;
+		int x, y;
+		int p1, p2, b;
 		void zero() {
-			lres = res = 0;
-			p = o = e;
+			p1 = p2 = b = 0;
 		}
 	}
 	
 	static boolean check(State st, Input in) {
 		switch (in.board[st.y][st.x]) {
 		case 1:
-			if (st.e == 1 && st.p + 2 > 2)
+			st.p2++;
+			if (st.p1 > 0 && st.p1+st.p2>1)
 				return true;
-			st.p++;
-			if (st.p > 2)
+			else if (st.p2>1 && st.b>0)
 				return true;
-			st.o = 0;
-			st.e = 0;
 			break;
 		case -1:
-			st.o++;
-			st.p = 0;
-			st.e = 0;
+			st.p1 = st.p2 = 0;
+			st.b = 0;
 			break;
 		case 0:
-			st.e++;
-			st.o = 0;
+			if (st.p2 > 1)
+				return true;
+			if (st.b == 0) {
+				st.p1 = st.p2;
+			} else {
+				st.p1 = 0;
+			}
+			st.p2 = 0;
+			st.b++;
 			break;
 		}
 		return false;
@@ -87,11 +90,11 @@ public class CF754B {
 			st.zero();
 		}
 		st.zero();
-		for (st.x=0; st.x<4; st.x++)
-			for (st.y=0; st.y<4; st.y++) {
+		for (st.x=0; st.x<4; st.x++) {
+			for (st.y=0; st.y<4; st.y++)
 				if (check(st, in))
 					return new Answer("YES");
-				st.zero();
+			st.zero();
 		}
 		st.zero();
 		for (int d=-3; d<4; d++) {
