@@ -9,7 +9,6 @@ import java.util.StringTokenizer;
 public class CF754C {
 	static class Chat {
 		int auth;
-		int ref[];
 		Set<Integer> r;
 		String s;
 	}
@@ -36,21 +35,19 @@ public class CF754C {
 			for (int i=0; i<nc; i++) {
 				String l = sc.nextLine();
 				c[i] = new Chat();
-				c[i].s = l.substring(l.indexOf(':')+1);
-				StringTokenizer st = new StringTokenizer(l);
-				String a = st.nextToken(":");
-				if ("?".equals(a.trim())) {
+				int posSC = l.indexOf(':');
+				c[i].s = l.substring(posSC+1);
+				StringTokenizer st = new StringTokenizer(c[i].s, ".,!? ");
+				String a = l.substring(0, posSC);
+				if ("?".equals(a)) {
 					c[i].auth = -1;
 				} else {
 					c[i].auth = nauth.get(a);
 				}
-				c[i].ref = new int[101];
 				c[i].r = new HashSet<>();
 				while (st.hasMoreTokens()) {
-					String s = st.nextToken(".,!? ");
+					String s = st.nextToken();
 					if (nauth.get(s) != null) {
-						c[i].ref[c[i].ref[0]+1] = nauth.get(s);
-						c[i].ref[0]++;
 						c[i].r.add(nauth.get(s));
 					}
 				}
@@ -79,7 +76,7 @@ public class CF754C {
 		@Override
 		public String toString() {
 			if (r == null) {
-				return "Impossible";
+				return "Impossible\n";
 			} else {
 				StringBuffer sb = new StringBuffer();
 				for (int i=0; i<in.nc; i++) {
@@ -136,7 +133,7 @@ public class CF754C {
 		int c = sc.nextInt();
 		for (int i=0; i<c; i++) {
 			in = new Input(sc);
-			out.println(solve(in));
+			out.print(solve(in));
 		}
 	}
 
