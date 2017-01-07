@@ -1,4 +1,5 @@
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -57,8 +58,10 @@ public class CF754C {
 
 	static class Result {
 		int a[];
-		Result() {
-			a = new int[101];
+		Result(Chat c[]) {
+			a = new int[c.length];
+			for (int i=0; i<c.length; i++)
+				a[i] = c[i].auth;
 		}
 	}
 	
@@ -90,39 +93,56 @@ public class CF754C {
 		}
 	};
 
-	static boolean tryAuth(Input in, int c, Result st, int prevAuth) {
-		if (c >= in.nc)
-			return true;
-		if (in.c[c].auth == -1) {
-			for (int i=0; i<in.na; i++) {
-				if (i == prevAuth)
-					continue;
-				if (in.c[c].r.contains(i))
-					continue;
-				st.a[c] = i;
-				if (tryAuth(in, c+1, st, i))
-					return true;
-			}
-			return false;
-		} else {
-			if (in.c[c].auth == prevAuth) {
-				return false;
-			} else {
-				st.a[c] = in.c[c].auth;
-				return tryAuth(in, c+1, st, in.c[c].auth);
-			}
+	static class Pair implements Comparable<Pair> {
+		int n, idx;
+		Pair(int n, int idx) {
+			this.n = n;
+			this.idx = idx;
+		}
+		@Override
+		public int compareTo(Pair o) {
+			return n-o.n;
 		}
 	}
 	
+	static boolean tryAuth(Input in, Pair c[], int nc, Result st) {
+		if (nc < 0)
+			return true;
+		int j = c[nc].idx;
+		for (int i=0; i<in.na; i++) {
+			if (j < st.a.length-1 && st.a[j+1] == i)
+				continue;
+			if (j > 0 && st.a[j-1] == i)
+				continue;
+			if (in.c[j].r.contains(i))
+				continue;
+			st.a[j] = i;
+			if (tryAuth(in, c, nc-1, st))
+				return true;
+		}
+		return false;
+	}
+
 	/**
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		Result st = new Result();
-		if (tryAuth(in, 0, st, -2))
+		Result st = new Result(in.c);
+		Pair c[] = new Pair[in.c.length];
+		int nc = 0;
+		for (int i=0; i<in.c.length; i++)
+			if (in.c[i].auth == -1)
+				c[nc++] = new Pair(in.c[i].r.size(), i);
+		if (nc > 0) {
+			nc--;
+			Arrays.sort(c, 0, nc);
+			if (tryAuth(in, c, nc, st))
+				return new Answer(st, in);
+			else
+				return new Answer(null, null);
+		} else {
 			return new Answer(st, in);
-		else
-			return new Answer(null, null);
+		}
 	}
 
 	/**
