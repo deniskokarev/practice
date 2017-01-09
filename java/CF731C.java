@@ -93,7 +93,13 @@ public class CF731C {
 		}
 	}
 
-	static int walkPart(int v, int g[][], int cc[], boolean vis[], int cht[]) {
+	static class BoxInt {
+		int n;
+	}
+	
+	static int walkPart(int v, int g[][], int cc[], boolean vis[], int nc, BoxInt maxColSocks) {
+		maxColSocks.n = 0;
+		int cht[] = new int[nc];
 		Queue<Integer> nodes = new LinkedList<>();
 		nodes.add(v);
 		int rc = 0;
@@ -102,6 +108,8 @@ public class CF731C {
 			if (!vis[v]) {
 				vis[v] = true;
 				cht[cc[v]]++;
+				if (cht[cc[v]] > maxColSocks.n)
+					maxColSocks.n = cht[cc[v]];
 				rc++;
 				for (int s:g[v])
 					nodes.add(s);
@@ -114,19 +122,15 @@ public class CF731C {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
+		BoxInt maxColSocks = new BoxInt();
 		int g[][] = new int[in.ns][];
 		mkg(in.ns, in.ss, g);
 		boolean vis[] = new boolean[g.length];
 		int rc = 0;
 		for (int i=0; i<in.ns; i++) {
-			int cht[] = new int[in.nc];
-			int cnt = walkPart(i, g, in.cc, vis, cht);
+			int cnt = walkPart(i, g, in.cc, vis, in.nc, maxColSocks);
 			if (cnt > 0) {
-				int mxj = 0;
-				for (int j=1; j<cht.length; j++)
-					if (cht[mxj] < cht[j])
-						mxj = j;
-				rc += cnt-cht[mxj];
+				rc += cnt-maxColSocks.n;
 			}
 		}
 		Answer ans = new Answer(rc);
