@@ -135,19 +135,22 @@ public class CF731C {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		BoxInt maxColSocks = new BoxInt(0);
-		int g[][] = new int[in.ns][];
-		mkg(in.ns, in.ss, g);
-		boolean vis[] = new boolean[g.length];
-		int rc = 0;
-		for (int i=0; i<in.ns; i++) {
-			int cnt = walkPart(i, g, in.cc, vis, in.nc, maxColSocks);
-			if (cnt > 0) {
-				rc += cnt-maxColSocks.n;
+		if (in.ss.length > 0) {
+			BoxInt maxColSocks = new BoxInt(0);
+			int g[][] = new int[in.ns][];
+			mkg(in.ns, in.ss, g);
+			boolean vis[] = new boolean[g.length];
+			int rc = 0;
+			for (int i=0; i<in.ns; i++) {
+				int cnt = walkPart(i, g, in.cc, vis, in.nc, maxColSocks);
+				if (cnt > 0) {
+					rc += cnt-maxColSocks.n;
+				}
 			}
+			return new Answer(rc);
+		} else {
+			return new Answer(0);
 		}
-		Answer ans = new Answer(rc);
-		return ans;
 	}
 
 	/**
