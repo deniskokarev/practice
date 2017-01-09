@@ -83,7 +83,7 @@ public class CF754D {
 			}
 		}
 		if (np > 0) {
-			Arrays.sort(pp, 0, np-1, (Point a, Point b) -> (a.x - b.x));
+			Arrays.sort(pp, 0, np, (Point a, Point b) -> (a.x<b.x)?-1:((a.x>b.x)?1:(b.lr-a.lr)));
 			int n = 0, mx = 0;
 			boolean mm[] = new boolean[rr.length];
 			for (int i=0; i<np; i++) {
@@ -114,7 +114,7 @@ public class CF754D {
 				mnr = Math.min(rr[j].r, mnr);
 			}
 		}
-		if (mnr>mxl)
+		if (mnr>=mxl)
 			return mnr-mxl+1;
 		else
 			return 0;
@@ -129,22 +129,29 @@ public class CF754D {
 		int mx = 2*1000000000+1;
 		int mid;
 		int k = 0;
+		int maxcover = -1;
 		while (mn<mx) {
 			mid = mn + (mx-mn)/2;
 			k = overlappingRanges(in.rr, 0, -mid, sel);
-			if (k<in.k)
+			if (k<in.k) {
 				mx = mid;
-			else
+			} else if (k == in.k) {
+				maxcover = mid;
 				mn = mid+1;
-		};
-		int addDummy = in.k-k;
-		for (int i=0; i<sel.length && addDummy>0; i++) {
-			if (!sel[i]) {
-				sel[i] = true;
-				addDummy--;
+			} else {
+				mn = mid+1;
 			}
+		};
+		if (maxcover >= 0) {
+			overlappingRanges(in.rr, 0, -maxcover, sel);
+			return new Answer(overlap(in.rr, sel), sel);
+		} else {
+			sel = new boolean[in.rr.length];
+			for (int i=0; i<in.k; i++) {
+				sel[i] = true;
+			}
+			return new Answer(0, sel);
 		}
-		return new Answer(overlap(in.rr, sel), sel);
 	}
 
 	/**
