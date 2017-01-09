@@ -1,6 +1,8 @@
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
 
@@ -95,11 +97,14 @@ public class CF731C {
 
 	static class BoxInt {
 		int n;
+		BoxInt(int n) {
+			this.n = n;
+		}
 	}
 	
 	static int walkPart(int v, int g[][], int cc[], boolean vis[], int nc, BoxInt maxColSocks) {
 		maxColSocks.n = 0;
-		int cht[] = new int[nc];
+		Map<Integer, BoxInt> cht = new HashMap<>();
 		Queue<Integer> nodes = new LinkedList<>();
 		nodes.add(v);
 		int rc = 0;
@@ -107,9 +112,17 @@ public class CF731C {
 			v = nodes.remove();
 			if (!vis[v]) {
 				vis[v] = true;
-				cht[cc[v]]++;
-				if (cht[cc[v]] > maxColSocks.n)
-					maxColSocks.n = cht[cc[v]];
+				Integer col = cc[v];
+				BoxInt bi;
+				if (cht.get(col) == null) {
+					bi = new BoxInt(1);
+					cht.put(col, bi);
+				} else {
+					bi = cht.get(col);
+					bi.n++;
+				}
+				if (bi.n > maxColSocks.n)
+					maxColSocks.n = bi.n;
 				rc++;
 				for (int s:g[v])
 					nodes.add(s);
@@ -122,7 +135,7 @@ public class CF731C {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		BoxInt maxColSocks = new BoxInt();
+		BoxInt maxColSocks = new BoxInt(0);
 		int g[][] = new int[in.ns][];
 		mkg(in.ns, in.ss, g);
 		boolean vis[] = new boolean[g.length];
