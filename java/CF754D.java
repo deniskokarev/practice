@@ -73,27 +73,34 @@ public class CF754D {
 	 * @param mxmm - boolean vector where the chosen range numbers will be stored
 	 * @return
 	 */
-	static int overlappingRanges(Range rr[], int dl, int dr, boolean mxmm[]) {
-		Point pp[] = new Point[rr.length*2];
+	static int overlappingRanges(Point pp[], Range rr[], int dl, int dr, boolean mxmm[]) {
 		int np = 0;
 		for (int i=0; i<rr.length; i++) {
 			if (rr[i].l+dl < rr[i].r+dr) {
-				pp[np++] = new Point(1, rr[i].l+dl, i);
-				pp[np++] = new Point(-1, rr[i].r+dr, i);
+				Point p;
+				p = pp[np++];
+				p.lr = 1;
+				p.x = rr[i].l+dl;
+				p.i = i;
+				p = pp[np++];
+				p.lr = -1;
+				p.x = rr[i].r+dr;
+				p.i = i;
 			}
 		}
 		if (np > 0) {
 			Arrays.sort(pp, 0, np, (Point a, Point b) -> (a.x<b.x)?-1:((a.x>b.x)?1:(b.lr-a.lr)));
-			int n = 0, mx = 0;
-			boolean mm[] = new boolean[rr.length];
+			int n = 0, mx = 0, mxi = 0;
 			for (int i=0; i<np; i++) {
-				mm[pp[i].i] = !mm[pp[i].i];
 				n += pp[i].lr;
 				if (n > mx) {
 					mx = n;
-					System.arraycopy(mm, 0, mxmm, 0, rr.length);
+					mxi = i;
 				}
 			}
+			if (mxmm != null)
+				for (int i=0; i<=mxi; i++)
+					mxmm[pp[i].i] = !mxmm[pp[i].i];
 			return mx;
 		} else {
 			return 0;
@@ -124,15 +131,17 @@ public class CF754D {
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		boolean sel[] = new boolean[in.rr.length];
 		int mn = 0;
 		int mx = 2*1000000000+1;
 		int mid;
 		int k = 0;
 		int maxcover = -1;
+		Point pp[] = new Point[in.rr.length*2];
+		for (int i=0; i<pp.length; i++)
+			pp[i] = new Point(-1, -1, -1);
 		while (mn<mx) {
 			mid = mn + (mx-mn)/2;
-			k = overlappingRanges(in.rr, 0, -mid, sel);
+			k = overlappingRanges(pp, in.rr, 0, -mid, null);
 			if (k<in.k) {
 				mx = mid;
 			} else if (k == in.k) {
@@ -143,10 +152,11 @@ public class CF754D {
 			}
 		};
 		if (maxcover >= 0) {
-			overlappingRanges(in.rr, 0, -maxcover, sel);
+			boolean sel[] = new boolean[in.rr.length];
+			overlappingRanges(pp, in.rr, 0, -maxcover, sel);
 			return new Answer(overlap(in.rr, sel), sel);
 		} else {
-			sel = new boolean[in.rr.length];
+			boolean sel[] = new boolean[in.rr.length];
 			for (int i=0; i<in.k; i++) {
 				sel[i] = true;
 			}
