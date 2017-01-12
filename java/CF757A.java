@@ -48,8 +48,9 @@ public class CF757A {
 //		l - 1
 //		b - 1
 //		a - 2
+//		s - 1
 //		r - 1
-		CCpair pp[] = new CCpair[]{new CCpair('B', 1), new CCpair('u', 2), new CCpair('l', 1), new CCpair('b', 1), new CCpair('a', 2), new CCpair('r', 1)};
+		CCpair pp[] = new CCpair[]{new CCpair('B', 1), new CCpair('u', 2), new CCpair('l', 1), new CCpair('b', 1), new CCpair('a', 2), new CCpair('s', 1), new CCpair('r', 1)};
 		int n = Integer.MAX_VALUE;
 		for (CCpair cp:pp)
 			n = Math.min(cc[cp.c]/cp.n, n);
