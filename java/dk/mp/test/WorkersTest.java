@@ -40,9 +40,11 @@ public class WorkersTest {
 		for (int i=0; i<bb.length; i++)
 			assertEquals("batch output must match", bb[i].out, "batch"+i+":batch"+i);
 	}
+	
 	@Test
 	public void testMany() {
-		Batch bb[] = new Batch[177];
+		final int PARALLEL = 177;
+		Batch bb[] = new Batch[PARALLEL];
 		for (int i=0; i<bb.length; i++)
 			bb[i] = new Batch("batch"+i);
 		try (MyWorkers ws = new MyWorkers()) {
@@ -52,15 +54,17 @@ public class WorkersTest {
 		for (int i=0; i<bb.length; i++)
 			assertEquals("batch output must match", bb[i].out, "batch"+i+":batch"+i);
 	}
+	
 	@Test
 	public void testManyMany() throws IOException {
-		final int N = 17777;
-		Batch bb[] = new Batch[17];
+		final int LOOP = 17777;
+		final int PARALLEL = 17;
+		Batch bb[] = new Batch[PARALLEL];
 		Work ww[] = new Work[bb.length];
 		for (int i=0; i<bb.length; i++)
 			bb[i] = new Batch("batch"+i);
 		try (MyWorkers ws = new MyWorkers()) {
-			for (int j=0; j<N; j++) {
+			for (int j=0; j<LOOP; j++) {
 				for (int i=0; i<bb.length; i++) {
 					ww[i] = ws.createWork(bb[i]);
 					ww[i].startWork();
@@ -72,6 +76,6 @@ public class WorkersTest {
 			}
 		}
 		for (int i=0; i<bb.length; i++)
-			assertEquals("batch output must match", bb[i].sum, N*(N+1)/2);
+			assertEquals("batch output must match", bb[i].sum, LOOP*(LOOP+1)/2);
 	}
 }
