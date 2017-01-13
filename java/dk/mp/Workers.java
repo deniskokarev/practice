@@ -66,6 +66,19 @@ class Worker<T> extends Thread implements Work {
 	}
 }
 
+/**
+ * Thread pool manager - requires performWork() implementation to do actual computation
+ * T - batch job type
+ * 
+ * Each Job is a persistent thread with life cycle:
+ * createWork(batch) -> startWork() -> waitWork() -> close()
+ * 
+ * TODO: limit max number of concurrent works
+ * 
+ * @author kokarev
+ *
+ * @param <T>
+ */
 public abstract class Workers<T> implements Closeable {
 	Set<Worker<T>> running;
 	List<Worker<T>> ready;
