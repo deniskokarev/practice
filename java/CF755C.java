@@ -81,7 +81,7 @@ public class CF755C {
 					int v = q.remove();
 					if (!vis[v]) {
 						vis[v] = true;
-						for (int c:gg[p])
+						for (int c:gg[v])
 							q.add(c);
 					}
 				}
