@@ -41,4 +41,18 @@ public class CombTest {
 		assertEquals("20! == 2432902008176640000", 2432902008176640000L, Comb.fact(20));
 	}
 
+	static boolean headEqual(int a[], int b[], int n) {
+		for (int i=0; i<n; i++)
+			if (a[i] != b[i])
+				return false;
+		return true;
+	}
+	
+	@Test
+	public void testPrimeFactors() {
+		int pp[] = new int[32];
+		assertTrue("2147483647==2147483647", headEqual(new int[]{2147483647}, pp, Comb.primeFactors(2147483647, pp)));
+		assertTrue("6==2*3", headEqual(new int[]{2, 3}, pp, Comb.primeFactors(2*3, pp)));
+		assertTrue("256==2*2*2*2*2*2*2*2", headEqual(new int[]{2, 2, 2, 2, 2, 2, 2, 2}, pp, Comb.primeFactors(256, pp)));
+	}
 }

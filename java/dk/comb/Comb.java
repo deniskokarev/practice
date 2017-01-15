@@ -62,4 +62,26 @@ public class Comb {
 		return res;
 	}
 
+	/**
+	 * Naive prime number factorization in O(sqrt(N))
+	 * @param n - number greater than that you want to factorize
+	 * @param p[] - preallocated recipient array where the of ordered
+	 *   prime numbers of n will be placed
+	 * 	p.length >= 32
+	 * @return number of populated primes in p[]
+	 */
+	public static int primeFactors(int n, int p[]) {
+		assert(n > 1);
+		int np = 0;
+		for (int i = 2; i <= n / i; i++) {
+			while (n % i == 0) {
+				p[np++] = i;
+				n /= i;
+			}
+		}
+		if (n > 1)
+			p[np++] = n;
+		return np;
+	}
+
 }
