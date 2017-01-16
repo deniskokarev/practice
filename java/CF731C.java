@@ -1,10 +1,10 @@
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Scanner;
+import java.util.Set;
 
 public class CF731C {
 	/**
@@ -55,80 +55,115 @@ public class CF731C {
 		}
 	};
 
-	static void mkg(int nnv, Pair ss[], int g[][]) {
-		int ll[] = new int[nnv];
-		Arrays.sort(ss, (Pair a, Pair b) -> (a.l - b.l));
-		int s;
-		int cnt;
-		s = ss[0].l;
-		cnt = 1;
-		for (int i=1; i < ss.length; i++) {
-			if (s != ss[i].l) {
-				ll[s] += cnt;
-				s = ss[i].l;
-				cnt = 0;
+	static int[][] mkGraph(Pair ss[], int nv) {
+		Map<Integer, Set<Integer>> gg = new HashMap<>();
+		for (int p=0; p<ss.length; p++) {
+			Set<Integer> cf = gg.get(ss[p].l);
+			if (cf == null) {
+				cf = new HashSet<>();
+				gg.put(ss[p].l, cf);
 			}
-			cnt++;
-		}
-		ll[s] += cnt;
-		Arrays.sort(ss, (Pair a, Pair b) -> (a.r - b.r));
-		s = ss[0].r;
-		cnt = 1;
-		for (int i=1; i < ss.length; i++) {
-			if (s != ss[i].r) {
-				ll[s] += cnt;
-				s = ss[i].r;
-				cnt = 0;
+			Set<Integer> cr = gg.get(ss[p].r);
+			if (cr == null) {
+				cr = new HashSet<>();
+				gg.put(ss[p].r, cr);
 			}
-			cnt++;
+			cf.add(ss[p].r);
+			cr.add(ss[p].l);
 		}
-		ll[s] += cnt;
-		for (int i=0; i<nnv; i++) 
-			g[i] = new int[ll[i]];
-		for (int i=0; i<ss.length; i++) {
-			int l = ss[i].l;
-			int r = ss[i].r;
-			ll[l]--;
-			g[l][ll[l]] = r;
-			ll[r]--;
-			g[r][ll[r]] = l;
+		int res[][] = new int[nv][];
+		for (int p:gg.keySet()) {
+			int l = gg.get(p).size();
+			res[p] = new int[l];
+			int i = 0;
+			for (int c:gg.get(p))
+				res[p][i++] = c;
+		}
+		return res;
+	}
+
+	/**
+	 * FIFO ringbuffer of ints
+	 * sz should be 1 greater of what you want to store
+	 * @author kokarev
+	 */
+	static class FifoQInt {
+		int head, tail;
+		int sz;
+		int emptyInd;	// special value that we return if our Q is empty
+		int buf[];
+		
+		FifoQInt(int sz) {
+			this(sz, -1);
+		}
+		FifoQInt(int sz, int emptyInd) {
+			this.emptyInd = emptyInd;
+			this.sz = sz;
+			buf = new int[sz];
+		}
+		int size() {
+			return (head+sz-tail)%sz;
+		}
+		int avail() {
+			return sz-size()-1;
+		}
+		boolean put(int v) {
+			int n = (head+1)%sz; 
+			if (n != tail) {
+				buf[head] = v;
+				head = n;
+				return true;
+			} else {
+				return false;
+			}
+		}
+		int get() {
+			if (tail != head) {
+				int v = buf[tail];
+				tail = (tail+1)%sz;
+				return v;
+			} else {
+				return emptyInd;
+			}
 		}
 	}
 
-	static class BoxInt {
-		int n;
-		BoxInt(int n) {
-			this.n = n;
-		}
-	}
-	
-	static int walkPart(int v, int g[][], int cc[], boolean vis[], int nc, BoxInt maxColSocks) {
-		maxColSocks.n = 0;
-		Map<Integer, BoxInt> cht = new HashMap<>();
-		Queue<Integer> nodes = new LinkedList<>();
-		nodes.add(v);
-		int rc = 0;
-		while (nodes.size() > 0) {
-			v = nodes.remove();
-			if (!vis[v]) {
-				vis[v] = true;
-				Integer col = cc[v];
-				BoxInt bi;
-				if (cht.get(col) == null) {
-					bi = new BoxInt(1);
-					cht.put(col, bi);
-				} else {
-					bi = cht.get(col);
-					bi.n++;
+	/**
+	 * Take a graph and return list of its connected components
+	 * @param graph is given as a list of edges where graph[i][?] == j denotes edge i->j
+	 * @return list of connected components meaning [n][v] - vertice v belongs to connected component number n 
+	 */
+	static int[][] connectedComponents(int graph[][]) {
+		final int EMPTY = -1;
+		FifoQInt q = new FifoQInt(graph.length+1, EMPTY);
+		int vis[] = new int[graph.length];
+		int cnts[] = new int[graph.length+1];
+		int cnt = 0;
+		for (int p=0; p<graph.length; p++) {
+			if (vis[p] == 0) {
+				cnt++;
+				q.put(p);
+				for (int v = q.get(); v != EMPTY; v = q.get()) {
+					if (vis[v] == 0) {
+						vis[v] = cnt;
+						cnts[cnt]++;
+						if (graph[v] != null)
+							for (int c:graph[v])
+								q.put(c);
+					}
 				}
-				if (bi.n > maxColSocks.n)
-					maxColSocks.n = bi.n;
-				rc++;
-				for (int s:g[v])
-					nodes.add(s);
 			}
 		}
-		return rc;
+		int res[][] = new int[cnt][];
+		for (int i=0; i<res.length; i++)
+			res[i] = new int[cnts[i+1]];
+		Arrays.fill(cnts, 0);
+		int c;
+		for (int p=0; p<graph.length; p++) {
+			c = vis[p]-1; 
+			res[c][cnts[c]++] = p;
+		}
+		return res;
 	}
 	
 	/**
@@ -136,18 +171,30 @@ public class CF731C {
 	 */
 	public static Answer solve(Input in) {
 		if (in.ss.length > 0) {
-			BoxInt maxColSocks = new BoxInt(0);
-			int g[][] = new int[in.ns][];
-			mkg(in.ns, in.ss, g);
-			boolean vis[] = new boolean[g.length];
-			int rc = 0;
-			for (int i=0; i<in.ns; i++) {
-				int cnt = walkPart(i, g, in.cc, vis, in.nc, maxColSocks);
-				if (cnt > 0) {
-					rc += cnt-maxColSocks.n;
+			int graph[][] = mkGraph(in.ss, in.cc.length);
+			int cc[][] = connectedComponents(graph);
+			int cnt = 0;
+			int colors[] = new int[in.nc];
+			int usedColors[] = new int[in.nc];
+			int nUsedColors = 0;
+			for (int i=0; i<cc.length; i++) {
+				int c[] = cc[i];
+				if (c != null) {
+					int mxColCnt = 0;
+					for (int k=0; k<nUsedColors; k++)
+						colors[usedColors[k]] = 0;
+					nUsedColors = 0;
+					for (int j=0; j<c.length; j++) {
+						int s = c[j];
+						if (colors[in.cc[s]]++ == 0)
+							usedColors[nUsedColors++] = in.cc[s];
+						if (colors[in.cc[s]] > mxColCnt)
+							mxColCnt = colors[in.cc[s]];
+					}
+					cnt += c.length - mxColCnt;
 				}
 			}
-			return new Answer(rc);
+			return new Answer(cnt);
 		} else {
 			return new Answer(0);
 		}
