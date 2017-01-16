@@ -166,6 +166,13 @@ public class CF731C {
 		return res;
 	}
 	
+	static class BoxInt {
+		int n;
+		BoxInt(int n) {
+			this.n = n;
+		}
+	}
+	
 	/**
 	 * solver function
 	 */
@@ -174,22 +181,21 @@ public class CF731C {
 			int graph[][] = mkGraph(in.ss, in.cc.length);
 			int cc[][] = connectedComponents(graph);
 			int cnt = 0;
-			int colors[] = new int[in.nc];
-			int usedColors[] = new int[in.nc];
-			int nUsedColors = 0;
 			for (int i=0; i<cc.length; i++) {
 				int c[] = cc[i];
 				if (c != null) {
 					int mxColCnt = 0;
-					for (int k=0; k<nUsedColors; k++)
-						colors[usedColors[k]] = 0;
-					nUsedColors = 0;
+					Map<Integer, BoxInt> colors = new HashMap<>(); // color -> count
 					for (int j=0; j<c.length; j++) {
-						int s = c[j];
-						if (colors[in.cc[s]]++ == 0)
-							usedColors[nUsedColors++] = in.cc[s];
-						if (colors[in.cc[s]] > mxColCnt)
-							mxColCnt = colors[in.cc[s]];
+						int col = in.cc[c[j]];
+						BoxInt ccnt = colors.get(col);
+						if (ccnt == null) {
+							ccnt = new BoxInt(0);
+							colors.put(col, ccnt);
+						}
+						ccnt.n++;
+						if (ccnt.n > mxColCnt)
+							mxColCnt = ccnt.n;
 					}
 					cnt += c.length - mxColCnt;
 				}
