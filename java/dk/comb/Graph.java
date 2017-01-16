@@ -68,8 +68,9 @@ public class Graph {
 					if (vis[v] == 0) {
 						vis[v] = cnt;
 						cnts[cnt]++;
-						for (int c:graph[v])
-							q.put(c);
+						if (graph[v] != null)
+							for (int c:graph[v])
+								q.put(c);
 					}
 				}
 			}
