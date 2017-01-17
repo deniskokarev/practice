@@ -1,10 +1,10 @@
-package dk.comb.test;
+package dk.alg.test;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import dk.comb.Comb;
+import dk.alg.Comb;
 
 public class CombTest {
 

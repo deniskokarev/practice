@@ -1,4 +1,4 @@
-package dk.comb;
+package dk.alg;
 
 /**
  * common combinatorics formulas
