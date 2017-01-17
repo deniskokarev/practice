@@ -15,14 +15,14 @@ public class CF757C {
 	 * solution result
 	 */
 	public static class Answer {
-		int n;
-		public Answer(int n) {
+		long n;
+		public Answer(long n) {
 			this.n = n;
 		}
 
 		@Override
 		public String toString() {
-			return Integer.toString(n);
+			return Long.toString(n);
 		}
 	};
 
@@ -39,22 +39,22 @@ public class CF757C {
 	 * input parser
 	 */
 	public static class Input {
-		int n, m;
-		Map<Integer, Map<Integer, BoxInt>> gg;	// row->(type->cnt)
+		int ns, nt;
+		Map<Integer, Map<Integer, BoxInt>> st;	// row->(type->cnt)
 		public Input(Scanner sc) {
-			n = sc.nextInt();
-			m = sc.nextInt();
-			gg = new HashMap<>();
-			for (int i=0; i<n; i++) {
+			ns = sc.nextInt();
+			nt = sc.nextInt();
+			st = new HashMap<>();
+			for (int i=0; i<ns; i++) {
 				Map<Integer,BoxInt> g = new HashMap<>();
-				gg.put(i, g);
+				st.put(i, g);
 				int p = sc.nextInt();
 				for (int j=0; j<p; j++) {
 					int t = sc.nextInt();
 					BoxInt bi = g.get(t);
 					if (bi == null) {
 						bi = new BoxInt(0);
-						g.put(t,  bi);
+						g.put(t, bi);
 					}
 					bi.inc();
 				}
@@ -63,51 +63,32 @@ public class CF757C {
 	};
 	
 	// mm will get common arcs from v -> (chl1, chl2)
-	static void doGraph(Map<Integer, BoxInt> row, Map<Integer, Set<Integer>> mm) {
+	static void aggrTypes(Map<Integer, BoxInt> sc, Map<Integer, Set<Integer>> mm, List<Set<Integer>> allSets) {
 		Map<Integer, Set<Integer>> hist = new HashMap<>();
-		for (int k:row.keySet()) {
-			int v = row.get(k).n;
+		for (int t:sc.keySet()) {
+			int v = sc.get(t).n;
 			Set<Integer> s = hist.get(v);
 			if (s == null) {
 				s = new HashSet<>();
 				hist.put(v, s);
 			}
-			s.add(k);
+			s.add(t);
 		}
-		for (int cnt:hist.keySet()) {
-			List<Integer> vv = hist.get(cnt).stream().sorted().collect(Collectors.toList());
-			for (int v:vv) {
-				Set<Integer> prior = mm.get(v); 
+		for (Set<Integer> connTypes:hist.values()) {
+			Set<Integer> ct = new HashSet<>(connTypes);
+			allSets.add(ct);
+			for (int t:connTypes) {
+				Set<Integer> prior = mm.get(t); 
 				if (prior == null) {
-					prior = new HashSet<>(vv);
-					mm.put(v, prior);
-				}
-				prior.retainAll(vv);
-			}
-		}
-	}
-	
-	// connected component counts
-	static List<Integer> doCluster(Map<Integer, Set<Integer>> mm, int nv) {
-		List<Integer> rc = new LinkedList<>();
-		boolean vis[] = new boolean[nv];
-		List<Integer> vv = new LinkedList<>(mm.keySet());
-		while (vv.size()>0) {
-			int f = vv.remove(0);
-			int cnt = 0;
-			Set<Integer> cn = mm.get(f);
-			if (cn != null) {
-				for (int c:cn) {
-					if (!vis[c]) {
-						vis[c] = true;
-						cnt++;
+					mm.put(t, ct);
+				} else {
+					if (!prior.containsAll(ct)) {
+						ct.removeAll(prior);
+						prior.clear();
 					}
 				}
 			}
-			if (cnt > 1)
-				rc.add(cnt);
 		}
-		return rc;
 	}
 	
 	/**
@@ -115,15 +96,19 @@ public class CF757C {
 	 */
 	public static Answer solve(Input in) {
 		Map<Integer, Set<Integer>> mm = new HashMap<>();
-		for (int i=0; i<in.n; i++) {
-			doGraph(in.gg.get(i), mm);
-			List<Integer> a = doCluster(mm, in.m+1);
-			System.out.println("line: "+i);
-			for (int n:a)
-				System.out.println(n);
+		List<Set<Integer>> allSets = new LinkedList<>();
+		for (int i=0; i<in.ns; i++)
+			aggrTypes(in.st.get(i), mm, allSets);
+		for (int t=1; t<=in.nt; t++)
+			System.out.println("type: "+t+" connected: "+mm.get(t));
+		long cnt = 1;
+		for (Set<Integer> s:allSets) {
+			for (long i=2; i<=s.size(); i++) {
+				cnt *= i;
+				cnt %= 1000000007;
+			}
 		}
-		Answer ans = new Answer(-1);
-		return ans;
+		return new Answer(cnt);
 	}
 
 	/**
