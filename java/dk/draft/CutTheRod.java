@@ -71,7 +71,7 @@ public class CutTheRod {
 		for (int i=1; i<=l; i++) {
 			// for each rod of length i we try to cut away j long piece
 			// and see if that combined with p[j] gives us best solution.
-			// i-j optimal solution is already cached
+			// i-j optimal solution is already known
 			int j = 1;
 			int mxj = j;
 			int mx = s[i-j].sum+p[j];
