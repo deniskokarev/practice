@@ -18,10 +18,11 @@ public class MatMulDPOptim {
 			return r;
 		if (r.x == 0)
 			return l;
-		assert(l.y == r.x && l.x == r.y);
-		res.x = r.x;
-		res.y = l.y;
-		res.cost = l.cost + r.cost + l.x*res.x*res.y;
+		if (l.y != r.x)
+			return null;
+		res.x = l.x;
+		res.y = r.y;
+		res.cost = l.cost + r.cost + l.x*r.x*r.y;
 		res.l = l;
 		res.r = r;
 		return res;
@@ -34,7 +35,7 @@ public class MatMulDPOptim {
 			mn.x = 0;
 			mn.cost = Integer.MAX_VALUE;
 			for (int i=f; i<t-1; i++) {
-				Expr l = bestMul(a, f, i, new Expr());
+				Expr l = bestMul(a, f, i+1, new Expr());
 				Expr r = bestMul(a, i+1, t, new Expr());
 				Expr e = costMul(l, r, new Expr());
 				if (mn.cost > e.cost)
