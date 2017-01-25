@@ -30,62 +30,33 @@ public class CF762A {
 	};
 
 	/**
-	 * Naive prime number factorization in O(sqrt(N))
-	 * @param n - number greater than that you want to factorize
-	 * @param p[] - preallocated recipient array where the of ordered
-	 *   prime numbers of n will be placed
-	 * 	p.length >= 32
-	 * @return number of populated primes in p[]
-	 */
-	public static int primeFactors(long n, long p[]) {
-		assert(n > 1);
-		int np = 0;
-		for (long i = 2; i <= n / i; i++) {
-			while (n % i == 0) {
-				p[np++] = i;
-				n /= i;
-			}
-		}
-		if (n > 1)
-			p[np++] = n;
-		return np;
-	}
-
-	public static long factorsMul(long n, boolean mask[], long minFact) {
-		long res = 1;
-		int np = 1;
-		for (long i = 2; i <= n / i; i++) {
-			while (n % i == 0) {
-				if (mask[np++])
-					res *= i;
-				n /= i;
-			}
-		}
-		if (n > 1)
-			if (mask[np++])
-				res *= n;
-		if (minFact > (1L << np))
-			return -1;
-		else
-			return res;
-	}
-
-	/**
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
 		int k = in.k;
-		boolean mask[] = new boolean[32];
-		int i = 0;
-		while (k!=0) {
-			if ((k & 1) == 1)
-				mask[i] = true;
-			else
-				mask[i] = false;
-			i++;
-			k = (k >> 1);
+		long n = in.n;
+		long i;
+		long sq = (long)Math.sqrt(n);
+		long res = 1;
+		for (i=1; i<=sq+1 && k>0; i++) {
+			if (n%i == 0) {
+				k--;
+				res = i;
+			}
 		}
-		return new Answer(factorsMul(in.n, mask, in.k));
+		i--;
+		for (; i>=1 && k>0; i--) {
+			if (n%i == 0) {
+				if (-sq+1+i <= 0)
+					return new Answer(-1);
+				k--;
+				res = n/(-sq+1+i);
+			}
+		}
+		if (k <= 0)
+			return new Answer(res);
+		else
+			return new Answer(-1);
 	}
 
 	/**
