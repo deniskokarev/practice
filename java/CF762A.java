@@ -55,7 +55,7 @@ public class CF762A {
 				k = all+1-k;
 				for (i=1; i<=sr; i++) {
 					if (n%i == 0) {
-						res *= i;
+						res = i;
 						k--;
 						if (k == 0)
 							return new Answer(n/res); 
@@ -65,7 +65,7 @@ public class CF762A {
 				res = 1;
 				for (i=1; i<=sr; i++) {
 					if (n%i == 0) {
-						res *= i;
+						res = i;
 						k--;
 						if (k == 0)
 							return new Answer(res); 
