@@ -36,27 +36,44 @@ public class CF762A {
 		int k = in.k;
 		long n = in.n;
 		long i;
-		long sq = (long)Math.sqrt(n);
-		long res = 1;
-		for (i=1; i<=sq+1 && k>0; i++) {
-			if (n%i == 0) {
-				k--;
-				res = i;
-			}
-		}
-		i--;
-		for (; i>=1 && k>0; i--) {
-			if (n%i == 0) {
-				if (-sq+1+i <= 0)
-					return new Answer(-1);
-				k--;
-				res = n/(-sq+1+i);
-			}
-		}
-		if (k <= 0)
-			return new Answer(res);
+		long sr = (long)Math.sqrt(n);
+		int nd = 1;
+		for (i=2; i<=sr; i++)
+			if (n%i == 0)
+				nd++;
+		int all;
+		if ((i-1)*(i-1)==n)
+			all = 2*nd-1;
 		else
+			all = 2*nd;
+		if (all < k) {
 			return new Answer(-1);
+		} else {
+			long res;
+			if (k>=nd) {
+				res = 1;
+				k = all+1-k;
+				for (i=1; i<=sr; i++) {
+					if (n%i == 0) {
+						res *= i;
+						k--;
+						if (k == 0)
+							return new Answer(n/res); 
+					}
+				}
+			} else {
+				res = 1;
+				for (i=1; i<=sr; i++) {
+					if (n%i == 0) {
+						res *= i;
+						k--;
+						if (k == 0)
+							return new Answer(res); 
+					}
+				}
+			}
+		}
+		return new Answer(-1);
 	}
 
 	/**
