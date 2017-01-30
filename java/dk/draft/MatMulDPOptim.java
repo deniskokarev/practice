@@ -1,6 +1,11 @@
+package dk.draft;
 
 public class MatMulDPOptim {
 
+	/**
+	 * TODO add cache to bestMul to take advantage of DP
+	 * @author kokarev
+	 */
 	static class Expr {
 		Expr l, r;
 		int x, y;
