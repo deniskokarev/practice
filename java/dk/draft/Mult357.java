@@ -2,6 +2,8 @@ package dk.draft;
 
 import java.util.PriorityQueue;
 
+import dk.alg.Heap;
+
 /**
  * Find kth number in sequence devisible by only 3,5,7
  * @author kokarev
@@ -21,21 +23,25 @@ public class Mult357 {
 		System.out.println(" = "+p);
 	}
 	static void solve(int k) {
-		char place[] = new char[32];
-		int sz = 3;
-		for (sz=1; sz<=k; sz++) {
-			for (int s=0; s<sz; s++) {
-				for (int f=s; f<sz; f++) {
-					for (int t=f; t<sz; t++) {
-						place[t] = '3';
-					}
-					prn(place, sz);
-					place[f] = '5';
-				}
-				prn(place, sz);
-				place[s] = '7';
+		long h[] = new long[2*k];
+		long prev = 0;
+		int sz = 0;
+		h[sz++] = 1;
+		while (k>0) {
+			long v = h[0];
+			if (sz > 1) {
+				sz--;
+				h[0] = h[sz];
+				Heap.siftDown(h, 0, sz);
 			}
-			prn(place, sz);
+			if (v == prev)
+				continue;
+			System.out.println(v);
+			prev = v;
+			h[sz++] = v*3; Heap.siftUp(h, sz-1);
+			h[sz++] = v*5; Heap.siftUp(h, sz-1);
+			h[sz++] = v*7; Heap.siftUp(h, sz-1);
+			k--;
 		}
 	}
 	static void solve2(int k) {
@@ -55,6 +61,6 @@ public class Mult357 {
 		}
 	}
 	public static void main(String args[]) {
-		solve2(333);
+		solve(4138);
 	}
 }
