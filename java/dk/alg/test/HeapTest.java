@@ -1,10 +1,12 @@
-package dk.alg;
+package dk.alg.test;
 
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
 import org.junit.Test;
+
+import dk.alg.Heap;
 
 public class HeapTest {
 	static void reverse(long a[]) {
