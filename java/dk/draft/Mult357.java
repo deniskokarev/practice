@@ -1,4 +1,7 @@
 package dk.draft;
+
+import java.util.PriorityQueue;
+
 /**
  * Find kth number in sequence devisible by only 3,5,7
  * @author kokarev
@@ -35,7 +38,23 @@ public class Mult357 {
 			prn(place, sz);
 		}
 	}
+	static void solve2(int k) {
+		PriorityQueue<Long> q = new PriorityQueue<>();
+		q.add(1L);
+		long prev = 0;
+		while (k>0) {
+			long v = q.remove();
+			if (v == prev)
+				continue;
+			prev = v;
+			q.add(v*3);
+			q.add(v*5);
+			q.add(v*7);
+			System.out.println(v);
+			k--;
+		}
+	}
 	public static void main(String args[]) {
-		solve(3);
+		solve2(333);
 	}
 }
