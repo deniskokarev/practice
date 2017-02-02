@@ -31,7 +31,7 @@ public class CF762B {
 		}
 		@Override
 		public int compareTo(Mouse o) {
-			return c < o.c?(-1):(c==o.c)?0:1;
+			return Long.compare(c, o.c);
 		}
 	}
 	/**
@@ -70,28 +70,29 @@ public class CF762B {
 			up[m.t][ni[m.t]++] = m;
 		Arrays.sort(u);
 		Arrays.sort(p);
-		ni[0] = ni[1] = 0;
+		int iu = 0;
+		int ip = 0;
 		long cost = 0;
 		int n = 0;
-		for (int t=Mouse.U; t<=Mouse.P; t++) {
-			for (int i=0; i<in.upb[t] && i<up[t].length; i++) {
-				cost += up[t][i].c;
-				n++;
-				ni[t]++;
-			}
+		int t = Mouse.U;
+		for (int i=0; i<in.upb[t] && i<up[t].length; i++) {
+			cost += up[t][i].c;
+			n++;
+			iu++;
 		}
-		int tot = in.upb[0]+in.upb[1]+in.upb[2];
-		for (int i=0; i<in.upb[Mouse.B] && (ni[Mouse.U] < up[Mouse.U].length || ni[Mouse.P] < up[Mouse.P].length) ; i++) {
-			for (int t=Mouse.U; t<=Mouse.P; t++) {
-				if (ni[t] < up[t].length) {
-					if (ni[t^1] >= up[t^1].length || up[t][ni[t]].c < up[t^1][ni[t^1]].c) {
-						cost += up[t][ni[t]++].c;
-						n++;
-						if (n >= tot)
-							return new Answer(n, cost);
-					}
-				}
-			}
+		t = Mouse.P;
+		for (int i=0; i<in.upb[t] && i<up[t].length; i++) {
+			cost += up[t][i].c;
+			n++;
+			ip++;
+		}
+		Mouse rem[] = new Mouse[u.length-iu + p.length-ip];
+		System.arraycopy(u, iu, rem, 0, u.length-iu);
+		System.arraycopy(p, ip, rem, u.length-iu, p.length-ip);
+		Arrays.sort(rem);
+		for (int i=0; i<rem.length && i<in.upb[Mouse.B]; i++) {
+			cost += rem[i].c;
+			n++;
 		}
 		return new Answer(n, cost);
 	}
