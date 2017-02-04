@@ -1,27 +1,20 @@
 #include <iostream>
+#include <vector>
 #include <algorithm>
 
-#if 0
-static int parent(int node) {
+inline size_t parent(size_t node) {
 	return (node-1) >> 1;
 }
-#endif
-
-static int leftChild(int root) {
+inline size_t leftChild(size_t root) {
 	return ((root+1) << 1) - 1;
 }
-static int rightChild(int root) {
+inline size_t rightChild(size_t root) {
 	return (root+1) << 1;
 }
-static void swap(long a[], int i, int j) {
-	long c = a[j];
-	a[j] = a[i];
-	a[i] = c;
-}
-static int smallest(long a[], int left, int right, int sz) {
-	if (left < sz) {
-		if (right < sz) {
-			if (a[left] < a[right])
+template <typename TI> inline TI smallest(TI left, TI right, TI end) {
+	if (left < end) {
+		if (right < end) {
+			if (*left < *right)
 				return left;
 			else
 				return right;
@@ -29,7 +22,7 @@ static int smallest(long a[], int left, int right, int sz) {
 			return left;
 		}
 	} else {
-		return -1;
+		return end;
 	}
 }
 	
@@ -40,13 +33,13 @@ static int smallest(long a[], int left, int right, int sz) {
  * @param root - increased element that you need to sieve
  * @param sz - size of the heap in array a
  */
-static void sift(long a[], int root, int sz) {
+template <typename TI> void siftDown(TI begin, TI root, TI end) {
 	while (true) {
-		int l = leftChild(root);
-		int r = rightChild(root);
-		int sm = smallest(a, l, r, sz);
-		if (sm > 0 && a[sm] < a[root]) {
-			swap(a, sm, root);
+		size_t l = leftChild(root-begin);
+		size_t r = rightChild(root-begin);
+		TI sm = smallest(begin+l, begin+r, end);
+		if (sm < end && *sm < *root) {
+			std::swap(*sm, *root);
 			root = sm;
 		} else {
 			break;
@@ -59,31 +52,33 @@ static void sift(long a[], int root, int sz) {
  * @param a
  * @param sz
  */
-static void heapify(long a[], int sz) {
-	for (int root=(sz>>1); root >= 0; root--)
-		sift(a, root, sz);
+template <typename TI> void heapify(TI begin, TI end) {
+	size_t sz = end-begin;
+	size_t root=(sz>>1);
+	for (; root > 0; root--)
+		siftDown(begin, begin+root, end);
+	siftDown(begin, begin, end);
 }
-	
+
 /**
  * Perform inverted sorting - greatest element will be first
  * @param a array to be sorted
  */
-void heapsort(long a[], int sz) {
-	heapify(a, sz);
-	for (int i=sz-1; i>0; i--) {
-		swap(a, 0, i);
-		sift(a, 0, i);
+template <typename TI> void heapsort(TI begin, TI end) {
+	heapify(begin, end);
+	TI p = end;
+	for (--p; p>begin; --p) {
+		std::swap(*begin, *p);
+		siftDown(begin, begin, p);
 	}
 }
 
 int main(int argc, char **argv) {
-	int sz = 1<<28;
+	int sz = 1<<27;
 	long *a = new long[sz];
 	for (int i=0; i<sz; i++)
 		a[i] = sz-i;
-	//std::make_heap(a, a+sz);
-	//std::sort_heap(a, a+sz);
-	//std::sort(a, a+sz);
-	heapsort(a, sz);
+	//std::sort_heap(&a[0], &a[sz]);
+	heapsort(&a[0], &a[sz]);
 	delete[] a;
 }
