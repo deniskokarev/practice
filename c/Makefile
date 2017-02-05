@@ -3,11 +3,22 @@ CXXFLAGS = -std=c++11 -Wall -g -O0
 CFLAGS = -std=c99 -Wall -g -O0
 LINK.o = $(LINK.cc)
 
-BINS = perm div7 choose choosem treap split safeseq derangement paths cf731c \
+BINS = a b c d e f \
+	perm div7 choose choosem treap split safeseq derangement paths cf731c \
 	4key atpp819 cf545d cf630f cf630g ringbuf heap \
 	cf764a
 
 all: $(BINS)
+
+# codeforces bins
+cf: a b c d e f
+
+a: a.o
+b: b.o
+c: c.o
+d: d.o
+e: e.o
+f: f.o
 
 perm: perm.o
 perm.o: perm.cc perm.hh
