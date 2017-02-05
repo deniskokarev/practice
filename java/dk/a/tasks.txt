@@ -1,4 +1,4 @@
-1. all putmutations of strings a1,a2..aN and b1,b2..bM so that the outgoing
+1. all permutations of strings a1,a2..aN and b1,b2..bM so that the outgoing
 string has the characters intermixed, but the order is still preserved
 
 2. find if any of the words from the dictionary may be traversed in NxN matrix. it is permitted to go up,down,left,right and (possibly with returns)
