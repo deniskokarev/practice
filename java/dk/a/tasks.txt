@@ -1,0 +1,15 @@
+1. all permutations of strings a1,a2..aN and b1,b2..bM so that the outgoing
+string has the characters intermixed, but the order is still preserved
+
+2. find if any of the words from the dictionary may be traversed in NxN matrix. it is permitted to go up,down,left,right and (possibly with returns)
+
+3. lunch
+
+4. write "find" utility using object-oriented concepts
+
+5. design S3 or HDFS file system
+
+6. design and write recommender engine based on
+customer1: [A,B,C]
+customer2: [B,D,E,F]
+customer3: [B,F,Z]
