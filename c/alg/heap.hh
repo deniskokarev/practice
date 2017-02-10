@@ -1,5 +1,4 @@
-#include <iostream>
-#include <vector>
+#include <cstdlib>
 #include <algorithm>
 
 inline size_t parent(size_t node) {
@@ -71,14 +70,4 @@ template <typename TI> void heapsort(TI begin, TI end) {
 		std::swap(*begin, *p);
 		siftDown(begin, begin, p);
 	}
-}
-
-int main(int argc, char **argv) {
-	int sz = 1<<27;
-	long *a = new long[sz];
-	for (int i=0; i<sz; i++)
-		a[i] = sz-i;
-	//std::sort_heap(&a[0], &a[sz]);
-	heapsort(&a[0], &a[sz]);
-	delete[] a;
 }

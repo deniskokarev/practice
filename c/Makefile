@@ -4,6 +4,7 @@ BINS = a b c d e f \
 	alg/heap \
 	alg/perm \
 	alg/comb_test \
+	alg/heap_test \
 
 CXXFLAGS += -std=c++11 -Wall
 CFLAGS += -std=c99 -Wall
@@ -46,6 +47,10 @@ alg/perm: alg/perm.o
 alg/comb_test.o: alg/comb_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
 alg/comb_test: alg/comb.o alg/comb_test.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) -o $(@) $(+)
+alg/heap_test.o: alg/heap_test.cc
+	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
+alg/heap_test: alg/heap_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
 perm.o: perm.cc perm.hh
