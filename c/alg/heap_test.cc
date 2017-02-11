@@ -62,19 +62,19 @@ TEST(HeapTest, Performance) {
 	std::unique_ptr<int[]> a(new int[sz]);
 	for (int i=0; i<sz; i++)
 		a[i] = rand();
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
 	std::sort_heap(&a[0], &a[sz], std::greater<int>());
-    end = std::chrono::system_clock::now();
-    std::chrono::duration<double> stock = end-start;
-	std::cerr << "[          ] system heap sort performance = " << stock.count() << std::endl;
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> stock = end-start;
+	std::cerr << "[			 ] system heap sort performance = " << stock.count() << std::endl;
 	for (int i=0; i<sz; i++)
 		a[i] = rand();
-    start = std::chrono::system_clock::now();
+	start = std::chrono::system_clock::now();
 	int *b = a.get();
 	heapsort(b, b+sz);
-    end = std::chrono::system_clock::now();
-    std::chrono::duration<double> ours = end-start;
-	std::cerr << "[          ] our heap sort performance = " << ours.count() << std::endl;
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> ours = end-start;
+	std::cerr << "[			 ] our heap sort performance = " << ours.count() << std::endl;
 }
 

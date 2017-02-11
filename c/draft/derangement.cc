@@ -13,7 +13,7 @@ uint64_t choose_c(uint8_t n, uint8_t k) {
 	static vector<vector<uint64_t> > cache;
 	if (k > n/2)
 		k = n-k;
-	for (int i=cache.size(); i<n+1; i++) {
+	for (auto i=cache.size(); i<n+1; i++) {
 		vector<uint64_t> kv((i+1)/2+1);
 		cache.push_back(kv);
 	}

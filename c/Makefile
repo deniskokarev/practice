@@ -1,7 +1,6 @@
 BINS = a b c d e f \
 	alg/choose \
 	alg/choosem \
-	alg/heap \
 	alg/perm \
 	alg/comb_test \
 	alg/heap_test \
@@ -19,16 +18,9 @@ all: $(BINS)
 $(LIBGTMAIN): $(LIBGT)
 $(LIBGT):
 	mkdir libgt
-	cd libgt && cmake ../googletest && make -j8
+	cd libgt && cmake ../googletest && $(MAKE)
 
 libgt: $(LIBGTMAIN)
-
-#	perm div7 choose choosem treap split safeseq derangement paths cf731c \
-#	4key atpp819 cf545d cf630f cf630g ringbuf heap \
-#	cf764a
-
-test: ./alg/comb_test
-	./alg/comb_test
 
 # codeforces bins
 cf: a b c d e f
@@ -42,7 +34,6 @@ f: f.o
 
 alg/choose: alg/choose.o
 alg/choosem: alg/choosem.o
-alg/heap: alg/heap.o
 alg/perm: alg/perm.o
 alg/comb_test.o: alg/comb_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
@@ -69,7 +60,9 @@ cf630g: cf630g.o
 ringbuf: ringbuf.o
 cf764a: cf764a.o
 
-test: all
+test: ./alg/comb_test ./alg/heap_test
+	./alg/comb_test
+	./alg/heap_test
 
 clean:
 	for d in . alg draft; do rm -f $$d/*.o $$d/*~; done
