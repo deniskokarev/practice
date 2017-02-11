@@ -1,7 +1,4 @@
 BINS = a b c d e f \
-	alg/choose \
-	alg/choosem \
-	alg/perm \
 	alg/comb_test \
 	alg/heap_test \
 
@@ -32,9 +29,6 @@ d: d.o
 e: e.o
 f: f.o
 
-alg/choose: alg/choose.o
-alg/choosem: alg/choosem.o
-alg/perm: alg/perm.o
 alg/comb_test.o: alg/comb_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
 alg/comb_test: alg/comb.o alg/comb_test.o $(LIBGTMAIN) $(LIBGT)
@@ -44,22 +38,6 @@ alg/heap_test.o: alg/heap_test.cc
 alg/heap_test: alg/heap_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
-perm.o: perm.cc perm.hh
-div7: div7.o
-treap: treap.o
-split: split.o
-safeseq: safeseq.o
-derangement: derangement.o
-paths: paths.o
-cf731c: cf731c.o
-4key: 4key.o
-atpp819: atpp819.o
-cf545d: cf545d.o
-cf630f: cf630f.o
-cf630g: cf630g.o
-ringbuf: ringbuf.o
-cf764a: cf764a.o
-
 test: ./alg/comb_test ./alg/heap_test
 	./alg/comb_test
 	./alg/heap_test
@@ -68,3 +46,4 @@ clean:
 	for d in . alg draft; do rm -f $$d/*.o $$d/*~; done
 	rm -rf libgt
 	rm -f $(BINS)
+	rm -rf Build
