@@ -296,7 +296,7 @@
 					};
 				};
 			};
-			buildConfigurationList = BFAC99C51E467D22003D066C /* Build configuration list for PBXProject "practice" */;
+			buildConfigurationList = BFAC99C51E467D22003D066C /* Build configuration list for PBXProject "cf" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -543,6 +543,7 @@
 				BF59AA5F1E46A8D600FC7DC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BF59AA661E46A8E400FC7DC2 /* Build configuration list for PBXNativeTarget "b" */ = {
 			isa = XCConfigurationList;
@@ -551,6 +552,7 @@
 				BF59AA681E46A8E400FC7DC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BF59AA6F1E46A8EF00FC7DC2 /* Build configuration list for PBXNativeTarget "c" */ = {
 			isa = XCConfigurationList;
@@ -559,6 +561,7 @@
 				BF59AA711E46A8EF00FC7DC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BF59AA781E46A8F900FC7DC2 /* Build configuration list for PBXNativeTarget "d" */ = {
 			isa = XCConfigurationList;
@@ -567,6 +570,7 @@
 				BF59AA7A1E46A8F900FC7DC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BF59AA811E46A90200FC7DC2 /* Build configuration list for PBXNativeTarget "e" */ = {
 			isa = XCConfigurationList;
@@ -575,6 +579,7 @@
 				BF59AA831E46A90200FC7DC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BF59AA8A1E46A91200FC7DC2 /* Build configuration list for PBXNativeTarget "f" */ = {
 			isa = XCConfigurationList;
@@ -583,8 +588,9 @@
 				BF59AA8C1E46A91200FC7DC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
-		BFAC99C51E467D22003D066C /* Build configuration list for PBXProject "practice" */ = {
+		BFAC99C51E467D22003D066C /* Build configuration list for PBXProject "cf" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				BFAC99CF1E467D22003D066C /* Debug */,
