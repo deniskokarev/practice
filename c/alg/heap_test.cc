@@ -1,6 +1,7 @@
 #include "heap.hh"
 #include "gtest/gtest.h"
 #include <vector>
+#include <memory>
 
 template<typename T> bool test_sort(T *begin, T *end) {
 	std::vector<T> s(begin, end);
