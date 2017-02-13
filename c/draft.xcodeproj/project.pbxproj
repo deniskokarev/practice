@@ -8,10 +8,47 @@
 
 /* Begin PBXBuildFile section */
 		BF23236E1E4F47E300365E46 /* derangement.cc in Sources */ = {isa = PBXBuildFile; fileRef = BF2323621E4F466200365E46 /* derangement.cc */; };
+		BFA69CFD1E50DD9000166975 /* knapsack_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = BFA69CEE1E50BFA700166975 /* knapsack_test.cc */; };
+		BFA69CFE1E50DD9700166975 /* knapsack.cc in Sources */ = {isa = PBXBuildFile; fileRef = BFA69CEF1E50BFA700166975 /* knapsack.cc */; };
+		BFA69CFF1E50DDCB00166975 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BFA69CEA1E50BF3500166975 /* libgtest.a */; };
+		BFA69D011E50EB1800166975 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BFA69CEC1E50BF3500166975 /* libgtest_main.a */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BFA69CE71E50BF3500166975 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFA69CE01E50BF3400166975 /* mygtest.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 4539C8FF0EC27F6400A70F4C;
+			remoteInfo = "gtest-framework";
+		};
+		BFA69CE91E50BF3500166975 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFA69CE01E50BF3400166975 /* mygtest.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 40C848FA101A209C0083642A;
+			remoteInfo = "gtest-static";
+		};
+		BFA69CEB1E50BF3500166975 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFA69CE01E50BF3400166975 /* mygtest.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 40C8490B101A217E0083642A;
+			remoteInfo = "gtest_main-static";
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		BF2323651E4F47DB00365E46 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		BFA69CF41E50DD8600166975 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -25,6 +62,11 @@
 /* Begin PBXFileReference section */
 		BF2323621E4F466200365E46 /* derangement.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = derangement.cc; sourceTree = "<group>"; };
 		BF2323671E4F47DB00365E46 /* derangement */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = derangement; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFA69CE01E50BF3400166975 /* mygtest.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = mygtest.xcodeproj; sourceTree = "<group>"; };
+		BFA69CED1E50BFA700166975 /* knapsack.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = knapsack.hh; sourceTree = "<group>"; };
+		BFA69CEE1E50BFA700166975 /* knapsack_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = knapsack_test.cc; sourceTree = "<group>"; };
+		BFA69CEF1E50BFA700166975 /* knapsack.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = knapsack.cc; sourceTree = "<group>"; };
+		BFA69CF61E50DD8600166975 /* knapsack_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = knapsack_test; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,12 +77,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BFA69CF31E50DD8600166975 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BFA69CFF1E50DDCB00166975 /* libgtest.a in Frameworks */,
+				BFA69D011E50EB1800166975 /* libgtest_main.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BFA69CE11E50BF3400166975 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BFA69CE81E50BF3500166975 /* gtest.framework */,
+				BFA69CEA1E50BF3500166975 /* libgtest.a */,
+				BFA69CEC1E50BF3500166975 /* libgtest_main.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		BFCD1B841E4F455F006510AC = {
 			isa = PBXGroup;
 			children = (
+				BFA69CE01E50BF3400166975 /* mygtest.xcodeproj */,
 				BFCD1B8F1E4F455F006510AC /* draft */,
 				BFCD1B8E1E4F455F006510AC /* Products */,
 			);
@@ -50,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				BF2323671E4F47DB00365E46 /* derangement */,
+				BFA69CF61E50DD8600166975 /* knapsack_test */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,6 +120,9 @@
 		BFCD1B8F1E4F455F006510AC /* draft */ = {
 			isa = PBXGroup;
 			children = (
+				BFA69CED1E50BFA700166975 /* knapsack.hh */,
+				BFA69CEE1E50BFA700166975 /* knapsack_test.cc */,
+				BFA69CEF1E50BFA700166975 /* knapsack.cc */,
 				BF2323621E4F466200365E46 /* derangement.cc */,
 			);
 			path = draft;
@@ -82,6 +148,23 @@
 			productReference = BF2323671E4F47DB00365E46 /* derangement */;
 			productType = "com.apple.product-type.tool";
 		};
+		BFA69CF51E50DD8600166975 /* knapsack_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BFA69CFA1E50DD8600166975 /* Build configuration list for PBXNativeTarget "knapsack_test" */;
+			buildPhases = (
+				BFA69CF21E50DD8600166975 /* Sources */,
+				BFA69CF31E50DD8600166975 /* Frameworks */,
+				BFA69CF41E50DD8600166975 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = knapsack_test;
+			productName = knapsack_test;
+			productReference = BFA69CF61E50DD8600166975 /* knapsack_test */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,6 +175,9 @@
 				ORGANIZATIONNAME = "Denis Kokarev";
 				TargetAttributes = {
 					BF2323661E4F47DB00365E46 = {
+						CreatedOnToolsVersion = 7.2.1;
+					};
+					BFA69CF51E50DD8600166975 = {
 						CreatedOnToolsVersion = 7.2.1;
 					};
 				};
@@ -106,12 +192,43 @@
 			mainGroup = BFCD1B841E4F455F006510AC;
 			productRefGroup = BFCD1B8E1E4F455F006510AC /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = BFA69CE11E50BF3400166975 /* Products */;
+					ProjectRef = BFA69CE01E50BF3400166975 /* mygtest.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				BF2323661E4F47DB00365E46 /* derangement */,
+				BFA69CF51E50DD8600166975 /* knapsack_test */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		BFA69CE81E50BF3500166975 /* gtest.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = gtest.framework;
+			remoteRef = BFA69CE71E50BF3500166975 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		BFA69CEA1E50BF3500166975 /* libgtest.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libgtest.a;
+			remoteRef = BFA69CE91E50BF3500166975 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		BFA69CEC1E50BF3500166975 /* libgtest_main.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libgtest_main.a;
+			remoteRef = BFA69CEB1E50BF3500166975 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
 		BF2323631E4F47DB00365E46 /* Sources */ = {
@@ -119,6 +236,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF23236E1E4F47E300365E46 /* derangement.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BFA69CF21E50DD8600166975 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BFA69CFE1E50DD9700166975 /* knapsack.cc in Sources */,
+				BFA69CFD1E50DD9000166975 /* knapsack_test.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,6 +259,20 @@
 			name = Debug;
 		};
 		BF23236D1E4F47DB00365E46 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		BFA69CFB1E50DD8600166975 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		BFA69CFC1E50DD8600166975 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -175,6 +315,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = $SRCROOT/googletest/googletest/include;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -212,6 +353,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = $SRCROOT/googletest/googletest/include;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
@@ -226,6 +368,15 @@
 			buildConfigurations = (
 				BF23236C1E4F47DB00365E46 /* Debug */,
 				BF23236D1E4F47DB00365E46 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BFA69CFA1E50DD8600166975 /* Build configuration list for PBXNativeTarget "knapsack_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BFA69CFB1E50DD8600166975 /* Debug */,
+				BFA69CFC1E50DD8600166975 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 		};
