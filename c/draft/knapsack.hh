@@ -12,6 +12,6 @@ namespace ks {
 
 	int better(int maxWeight, std::vector<Item> &items);
 
-	int cached(int maxWeight, std::vector<Item> &items);
+	int dp(int maxWeight, std::vector<Item> &items);
 };
 

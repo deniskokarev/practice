@@ -85,7 +85,7 @@ TEST(KsBetterTest, T3) {
 	EXPECT_EQ(1458, rc);
 }
 
-TEST(KsCachedTest, T1) {
+TEST(KsDPTest, T1) {
 	std::vector<ks::Item> items {
 		{23, 92},
 		{31, 57},
@@ -98,11 +98,11 @@ TEST(KsCachedTest, T1) {
 		{89, 87},
 		{82, 72}
 	};
-	int rc = ks::cached(165, items);
+	int rc = ks::dp(165, items);
 	EXPECT_EQ(309, rc);
 }
 
-TEST(KsCachedTest, T2) {
+TEST(KsDPTest, T2) {
 	std::vector<ks::Item> items {
 		{41, 442},
 		{50, 525},
@@ -112,11 +112,11 @@ TEST(KsCachedTest, T2) {
 		{57, 564},
 		{60, 617}
 	};
-	int rc = ks::cached(170, items);
+	int rc = ks::dp(170, items);
 	EXPECT_EQ(1735, rc);
 }
 
-TEST(KsCachedTest, T3) {
+TEST(KsDPTest, T3) {
 	std::vector<ks::Item> items {
 		{70, 135},
 		{73, 139},
@@ -134,6 +134,6 @@ TEST(KsCachedTest, T3) {
 		{118, 229},
 		{120, 240}
 	};
-	int rc = ks::cached(750, items);
+	int rc = ks::dp(750, items);
 	EXPECT_EQ(1458, rc);
 }

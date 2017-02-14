@@ -1,6 +1,4 @@
 #include "knapsack.hh"
-#include <unordered_map>
-#include <algorithm>
 
 using namespace ks;
 
@@ -70,39 +68,21 @@ int ks::better(int maxWeight, std::vector<Item> &items) {
 	return rc;
 }
 
-static int cachedHlp(int maxWeight,
-					 std::vector<Item> &src,
-					 std::unordered_map<int, std::pair<int, std::vector<int>>> &cache)
-{
-	if (cache.find(maxWeight) != cache.end())
-		return cache[maxWeight].first;
-	int &bestVal = cache[maxWeight].first;
-	bestVal = 0;
-	std::vector<int> &bestRes = cache[maxWeight].second;
-	int i = 0;
-	for (auto &item: src) {
-		if (!item.taken && maxWeight >= item.weight) {
-			item.taken = true;
-			int val = cachedHlp(maxWeight-item.weight, src, cache);
-			std::vector<int> &justRes = cache[maxWeight-item.weight].second;
-			if (bestVal < val+item.value) {
-				bestVal = val+item.value;
-				bestRes = justRes;
-				bestRes.push_back(i);
-			}
-			item.taken = false;
+int ks::dp(int maxWeight, std::vector<Item> &items) {
+	std::vector<std::vector<int>> cache;
+	int n = 0;
+	cache.resize(n+1);
+	cache[n].resize(maxWeight+1);
+	for (auto &im:items) {
+		n++;
+		cache.resize(n+1);
+		cache[n].resize(maxWeight+1);
+		for (int w=0; w<=maxWeight; w++) {
+			if (im.weight <= w)
+				cache[n][w] = std::max(cache[n-1][w-im.weight]+im.value, cache[n-1][w]);
+			else
+				cache[n][w] = cache[n-1][w];
 		}
-		i++;
 	}
-	return bestVal;
-}
-
-
-int ks::cached(int maxWeight, std::vector<Item> &items) {
-	// maxWeight -> (maxValue, whatSelect)
-	std::unordered_map<int, std::pair<int, std::vector<int>>> cache;
-	int rc = cachedHlp(maxWeight, items, cache);
-	for (auto i:cache[maxWeight].second)
-		items[i].taken = true;
-	return rc;
+	return cache[n][maxWeight];
 }
