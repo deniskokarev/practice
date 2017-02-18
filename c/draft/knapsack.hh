@@ -11,5 +11,7 @@ namespace ks {
 	int naive(int maxWeight, std::vector<Item> &src);
 
 	int better(int maxWeight, std::vector<Item> &items);
+
+	int dp(int maxWeight, std::vector<Item> &items);
 };
 

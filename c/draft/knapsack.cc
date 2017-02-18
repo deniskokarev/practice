@@ -1,4 +1,5 @@
 #include "knapsack.hh"
+#include <algorithm>
 
 using namespace ks;
 
@@ -32,20 +33,25 @@ int ks::naive(int maxWeight, std::vector<Item> &items) {
 	return rc;
 }
 
-static int betterHlp(int maxWeight, int i, std::vector<Item>::iterator it, const std::vector<Item>::iterator &end, std::vector<int> &res) {
+static int betterHlp(int maxWeight,
+					 int i,
+					 std::vector<Item>::iterator it,
+					 const std::vector<Item>::iterator &end,
+					 std::vector<int> &res)
+{
 	if (it == end)
 		return 0;
 	Item &item = *it;
 	std::vector<int> resWith;
 	resWith.push_back(i);
 	int valWith;
-	std::vector<int> resWithout;
 	++it;
-	int valWithout = betterHlp(maxWeight, i+1, it, end, resWithout);
 	if (item.weight <= maxWeight)
 		valWith = betterHlp(maxWeight-item.weight, i+1, it, end, resWith) + item.value;
 	else
 		valWith = -1;
+	std::vector<int> resWithout;
+	int valWithout = betterHlp(maxWeight, i+1, it, end, resWithout);
 	if (valWith > valWithout) {
 		res = resWith;
 		return valWith;
@@ -61,4 +67,36 @@ int ks::better(int maxWeight, std::vector<Item> &items) {
 	for (auto i:res)
 		items[i].taken = true;
 	return rc;
+}
+
+struct CachedVal {
+	int val;
+	int n;
+	int prevN;
+	int prevW;
+	CachedVal():CachedVal(0, -1, -1, -1){}
+	CachedVal(int av, int an, int apn, int apw):val{av},n{an},prevN{apn},prevW{apw}{}
+};
+
+int ks::dp(int maxWeight, std::vector<Item> &items) {
+	std::vector<std::vector<CachedVal>> cache;
+	int n = 0;
+	cache.resize(n+1);
+	cache[n].resize(maxWeight+1);
+	for (auto &im:items) {
+		n++;
+		cache.resize(n+1);
+		cache[n].resize(maxWeight+1);
+		for (int w=0; w<=maxWeight; w++) {
+			int val;
+			if (im.weight <= w && (val=cache[n-1][w-im.weight].val+im.value) > cache[n-1][w].val) {
+				cache[n][w] = CachedVal(val, n, n-1, w-im.weight);
+			} else {
+				cache[n][w] = cache[n-1][w];
+			}
+		}
+	}
+	for (CachedVal pcv = cache[n][maxWeight]; pcv.n > 0; pcv = cache[pcv.prevN][pcv.prevW])
+		items[pcv.n-1].taken = true;
+	return cache[n][maxWeight].val;
 }
