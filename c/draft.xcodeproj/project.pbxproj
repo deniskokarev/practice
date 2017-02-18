@@ -379,6 +379,7 @@
 				BFA69CFC1E50DD8600166975 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BFCD1B881E4F455F006510AC /* Build configuration list for PBXProject "draft" */ = {
 			isa = XCConfigurationList;

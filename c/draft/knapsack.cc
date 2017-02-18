@@ -1,4 +1,5 @@
 #include "knapsack.hh"
+#include <algorithm>
 
 using namespace ks;
 
@@ -68,8 +69,17 @@ int ks::better(int maxWeight, std::vector<Item> &items) {
 	return rc;
 }
 
+struct CachedVal {
+	int val;
+	int n;
+	int prevN;
+	int prevW;
+	CachedVal():CachedVal(0, -1, -1, -1){}
+	CachedVal(int av, int an, int apn, int apw):val{av},n{an},prevN{apn},prevW{apw}{}
+};
+
 int ks::dp(int maxWeight, std::vector<Item> &items) {
-	std::vector<std::vector<int>> cache;
+	std::vector<std::vector<CachedVal>> cache;
 	int n = 0;
 	cache.resize(n+1);
 	cache[n].resize(maxWeight+1);
@@ -78,11 +88,15 @@ int ks::dp(int maxWeight, std::vector<Item> &items) {
 		cache.resize(n+1);
 		cache[n].resize(maxWeight+1);
 		for (int w=0; w<=maxWeight; w++) {
-			if (im.weight <= w)
-				cache[n][w] = std::max(cache[n-1][w-im.weight]+im.value, cache[n-1][w]);
-			else
+			int val;
+			if (im.weight <= w && (val=cache[n-1][w-im.weight].val+im.value) > cache[n-1][w].val) {
+				cache[n][w] = CachedVal(val, n, n-1, w-im.weight);
+			} else {
 				cache[n][w] = cache[n-1][w];
+			}
 		}
 	}
-	return cache[n][maxWeight];
+	for (CachedVal pcv = cache[n][maxWeight]; pcv.n > 0; pcv = cache[pcv.prevN][pcv.prevW])
+		items[pcv.n-1].taken = true;
+	return cache[n][maxWeight].val;
 }
