@@ -147,13 +147,13 @@
 		BFCD1B8F1E4F455F006510AC /* draft */ = {
 			isa = PBXGroup;
 			children = (
-				BFE7EE3D1E57E900007E31CA /* matmul_test.cc */,
-				BFA69CED1E50BFA700166975 /* knapsack.hh */,
-				BFA69CEE1E50BFA700166975 /* knapsack_test.cc */,
-				BFA69CEF1E50BFA700166975 /* knapsack.cc */,
 				BF2323621E4F466200365E46 /* derangement.cc */,
+				BFA69CED1E50BFA700166975 /* knapsack.hh */,
+				BFA69CEF1E50BFA700166975 /* knapsack.cc */,
+				BFA69CEE1E50BFA700166975 /* knapsack_test.cc */,
 				BFE7EE2C1E57D670007E31CA /* matmul.cc */,
 				BFE7EE2D1E57D670007E31CA /* matmul.hh */,
+				BFE7EE3D1E57E900007E31CA /* matmul_test.cc */,
 			);
 			path = draft;
 			sourceTree = "<group>";
@@ -471,6 +471,7 @@
 				BFE7EE3C1E57E8E3007E31CA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
