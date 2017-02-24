@@ -12,6 +12,10 @@
 		BFA69CFE1E50DD9700166975 /* knapsack.cc in Sources */ = {isa = PBXBuildFile; fileRef = BFA69CEF1E50BFA700166975 /* knapsack.cc */; };
 		BFA69CFF1E50DDCB00166975 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BFA69CEA1E50BF3500166975 /* libgtest.a */; };
 		BFA69D011E50EB1800166975 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BFA69CEC1E50BF3500166975 /* libgtest_main.a */; };
+		BFE7EE3E1E57E900007E31CA /* matmul_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = BFE7EE3D1E57E900007E31CA /* matmul_test.cc */; };
+		BFE7EE3F1E57E92E007E31CA /* matmul.cc in Sources */ = {isa = PBXBuildFile; fileRef = BFE7EE2C1E57D670007E31CA /* matmul.cc */; };
+		BFE7EE401E57E970007E31CA /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BFA69CEA1E50BF3500166975 /* libgtest.a */; };
+		BFE7EE411E57E973007E31CA /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BFA69CEC1E50BF3500166975 /* libgtest_main.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +61,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		BFE7EE341E57E8E3007E31CA /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +80,10 @@
 		BFA69CEE1E50BFA700166975 /* knapsack_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = knapsack_test.cc; sourceTree = "<group>"; };
 		BFA69CEF1E50BFA700166975 /* knapsack.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = knapsack.cc; sourceTree = "<group>"; };
 		BFA69CF61E50DD8600166975 /* knapsack_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = knapsack_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFE7EE2C1E57D670007E31CA /* matmul.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = matmul.cc; sourceTree = "<group>"; };
+		BFE7EE2D1E57D670007E31CA /* matmul.hh */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = matmul.hh; sourceTree = "<group>"; };
+		BFE7EE361E57E8E3007E31CA /* matmul_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = matmul_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFE7EE3D1E57E900007E31CA /* matmul_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = matmul_test.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +100,15 @@
 			files = (
 				BFA69CFF1E50DDCB00166975 /* libgtest.a in Frameworks */,
 				BFA69D011E50EB1800166975 /* libgtest_main.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BFE7EE331E57E8E3007E31CA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BFE7EE401E57E970007E31CA /* libgtest.a in Frameworks */,
+				BFE7EE411E57E973007E31CA /* libgtest_main.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +139,7 @@
 			children = (
 				BF2323671E4F47DB00365E46 /* derangement */,
 				BFA69CF61E50DD8600166975 /* knapsack_test */,
+				BFE7EE361E57E8E3007E31CA /* matmul_test */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -120,10 +147,13 @@
 		BFCD1B8F1E4F455F006510AC /* draft */ = {
 			isa = PBXGroup;
 			children = (
+				BFE7EE3D1E57E900007E31CA /* matmul_test.cc */,
 				BFA69CED1E50BFA700166975 /* knapsack.hh */,
 				BFA69CEE1E50BFA700166975 /* knapsack_test.cc */,
 				BFA69CEF1E50BFA700166975 /* knapsack.cc */,
 				BF2323621E4F466200365E46 /* derangement.cc */,
+				BFE7EE2C1E57D670007E31CA /* matmul.cc */,
+				BFE7EE2D1E57D670007E31CA /* matmul.hh */,
 			);
 			path = draft;
 			sourceTree = "<group>";
@@ -165,6 +195,23 @@
 			productReference = BFA69CF61E50DD8600166975 /* knapsack_test */;
 			productType = "com.apple.product-type.tool";
 		};
+		BFE7EE351E57E8E3007E31CA /* matmul_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BFE7EE3A1E57E8E3007E31CA /* Build configuration list for PBXNativeTarget "matmul_test" */;
+			buildPhases = (
+				BFE7EE321E57E8E3007E31CA /* Sources */,
+				BFE7EE331E57E8E3007E31CA /* Frameworks */,
+				BFE7EE341E57E8E3007E31CA /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = matmul_test;
+			productName = matmul_test;
+			productReference = BFE7EE361E57E8E3007E31CA /* matmul_test */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -178,6 +225,9 @@
 						CreatedOnToolsVersion = 7.2.1;
 					};
 					BFA69CF51E50DD8600166975 = {
+						CreatedOnToolsVersion = 7.2.1;
+					};
+					BFE7EE351E57E8E3007E31CA = {
 						CreatedOnToolsVersion = 7.2.1;
 					};
 				};
@@ -202,6 +252,7 @@
 			targets = (
 				BF2323661E4F47DB00365E46 /* derangement */,
 				BFA69CF51E50DD8600166975 /* knapsack_test */,
+				BFE7EE351E57E8E3007E31CA /* matmul_test */,
 			);
 		};
 /* End PBXProject section */
@@ -245,6 +296,15 @@
 			files = (
 				BFA69CFE1E50DD9700166975 /* knapsack.cc in Sources */,
 				BFA69CFD1E50DD9000166975 /* knapsack_test.cc in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BFE7EE321E57E8E3007E31CA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BFE7EE3E1E57E900007E31CA /* matmul_test.cc in Sources */,
+				BFE7EE3F1E57E92E007E31CA /* matmul.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -360,6 +420,20 @@
 			};
 			name = Release;
 		};
+		BFE7EE3B1E57E8E3007E31CA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		BFE7EE3C1E57E8E3007E31CA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -389,6 +463,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		BFE7EE3A1E57E8E3007E31CA /* Build configuration list for PBXNativeTarget "matmul_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BFE7EE3B1E57E8E3007E31CA /* Debug */,
+				BFE7EE3C1E57E8E3007E31CA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
