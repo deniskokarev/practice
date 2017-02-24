@@ -44,47 +44,32 @@ namespace lcs {
 			std::vector<std::pair<int,int> > res;
 			int na, nb;
 			na = nb = 0;
-			while (na >=0 && nb >= 0) {
-				const entry &e = cache[na][nb];
-				res.push_back(std::pair<int,int>(e.a, e.b));
-				na = e.na;
-				nb = e.nb;
+			if (cache[na][nb].a >= 0) {
+				while (na >= 0 && nb >= 0) {
+					const entry &e = cache[na][nb];
+					res.push_back(std::pair<int,int>(e.a, e.b));
+					na = e.na;
+					nb = e.nb;
+				}
 			}
 			return res;
+		}
+		template<typename IT> std::ptrdiff_t getsize(const IT &begin, const IT &end, std::random_access_iterator_tag) {
+			return end-begin;
+		}
+		template<typename IT> std::ptrdiff_t getsize(const IT &begin, const IT &end, std::input_iterator_tag) {
+			std::ptrdiff_t sz = 0;
+			for(IT it(begin); it != end; ++it)
+				sz++;
+			return sz;
 		}
 	}
 
 	using namespace details;
 	
 	template<typename IT> std::vector<std::pair<int,int> > lcs(const IT &ahead, const IT &aend, const IT &bhead, const IT &bend) {
-		std::vector<std::vector<entry> > cache(aend-ahead+1, std::vector<entry>(bend-bhead+1));
+		std::vector<std::vector<entry> > cache(getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category())+1, std::vector<entry>(getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category())+1));
 		lcs_r(ahead, aend, 0, bhead, bend, 0, cache);
 		return reconstruct(cache);
 	}
-}
-
-int main(int argc, char **argv) {
-	std::vector<std::pair<int,int> > result;
-	/*
-	std::string a;
-	std::string b;
-	std::cin >> a;
-	std::cin >> b;
-	result = lcs::lcs(a.begin(), a.end(), b.begin(), b.end());
-	std::cout << result.size() << std::endl;
-	for (std::vector<std::pair<int,int> >::iterator it=result.begin(); it!=result.end(); ++it)
-		std::cout << a[it->first];
-	std::cout << std::endl;
-	*/
-	char a1[32];
-	char b1[32];
-	fgets(a1, sizeof(a1), stdin);
-	fgets(b1, sizeof(b1), stdin);
-
-	result = lcs::lcs(&a1[0], &a1[strlen(a1)-1], &b1[0], &b1[strlen(b1)-1]);
-	std::cout << result.size() << std::endl;
-	for (std::vector<std::pair<int,int> >::iterator it=result.begin(); it!=result.end(); ++it)
-		std::cout << a1[it->first];
-	std::cout << std::endl;
-	
 }
