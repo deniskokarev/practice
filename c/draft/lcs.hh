@@ -2,107 +2,62 @@
  * LCS - longest common subsequence
  */
 #include <vector>
-#include <stack>
 
 namespace lcs {
 	
 	namespace details {
 		
-		struct cache_item {
+		struct entry {
 			size_t sz;
+			int a, b;
 			int na, nb;
-			cache_item():sz(0),na(-1),nb(-1){}
-			cache_item(int _sz, int _na, int _nb):sz(_sz),na(_na),nb(_nb){}
+			entry():sz(0),a(-1),b(-1),na(-1),nb(-1){}
+			entry(int _a, int _b, const entry &e):sz(e.sz+1),a(_a),b(_b),na(e.a),nb(e.b){}
 		};
 
-		template <typename IT> struct rnode {
-			IT a;
-			IT b;
-			const IT &aend;
-			const IT &bend;
-			int na;
-			int nb;
-			int ai;
-			int bi;
-			int cnt;
-			int pfx;
-			rnode(const IT &_a, int _ai, const IT &_aend,
-					   const IT &_b, int _bi, const IT &_bend,
-					   int _pfx):
-				a(_a), b(_b), aend(_aend), bend(_bend), na(_ai), nb(_bi), ai(_ai), bi(_bi), cnt(0), pfx(_pfx) {
-			}
-			rnode(const rnode &si):
-				a(si.a), b(si.b), aend(si.aend), bend(si.bend), na(si.ai), nb(si.bi), ai(si.ai), bi(si.bi), cnt(0), pfx(si.pfx) {
-			}
-			rnode next() {
-				cnt++;
-				switch(cnt) {
-				case 1:
-					return rnode(*this).advance_a();
-				case 2:
-					return rnode(*this).advance_b();
-				default:
-					return *this;
-				}
-			}
-			rnode &advance_a() {
-				++ai;
-				++a;
-				return *this;
-			}
-			rnode &advance_b() {
-				++bi;
-				++b;
-				return *this;
-			}
-			rnode &inc() {
-				pfx++;
-				return *this;
-			}
-			bool end() {
-				return cnt > 1;
-			}
-			bool bottom() {
-				return a == aend || b == bend;
-			}
-		};
-
-		template<typename IT> void lcs_r(const IT &ahead, const IT &aend, int ai,
-										 const IT &bhead, const IT &bend, int bi,
-										 std::vector<std::vector<cache_item> > &cache) {
-			std::stack<rnode<IT>> stack;
-			stack.push(rnode<IT>(ahead, 0, aend, bhead, 0, bend, 0));
-			while (!stack.empty()) {
-				auto s = stack.top();
-				stack.pop();
-				if (cache[s.ai][s.bi].na < 0) {
-					if (s.bottom()) {
-						cache[s.ai][s.bi].sz = s.pfx;
-					} else if (*s.a == *s.b) {
-						stack.push(s.inc().advance_a().advance_b());
-					} else if (s.end()) {
-						if (cache[s.ai+1][s.bi].sz > cache[s.ai][s.bi+1].sz)
-							cache[s.ai][s.bi] = cache_item(cache[s.ai+1][s.bi].sz, s.ai+1, s.bi);
-						else
-							cache[s.ai][s.bi] = cache_item(cache[s.ai][s.bi+1].sz, s.ai, s.bi+1);
+		template<typename IT> void lcs_r(const IT &ahead, const IT &aend,
+										 const IT &bhead, const IT &bend,
+										 std::vector<std::vector<entry> > &cache) {
+			IT aa(ahead);
+			IT bb(bhead);
+			int bi=1;
+			while (bb!=bend) {
+				int ai=1;
+				for (IT a(aa); a!=aend; ++a) {
+					int na, nb;
+					if (cache[ai-1][bi].sz > cache[ai][bi-1].sz) {
+						na = ai-1;
+						nb = bi;
 					} else {
-						stack.push(s);
-						stack.push(s.next());
+						na = ai;
+						nb = bi-1;
 					}
+					if (*a==*bb)
+						cache[ai][bi] = entry(ai, bi, cache[na][nb]);
+					else
+						cache[ai][bi] = cache[na][nb];
+					++ai;
 				}
+				++bb;
+				++bi;
 			}
 		}
 
-		std::vector<std::pair<int,int> > reconstruct(const std::vector<std::vector<cache_item> > &cache) {
+		std::vector<std::pair<int,int> > reconstruct(const std::vector<std::vector<entry> > &cache) {
 			std::vector<std::pair<int,int> > res;
-			int na, nb;
-			na = nb = 0;
-			if (cache[na][nb].sz > 0) {
-				while (na >= 0 && nb >= 0) {
-					const cache_item &e = cache[na][nb];
-					res.push_back(std::pair<int,int>(na, nb));
-					na = e.na;
-					nb = e.nb;
+			int na = cache.size()-1;
+			if (na > 0) {
+				int nb = cache[0].size()-1;
+				if (cache[na][nb].a >= 0) {
+					int di = cache[na][nb].sz-1;
+					res.resize(di+1);
+					while (na >= 0 && nb >= 0) {
+						const entry &e = cache[na][nb];
+						res[di] = std::pair<int,int>(e.a, e.b);
+						na = e.na;
+						nb = e.nb;
+						di--;
+					}
 				}
 			}
 			return res;
@@ -121,8 +76,9 @@ namespace lcs {
 	using namespace details;
 	
 	template<typename IT> std::vector<std::pair<int,int> > lcs(const IT &ahead, const IT &aend, const IT &bhead, const IT &bend) {
-		std::vector<std::vector<cache_item> > cache(getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category())+1, std::vector<cache_item>(getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category())+1));
-		lcs_r(ahead, aend, 0, bhead, bend, 0, cache);
+		std::vector<std::vector<entry> > cache(getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category())+1,
+											   std::vector<entry>(getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category())+1));
+		lcs_r(ahead, aend, bhead, bend, cache);
 		return reconstruct(cache);
 	}
 }
