@@ -1,6 +1,9 @@
 BINS = a b c d e f \
 	alg/comb_test \
 	alg/heap_test \
+	draft/knapsack_test \
+	draft/matmul_test \
+	draft/lcs_test \
 
 INCGT = ./googletest/googletest/include
 LIBGT = ./libgt/googlemock/gtest/libgtest.a
@@ -39,12 +42,17 @@ alg/heap_test.o: alg/heap.hh
 alg/heap_test: alg/heap_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
+draft/knapsack.o: draft/knapsack.hh
 draft/knapsack_test: draft/knapsack_test.o draft/knapsack.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
 draft/matmul.o: draft/matmul.hh
 draft/matmul_test.o: draft/matmul.hh
 draft/matmul_test: draft/matmul_test.o draft/matmul.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) -o $(@) $(+)
+
+draft/lcs_test.o: draft/lcs.hh
+draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
 test: ./alg/comb_test ./alg/heap_test
