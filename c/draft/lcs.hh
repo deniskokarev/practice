@@ -32,10 +32,11 @@ namespace lcs {
 						na = ai;
 						nb = bi-1;
 					}
-					if (*a==*bb)
+					if (*a == *bb) {
 						cache[ai][bi] = entry(ai, bi, cache[na][nb]);
-					else
+					} else {
 						cache[ai][bi] = cache[na][nb];
+					}
 					++ai;
 				}
 				++bb;
