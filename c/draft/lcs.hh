@@ -21,21 +21,17 @@ namespace lcs {
 			IT aa(ahead);
 			IT bb(bhead);
 			int bi=1;
+			std::vector<std::pair<int,int> > res;
 			while (bb!=bend) {
 				int ai=1;
 				for (IT a(aa); a!=aend; ++a) {
-					int na, nb;
-					if (cache[ai-1][bi].sz > cache[ai][bi-1].sz) {
-						na = ai-1;
-						nb = bi;
-					} else {
-						na = ai;
-						nb = bi-1;
-					}
 					if (*a == *bb) {
-						cache[ai][bi] = entry(ai, bi, cache[na][nb]);
+						cache[ai][bi] = entry(ai, bi, cache[ai-1][bi-1]);
 					} else {
-						cache[ai][bi] = cache[na][nb];
+						if (cache[ai-1][bi].sz > cache[ai][bi-1].sz)
+							cache[ai][bi] = cache[ai-1][bi];
+						else
+							cache[ai][bi] = cache[ai][bi-1];
 					}
 					++ai;
 				}
