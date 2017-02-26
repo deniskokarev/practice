@@ -8,7 +8,7 @@ namespace lcs {
 	namespace details {
 		
 		struct entry {
-			size_t sz;
+			int sz;
 			int a, b;
 			int na, nb;
 			entry():sz(0),a(-1),b(-1),na(-1),nb(-1){}
@@ -50,7 +50,7 @@ namespace lcs {
 					res.resize(di+1);
 					while (na >= 0 && nb >= 0) {
 						const entry &e = cache[na][nb];
-						res[di] = std::pair<int,int>(e.a, e.b);
+						res[di] = std::pair<int,int>(e.a-1, e.b-1);
 						na = e.na;
 						nb = e.nb;
 						di--;
@@ -72,10 +72,14 @@ namespace lcs {
 
 	using namespace details;
 	
-	template<typename IT> std::vector<std::pair<int,int> > lcs(const IT &ahead, const IT &aend, const IT &bhead, const IT &bend) {
+	template<typename IT, typename OIT> int lcs(const IT &ahead, const IT &aend,
+								  const IT &bhead, const IT &bend,
+								  OIT dst) {
 		std::vector<std::vector<entry> > cache(getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category())+1,
 											   std::vector<entry>(getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category())+1));
 		lcs_r(ahead, aend, bhead, bend, cache);
-		return reconstruct(cache);
+		std::vector<std::pair<int,int> > res(reconstruct(cache));
+		std::copy(res.begin(), res.end(), dst);
+		return res.size();
 	}
 }
