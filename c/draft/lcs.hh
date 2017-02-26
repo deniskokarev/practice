@@ -1,10 +1,7 @@
 /*
  * LCS - longest common subsequence
  */
-#include <string>
 #include <vector>
-#include <stack>
-#include <iostream>	// TODO: remove
 
 namespace lcs {
 	
@@ -18,38 +15,49 @@ namespace lcs {
 			entry(int aa, int ab, const entry &e):sz(e.sz+1),a(aa),b(ab),na(e.a),nb(e.b){}
 		};
 
-		template<typename IT> void lcs_r(const IT &ahead, const IT &aend, int pa,
-										 const IT &bhead, const IT &bend, int pb,
+		template<typename IT> void lcs_r(const IT &ahead, const IT &aend,
+										 const IT &bhead, const IT &bend,
 										 std::vector<std::vector<entry> > &cache) {
-			if (ahead != aend && bhead != bend && cache[pa][pb].a < 0) {
-				IT na = ahead;
-				na++;
-				IT nb = bhead;
-				nb++;
-				if (*ahead == *bhead) {
-					lcs_r(na, aend, pa+1, nb, bend, pb+1, cache);
-					cache[pa][pb] = entry(pa, pb, cache[pa+1][pb+1]);
-				} else {
-					lcs_r(na, aend, pa+1, bhead, bend, pb, cache);
-					lcs_r(ahead, aend, pa, nb, bend, pb+1, cache);
-					if (cache[pa+1][pb].sz > cache[pa][pb+1].sz)
-						cache[pa][pb] = cache[pa+1][pb];
+			IT aa(ahead);
+			IT bb(bhead);
+			int bi=1;
+			while (bb!=bend) {
+				int ai=1;
+				for (IT a(aa); a!=aend; ++a) {
+					int na, nb;
+					if (cache[ai-1][bi].sz > cache[ai][bi-1].sz) {
+						na = ai-1;
+						nb = bi;
+					} else {
+						na = ai;
+						nb = bi-1;
+					}
+					if (*a==*bb)
+						cache[ai][bi] = entry(ai, bi, cache[na][nb]);
 					else
-						cache[pa][pb] = cache[pa][pb+1];
+						cache[ai][bi] = cache[na][nb];
+					++ai;
 				}
+				++bb;
+				++bi;
 			}
 		}
 
 		std::vector<std::pair<int,int> > reconstruct(const std::vector<std::vector<entry> > &cache) {
 			std::vector<std::pair<int,int> > res;
-			int na, nb;
-			na = nb = 0;
-			if (cache[na][nb].a >= 0) {
-				while (na >= 0 && nb >= 0) {
-					const entry &e = cache[na][nb];
-					res.push_back(std::pair<int,int>(e.a, e.b));
-					na = e.na;
-					nb = e.nb;
+			int na = cache.size()-1;
+			if (na > 0) {
+				int nb = cache[0].size()-1;
+				if (cache[na][nb].a >= 0) {
+					int di = cache[na][nb].sz-1;
+					res.resize(di+1);
+					while (na >= 0 && nb >= 0) {
+						const entry &e = cache[na][nb];
+						res[di] = std::pair<int,int>(e.a, e.b);
+						na = e.na;
+						nb = e.nb;
+						di--;
+					}
 				}
 			}
 			return res;
@@ -68,8 +76,9 @@ namespace lcs {
 	using namespace details;
 	
 	template<typename IT> std::vector<std::pair<int,int> > lcs(const IT &ahead, const IT &aend, const IT &bhead, const IT &bend) {
-		std::vector<std::vector<entry> > cache(getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category())+1, std::vector<entry>(getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category())+1));
-		lcs_r(ahead, aend, 0, bhead, bend, 0, cache);
+		std::vector<std::vector<entry> > cache(getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category())+1,
+											   std::vector<entry>(getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category())+1));
+		lcs_r(ahead, aend, bhead, bend, cache);
 		return reconstruct(cache);
 	}
 }

@@ -1,8 +1,9 @@
 BINS = a b c d e f \
 	alg/comb_test \
 	alg/heap_test \
+	draft/lcs_test \
 
-CXXFLAGS += -std=c++11 -Wall
+CXXFLAGS += -std=c++11 -Wall -g -O0
 CFLAGS += -std=c99 -Wall
 LINK.o = $(LINK.cc)
 
@@ -36,6 +37,10 @@ alg/comb_test: alg/comb.o alg/comb_test.o $(LIBGTMAIN) $(LIBGT)
 alg/heap_test.o: alg/heap_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
 alg/heap_test: alg/heap_test.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) -o $(@) $(+)
+draft/lcs_test.o: draft/lcs_test.cc draft/lcs.hh
+	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c draft/lcs_test.cc
+draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
 test: ./alg/comb_test ./alg/heap_test
