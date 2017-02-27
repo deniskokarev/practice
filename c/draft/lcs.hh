@@ -21,12 +21,11 @@ namespace lcs {
 		template<typename IT> void lcs_r(const IT &ahead, const IT &aend,
 										 const IT &bhead, const IT &bend,
 										 std::vector<std::vector<entry> > &cache) {
-			IT aa(ahead);
 			IT bb(bhead);
 			size_t bi = 1;
 			while (bb != bend) {
 				size_t ai = 1;
-				for (IT a(aa); a != aend; ++a) {
+				for (IT a(ahead); a != aend; ++a) {
 					if (*a == *bb) {
 						cache[bi][ai] = entry(bi, ai, cache[bi-1][ai-1]);
 					} else {
@@ -75,12 +74,11 @@ namespace lcs {
 		template<typename IT> size_t lcs_sz_only(const IT &ahead, const IT &aend,
 												 const IT &bhead, const IT &bend,
 												 std::vector<std::vector<size_t> > &cache) {
-			IT aa(ahead);
 			IT bb(bhead);
 			size_t bi = 1;
 			while (bb != bend) {
 				size_t ai = 1;
-				for (IT a(aa); a != aend; ++a) {
+				for (IT a(ahead); a != aend; ++a) {
 					if (*a == *bb) {
 						cache[bi][ai] = cache[bi^1][ai-1]+1;
 					} else {
@@ -124,12 +122,10 @@ namespace lcs {
 		size_t a_sz = getsize(ahead, aend, typename std::iterator_traits<IT>::iterator_category());
 		size_t b_sz = getsize(bhead, bend, typename std::iterator_traits<IT>::iterator_category());
 		if (a_sz <= b_sz) {
-			std::vector<std::vector<size_t> > cache(2, std::vector<size_t>(a_sz+1));
-			std::fill(cache[0].begin(), cache[0].end(), 0);
+			std::vector<std::vector<size_t> > cache(2, std::vector<size_t>(a_sz+1, 0));
 			return lcs_sz_only(ahead, aend, bhead, bend, cache);
 		} else {
-			std::vector<std::vector<size_t> > cache(2, std::vector<size_t>(b_sz+1));
-			std::fill(cache[0].begin(), cache[0].end(), 0);
+			std::vector<std::vector<size_t> > cache(2, std::vector<size_t>(b_sz+1, 0));
 			return lcs_sz_only(bhead, bend, ahead, aend, cache);
 		}
 	}
