@@ -5,16 +5,18 @@
 /* CodeForces CF776C problem */
 using namespace std;
 
-int64_t cnt(int64_t kp, const vector<int64_t> &ss) {
+static int64_t cnt(int64_t kp, const vector<int64_t> &ss) {
 	int64_t sum = 0;
 	unordered_map<int64_t, int64_t> r;
 	for (int i=ss.size()-1; i>=0; i--) {
-		if (r.find(kp+ss[i]) != r.end())
-			sum += r[kp+ss[i]];
+		auto v = r.find(kp+ss[i]);
+		if (v != r.end())
+			sum += v->second;
 		r[ss[i]]++;
 	}
-	if (r.find(kp) != r.end())
-		sum += r[kp];
+	auto v = r.find(kp);
+	if (v != r.end())
+		sum += v->second;
 	return sum;
 }
 
