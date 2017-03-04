@@ -1,5 +1,7 @@
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -38,23 +40,27 @@ public class CF776C {
 		long l;
 	}
 	
-	static long cnt(long kp, long ss[]) {
+	static long cnt(long ss[], long vkp[]) {
 		long sum = 0;
 		Map<Long, BoxLong> r = new HashMap<>();
 		for (int i=ss.length-1; i>=0; i--) {
-			BoxLong v = r.get(kp+ss[i]);
-			if (v != null)
-				sum += v.l;
-			v = r.get(ss[i]);
+			for (long kp:vkp) {
+				BoxLong v = r.get(kp+ss[i]);
+				if (v != null)
+					sum += v.l;
+			}
+			BoxLong v = r.get(ss[i]);
 			if (v == null) {
 				v = new BoxLong();
 				r.put(ss[i], v);
 			}
 			v.l++;
 		}
-		BoxLong v = r.get(kp);
-		if (v != null)
-			sum += v.l;
+		for (long kp:vkp) {
+			BoxLong v = r.get(kp);
+			if (v != null)
+				sum += v.l;
+		}
 		return sum;
 	}
 	
@@ -68,13 +74,15 @@ public class CF776C {
 			ss[i] = ss[i-1]+in.aa[i];
 		long sum = 0;
 		if (Math.abs(in.k) > 1) {
-			for (long kp=1; Math.abs(kp)<=100000000000000L; kp *= in.k)
-				sum += cnt(kp, ss);
+			List<Long> lkp = new ArrayList<>();
+			for (long v=1; Math.abs(v)<=100000000000000L; v *= in.k)
+				lkp.add(v);
+			long kp[] = lkp.stream().mapToLong(i -> i).toArray();
+			sum += cnt(ss, kp);
 		} else if (in.k == -1) {
-			sum += cnt(-1, ss);
-			sum += cnt(1, ss);
+			sum += cnt(ss, new long[]{-1, 1});
 		} else {
-			sum += cnt(1, ss);
+			sum += cnt(ss, new long[]{1});
 		}
 		Answer ans = new Answer(sum);
 		return ans;
