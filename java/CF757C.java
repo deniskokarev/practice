@@ -82,10 +82,13 @@ public class CF757C {
 				if (prior == null) {
 					mm.put(t, ct);
 				} else {
-					if (!prior.containsAll(ct)) {
-						ct.removeAll(prior);
-						prior.clear();
-					}
+					Set<Integer> joined = new HashSet<>(connTypes);
+					joined.retainAll(prior);
+					allSets.add(joined);
+					for (int t1:joined)
+						mm.put(t1, joined);
+					ct.removeAll(prior);
+					prior.removeAll(connTypes);
 				}
 			}
 		}
@@ -103,6 +106,7 @@ public class CF757C {
 			System.out.println("type: "+t+" connected: "+mm.get(t));
 		long cnt = 1;
 		for (Set<Integer> s:allSets) {
+			System.out.println("set: "+s);
 			for (long i=2; i<=s.size(); i++) {
 				cnt *= i;
 				cnt %= 1000000007;
