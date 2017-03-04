@@ -1,22 +1,26 @@
 #include <iostream>
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 /* CodeForces CF776C problem */
 using namespace std;
 
-static int64_t cnt(int64_t kp, const vector<int64_t> &ss) {
+static int64_t cnt(const vector<int64_t> &ss, const vector<int64_t> &vkp) {
 	int64_t sum = 0;
-	unordered_map<int64_t, int64_t> r;
+	map<int64_t, int64_t> r;
 	for (int i=ss.size()-1; i>=0; i--) {
-		auto v = r.find(kp+ss[i]);
-		if (v != r.end())
-			sum += v->second;
+		for (auto &kp:vkp) {
+			auto v = r.find(kp+ss[i]);
+			if (v != r.end())
+				sum += v->second;
+		}
 		r[ss[i]]++;
 	}
-	auto v = r.find(kp);
-	if (v != r.end())
-		sum += v->second;
+	for (auto &kp:vkp) {
+		auto v = r.find(kp);
+		if (v != r.end())
+			sum += v->second;
+	}
 	return sum;
 }
 
@@ -32,13 +36,14 @@ int main(int argc, char **argv) {
 		ss[i] = ss[i-1]+aa[i];
 	int64_t sum = 0;
 	if (abs(k) > 1) {
+		vector<int64_t> vkp;
 		for (int64_t kp=1; abs(kp)<=100000000000000; kp *= k)
-			sum += cnt(kp, ss);
+			vkp.push_back(kp);
+		sum += cnt(ss, vkp);
 	} else if (k == -1) {
-		sum += cnt(-1, ss);
-		sum += cnt(1, ss);
+		sum += cnt(ss, vector<int64_t>{-1, 1});
 	} else {
-		sum += cnt(1, ss);
+		sum += cnt(ss, vector<int64_t>{1});
 	}
 	cout << sum << endl;
 	return 0;
