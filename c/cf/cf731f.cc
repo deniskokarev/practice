@@ -20,12 +20,14 @@ int main(int argc, char **argv) {
 	for (int i=0; i<maxa; i++)
 		ss[i] += ss[i-1];
 	int64_t mx = 0;
+	auto it = unique(aa.begin(), aa.end());
+	aa.resize(distance(aa.begin(), it));
 	for (auto a:aa) {
 		int64_t sum = 0;
 		for (int n=1; a*n < maxa; n++) {
 			int t = min(a*(n+1)-1, maxa-1);
 			int f = a*n-1;
-			sum += (ss[t]-ss[f])*a*n;
+			sum += (int64_t)(ss[t]-ss[f])*a*n;
 		}
 		mx = max(mx, sum);
 	}
