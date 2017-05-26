@@ -12,11 +12,11 @@ struct S {
 
 #define dim(X)	(sizeof(X)/sizeof(X[0]))
 
-template<typename T> T ifordered(vector<string> &&s, T yes, T no) {
-	auto i = s.cbegin();
+uint64_t ifordered(const string **b, const string **e, uint64_t yes, uint64_t no) {
+	auto i = b;
 	auto j = i+1;
-	for (j=i+1; j<s.cend(); ++i,++j)
-		if (*i > *j)
+	for (j=i+1; j<e; ++i,++j)
+		if (**i > **j)
 			return no;
 	return yes;
 }
@@ -28,42 +28,58 @@ uint64_t mincost(const vector<S> &ss, int b, int e, const string &a, const strin
 	} else if (e-b < 1) {
 		mn = 0;
 	} else if (e-b < 2) {
-		uint64_t c[] = {
-			ifordered<uint64_t>({a, ss[b].s, z}, 0, ULLONG_MAX),
-			ifordered<uint64_t>({a, ss[b].r, z}, ss[b].c, ULLONG_MAX)
+		struct {
+			const string *s[3];
+			uint64_t c;
+		} d[] = {
+			{{&a, &ss[b].s, &z}, 0},
+			{{&a, &ss[b].r, &z}, ss[b].c}
 		};
+		uint64_t c[dim(d)];
+		for (int i=0; i<dim(d); i++)
+			c[i] = ifordered(d[i].s, d[i].s+dim(d[i].s), d[i].c, ULLONG_MAX);
 		mn = *min_element(c, c+dim(c));
 	} else if (e-b < 3) {
-		uint64_t c[] = {
-			ifordered<uint64_t>({a, ss[b].s, ss[b+1].s, z}, 0, ULLONG_MAX),
-			ifordered<uint64_t>({a, ss[b].s, ss[b+1].r, z}, ss[b+1].c, ULLONG_MAX),
-			ifordered<uint64_t>({a, ss[b].r, ss[b+1].s, z}, ss[b].c, ULLONG_MAX),
-			ifordered<uint64_t>({a, ss[b].r, ss[b+1].r, z}, ss[b].c+ss[b+1].c, ULLONG_MAX)
+		struct {
+			const string *s[4];
+			uint64_t c;
+		} d[] = {
+			{{&a, &ss[b].s, &ss[b+1].s, &z}, 0},
+			{{&a, &ss[b].s, &ss[b+1].r, &z}, ss[b+1].c},
+			{{&a, &ss[b].r, &ss[b+1].s, &z}, ss[b].c},
+			{{&a, &ss[b].r, &ss[b+1].r, &z}, ss[b].c+ss[b+1].c}
 		};
+		uint64_t c[dim(d)];
+		for (int i=0; i<dim(d); i++)
+			c[i] = ifordered(d[i].s, d[i].s+dim(d[i].s), d[i].c, ULLONG_MAX);
 		mn = *min_element(c, c+dim(c));
 	} else {
 		int m = (e-1+b)/2;
-		struct R {
+		struct {
+			const string *s[5];
 			uint64_t c;
-			const string b, m, e;
 		} d[] = {
-			ifordered<R>({a, ss[b].s, ss[m].s, ss[e-1].s, z}, {0, 							ss[b].s, ss[m].s, ss[e-1].s}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].s, ss[m].s, ss[e-1].r, z}, {ss[e-1].c,					ss[b].s, ss[m].s, ss[e-1].r}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].s, ss[m].r, ss[e-1].s, z}, {ss[m].c,						ss[b].s, ss[m].r, ss[e-1].s}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].s, ss[m].r, ss[e-1].r, z}, {ss[m].c+ss[e-1].c, 			ss[b].s, ss[m].r, ss[e-1].r}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].r, ss[m].s, ss[e-1].s, z}, {ss[b].c,						ss[b].r, ss[m].s, ss[e-1].s}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].r, ss[m].s, ss[e-1].r, z}, {ss[b].c+ss[e-1].c,			ss[b].r, ss[m].s, ss[e-1].r}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].r, ss[m].r, ss[e-1].s, z}, {ss[b].c+ss[m].c, 			ss[b].r, ss[m].r, ss[e-1].s}, {ULLONG_MAX}),
-			ifordered<R>({a, ss[b].r, ss[m].r, ss[e-1].r, z}, {ss[b].c+ss[m].c+ss[e-1].c,	ss[b].r, ss[m].r, ss[e-1].r}, {ULLONG_MAX})
+			{{&a, &ss[b].s, &ss[m].s, &ss[e-1].s, &z}, 0},
+			{{&a, &ss[b].s, &ss[m].s, &ss[e-1].r, &z}, ss[e-1].c},
+			{{&a, &ss[b].s, &ss[m].r, &ss[e-1].s, &z}, ss[m].c},
+			{{&a, &ss[b].s, &ss[m].r, &ss[e-1].r, &z}, ss[m].c+ss[e-1].c},
+			{{&a, &ss[b].r, &ss[m].s, &ss[e-1].s, &z}, ss[b].c},
+			{{&a, &ss[b].r, &ss[m].s, &ss[e-1].r, &z}, ss[b].c+ss[e-1].c},
+			{{&a, &ss[b].r, &ss[m].r, &ss[e-1].s, &z}, ss[b].c+ss[m].c},
+			{{&a, &ss[b].r, &ss[m].r, &ss[e-1].r, &z}, ss[b].c+ss[m].c+ss[e-1].c}
 		};
 		uint64_t c[dim(d)];
 		for (int i=0; i<dim(d); i++) {
 			c[i] = ULLONG_MAX;
-			if (d[i].c < ULLONG_MAX) {
-				uint64_t l = mincost(ss, b+1, m-1, d[i].b, d[i].m);
-				uint64_t r = mincost(ss, m+1, e-1, d[i].m, d[i].e);
-				if (l != ULLONG_MAX && r != ULLONG_MAX)
-					c[i] = d[i].c + l + r;
+			uint64_t g = ifordered(d[i].s, d[i].s+dim(d[i].s), d[i].c, ULLONG_MAX);
+			if (g < ULLONG_MAX) {
+				uint64_t l = mincost(ss, b+1, m-1, *d[i].s[1], *d[i].s[2]);
+				if (l != ULLONG_MAX) {
+					uint64_t r = mincost(ss, m+1, e-1, *d[i].s[2], *d[i].s[3]);
+					if (r != ULLONG_MAX) {
+						c[i] = g + l + r;
+					}
+				}
 			}
 		}
 		mn = *min_element(c, c+dim(c));
