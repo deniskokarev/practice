@@ -32,7 +32,9 @@ int sdiff(const F ffc[], int nc, const F ffd[], int nd, int c, int d) {
 		return 0;
 }
 
+
 int ssame(const F ff[], int n, int p) {
+	int bbmx2[100001][2] = {};
 	int bb[100001];
 	int pi = 0;
 	int bmx = 0;
@@ -40,31 +42,29 @@ int ssame(const F ff[], int n, int p) {
 		while (pi<ff[i].p)
 			bb[pi++] = bmx;
 		bmx = max(bmx, ff[i].b);
+		if (ff[i].b > bbmx2[ff[i].p][0]) {
+			bbmx2[ff[i].p][1] = bbmx2[ff[i].p][0];
+			bbmx2[ff[i].p][0] = ff[i].b;
+		} else if (ff[i].b > bbmx2[ff[i].p][1]) {
+			bbmx2[ff[i].p][1] = ff[i].b;
+		}
 	}
 	while(pi < 100001)
 		bb[pi++] = bmx;
 	bmx = 0;
-	for (int i=n-1; i >= 0 && ff[i].p > p/2; i--)
-		if (ff[i].p <= p && p-ff[i].p > 0 && bb[p-ff[i].p] > 0)
+	int i;
+	for (i=n-1; i >= 0 && ff[i].p > p/2; i--)
+		if (ff[i].p > p)
+			continue;
+		else if (bb[p-ff[i].p] > 0)
 			bmx = max(bmx, ff[i].b+bb[p-ff[i].p]);
-	int b1 = 0;
-	int b1i = -1;
-	for (int i=0; i<n; i++) {
-		if (ff[i].p == p/2) {
-			if (ff[i].b > b1) {
-				b1i = i;
-				b1 = ff[i].b;
-			}
-		}
+	for (; i >= 0; i--) {
+		if (bbmx2[ff[i].p][1]>0)
+			bmx = max(bmx, bbmx2[ff[i].p][0]+bbmx2[ff[i].p][1]);
+		if (bb[ff[i].p-1] > 0)
+			bmx = max(bmx, ff[i].b+bb[ff[i].p-1]);
 	}
-	int b2 = 0;
-	for (int i=0; i<n; i++)
-		if (ff[i].p == p/2 && i != b1i)
-			b2 = max(b2, ff[i].b);
-	if (b1 && b2)
-		return max(bmx, b1+b2);
-	else
-		return bmx;
+	return bmx;
 }
 
 int main(int argc, char **argv) {
