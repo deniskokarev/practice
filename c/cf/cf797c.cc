@@ -18,7 +18,7 @@ void append_t(vector<MM> &tmn, char c) {
 }
 
 void output_t(vector<MM> &tmn, char upto_c) {
-	while (tmn.size() > 0 && tmn.back().mnc <= upto_c) {
+	while (tmn.size() > 0 && tmn.back().c <= upto_c) {
 		cout << tmn.back().c;
 		tmn.pop_back();
 	}
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	int i=0;
 	while (i<sl) {
 		output_t(tmn, smn[i].mnc);
-		while (i<sl && (tmn.size() <= 0 || tmn.back().mnc > smn[i].mnc)) {
+		while (i<sl && (tmn.size() <= 0 || tmn.back().c > smn[i].mnc)) {
 			append_t(tmn, smn[i].c);
 			i++;
 		}
