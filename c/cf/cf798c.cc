@@ -41,16 +41,19 @@ uint64_t gcd(int64_t aa[], int n) {
 
 int bm(int64_t aa[], int n) {
 	int s = 0;
-	for (int i=0; i<n-1; i++) {
-		if ((aa[i]&1) == 0 && (aa[i+1]&1) == 1) {
-			s += 2;
-			i++;
-		} else if ((aa[i]&1) == 1 && (aa[i+1]&1) == 0) {
-			s += 2;
-			i++;
-		} else if ((aa[i]&1) == 1 && (aa[i+1]&1) == 1) {
-			s += 1;
-			i++;
+	for (int i=0; i<n; i++)
+		aa[i] &= 1;
+	for (int i=0; i<n; i++) {
+		if (aa[i]) {
+			if (i+1<n) {
+				if (aa[i+1])
+					s += 1;
+				else
+					s += 2;
+				aa[i+1] = 0;
+			} else {
+				s += 2;
+			}
 		}
 	}
 	return s;
@@ -62,14 +65,12 @@ int main(int argc, char **argv) {
 	int64_t aa[n];
 	for (auto &a:aa)
 		cin >> a;
-	if (n < 2 && aa[0] < 2) {
+	uint64_t g = gcd(aa, n);
+	if (g > 1)
+		cout << "YES" << endl << 0 << endl;
+	else if (n < 2)
 		cout << "NO" << endl;
-	} else {
-		uint64_t g = gcd(aa, n);
-		if (g > 1)
-			cout << "YES" << endl << 0 << endl;
-		else
-			cout << "YES" << endl << bm(aa, n) << endl;
-	}
+	else
+		cout << "YES" << endl << bm(aa, n) << endl;
 	return 0;
 }
