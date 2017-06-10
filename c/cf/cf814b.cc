@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
 			miss = i;
 	if (k > 1) {
 		for (int i=0; i<n; i++) {
-			if (aa[i] != bb[i] && aan[aa[i]] > 1) {
-				aa[i] = bb[i];
+			if (aa[i] != bb[i] && aan[aa[i]] > 1 && bb[i] == miss) {
+				aa[i] = miss;
 				break;
 			}
 		}
