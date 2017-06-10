@@ -6,17 +6,18 @@ using namespace std;
 
 struct Node {
 	vector<int> e;
-	int d;
-	int p;
+	int u, d;	// up, max down
+	int p;		// patent
 };
 
-void setstat(vector<Node> &t, int r, int p) {
+void setstat(vector<Node> &t, int r, int p, int u) {
 	Node &n = t[r];
 	n.p = p;
 	n.d = 1;
+	n.u = u;
 	for (auto e:n.e) {
 		if (e != p) {
-			setstat(t, e, r);
+			setstat(t, e, r, u+1);
 			n.d = max(n.d, t[e].d+1);
 		}
 	}
@@ -32,14 +33,10 @@ int main(int argc, char **argv) {
 		t[a].e.push_back(b);
 		t[b].e.push_back(a);
 	}
-	setstat(t, 1, 0);
-	int l = 0;
-	int b = x;
-	for (b=x; b != 1; b=t[b].p,l++);
-	b = x;
-	int mx = t[x].d-1+l;
-	for (int i=0; i<l/2-1; i++) {
-		mx = max(mx, l-i+t[b].d-1);
+	setstat(t, 1, 0, 0);
+	int mx = t[x].d-1+t[x].u;
+	for (int i=0,b=x; i<(t[x].u-1)/2; i++) {
+		mx = max(mx, t[x].u-i+t[b].d-1);
 		b = t[b].p;
 	}
 	cout << mx*2 << endl;
