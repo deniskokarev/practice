@@ -1,48 +1,47 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 /* CodeForces CF813C problem */
 using namespace std;
 
 struct Node {
-	int l, r;
+	vector<int> e;
 	int d;
 	int p;
 };
 
 void setstat(vector<Node> &t, int r, int p) {
-	if (r) {
-		Node &n = t[r];
-		n.p = p;
-		setstat(t, n.l, r);
-		setstat(t, n.r, r);
-		n.d = max(t[n.l].d, t[n.r].d)+1;
+	Node &n = t[r];
+	n.p = p;
+	n.d = 1;
+	for (auto e:n.e) {
+		if (e != p) {
+			setstat(t, e, r);
+			n.d = max(n.d, t[e].d+1);
+		}
 	}
 }
 
 int main(int argc, char **argv) {
 	int n, x;
 	cin >> n >> x;
-	vector<Node> t(n+1, {0, 0, 0, 0});
+	vector<Node> t(n+1);
 	for (int i=0; i<n-1; i++) {
 		int a, b;
 		cin >> a >> b;
-		Node &n = t[a];
-		if (!n.l)
-			n.l = b;
-		else
-			n.r = b;
+		t[a].e.push_back(b);
+		t[b].e.push_back(a);
 	}
 	setstat(t, 1, 0);
 	int l = 0;
-	int b;
+	int b = x;
 	for (b=x; b != 1; b=t[b].p,l++);
 	b = x;
-	int mx = 0;
+	int mx = t[x].d-1+l;
 	for (int i=0; i<l/2-1; i++) {
-		mx = max(mx, l-i*2+t[n].d);
+		mx = max(mx, l-i+t[b].d-1);
 		b = t[b].p;
 	}
-	mx = max(mx, (t[x].d-1+l));
 	cout << mx*2 << endl;
 	return 0;
 }
