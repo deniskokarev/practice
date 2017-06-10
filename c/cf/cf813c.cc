@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 	}
 	setstat(t, 1, 0, 0);
 	int mx = t[x].d-1+t[x].u;
-	for (int i=0,b=x; i<(t[x].u-1)/2; i++) {
+	for (int i=0,b=x; i<(t[x].u)/2; i++) {
 		mx = max(mx, t[x].u-i+t[b].d-1);
 		b = t[b].p;
 	}
