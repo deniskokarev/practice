@@ -3,6 +3,7 @@
 #include <vector>
 #include <climits>
 /* CodeForces CF811B problem */
+/* advanced version with O(N*log(N) + M*log(N)*log(N)) */
 using namespace std;
 
 int bcnt_lt(const vector<int> &v, int b, int e, int n) {
@@ -42,7 +43,7 @@ int main(int argc, char **argv) {
 	int pp[n];
 	for (auto &p:pp)
 		cin >> p;
-	// keep all mergesort stages to get count of less than px in the range in O(log(n)*log(n))
+	// keep all mergesort stages to get count of less than elements to the left in ~O(log(n)*log(n))
 	int p2, p;
 	for (p2=0,p=1; p<n; p2++,p<<=1);
 	vector<vector<int>> msrt(p2+1, vector<int>(p));
@@ -55,14 +56,12 @@ int main(int argc, char **argv) {
 			inplace_merge(&msrt[i][j*2*msz], &msrt[i][j*2*msz+msz], &msrt[i][(j+1)*2*msz]);
 		msz *= 2;
 	}
-	//copy(&msrt[p2][0], &msrt[p2][n], ostream_iterator<int>(cerr, " "));	cerr << endl;
 	for (int i=0; i<m; i++) {
 		int l, r, x;
 		cin >> l >> r >> x;
 		int cr = lt_count(msrt, r, pp[x-1]);
 		int cl = lt_count(msrt, l-1, pp[x-1]);
 		int c = cr-cl;
-		//cerr << cl << ":" << cr << endl;
 		cout << ((c+l == x)?"Yes":"No") << endl;
 	}
 	return 0;
