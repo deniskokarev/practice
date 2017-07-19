@@ -17,8 +17,12 @@ int main(int argc, char **argv) {
 	int d, n, m;
 	cin >> d >> n >> m;
 	P dd[d][2];
-	for (auto &c:dd)
-		cin >> c[0].x >> c[0].y >> c[1].x >> c[1].y;
+	for (auto &c:dd) {
+		int x1, x2, y1, y2;
+		cin >> x1 >> y1 >> x2 >> y2;
+		c[0] = {min(x1,x2), min(y1,y2)};
+		c[1] = {max(x1,x2), max(y1,y2)};
+	}
 	int cl, cr, ct, cb;
 	cin >> cl >> cr >> ct >> cb;
 	for (auto &c:dd) {
@@ -52,6 +56,14 @@ int main(int argc, char **argv) {
 	cerr << "hr: ";
 	for (int i=0; i<=n+1; i++)
 		cerr << hr[i] << ' ';
+	cerr << endl;
+	cerr << "vu: ";
+	for (int i=0; i<=m+1; i++)
+		cerr << vu[i] << ' ';
+	cerr << endl;
+	cerr << "vd: ";
+	for (int i=0; i<=m+1; i++)
+		cerr << vd[i] << ' ';
 	cerr << endl;
 #endif
 	int ans = 0;
