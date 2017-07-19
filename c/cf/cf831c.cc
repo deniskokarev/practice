@@ -18,45 +18,36 @@ int main(int argc, char **argv) {
 	int64_t bb[n];
 	for (auto &b:bb)
 		cin >> b;
+	// make both sorted 0-based absolute scores
 	sort(aa, aa+k);
 	sort(bb, bb+n);
 	int mn;
 	mn = aa[0];
-	for (auto &a:aa) {
+	for (auto &a:aa)
 		a -= mn;
-		//cerr << a << ' ';
-	}
-	//cerr << endl;
 	mn = bb[0];
-	for (auto &b:bb) {
+	for (auto &b:bb)
 		b -= mn;
-		//cerr << b << ' ';
-	}
-	//cerr << endl;
+	// diff at node -> next node
 	vector<unordered_map<int, int>> ss(k);
 	for (int i=0; i<k-1; i++)
 		for (int j=k-1; j>i; j--)
 			ss[i][aa[j]-aa[i]] = j;
 	int ans = 0;
 	for (int ai=0; ai<k; ai++) {
-		int p = ai;
-		int bi;
-		int inc = (ai==0 || (aa[ai]>aa[ai-1]))?1:0;
-		for (bi=1; bi<n && p<k; bi++) {
+		if (ai>0 && aa[ai] == aa[ai-1])
+			continue;
+		// layout [b] elements into [a] graph staring node ai
+		ans++;
+		for (int bi=1,p=ai; bi<n; bi++) {
 			int d = bb[bi]-bb[bi-1];
-			while (p<k) {
-				if (ss[p].find(d) == ss[p].end()) {
-					goto nx;
-				} else {
-					p = ss[p][d];
-					break;
-				}
-				p++;
+			if (ss[p].find(d) == ss[p].end()) {
+				ans--;
+				break;
+			} else {
+				p = ss[p][d];
 			}
 		}
-	nx:
-		if (bi == n)
-			ans += inc;
 	}
 	cout << ans << endl;
 	return 0;
