@@ -1,5 +1,6 @@
 BINS = a b c d e f \
 	alg/comb_test \
+	alg/ilog_test \
 	alg/heap_test \
 	draft/knapsack_test \
 	draft/matmul_test \
@@ -36,6 +37,21 @@ alg/comb_test.o: alg/comb_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
 
 alg/comb_test: alg/comb.o alg/comb_test.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) -o $(@) $(+)
+
+alg/ilog.c: alg/ilog.hh
+
+alg/ilog.hh:  alg/ilog.h
+
+alg/ilog.h: alg/genilog.sh
+	cd alg && ./genilog.sh
+
+alg/ilog.o: alg/ilog.h
+
+alg/ilog_test.o: alg/ilog_test.cc alg/ilog.h
+	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c alg/ilog_test.cc
+
+alg/ilog_test: alg/ilog.o alg/ilog_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
 alg/heap_test.o: alg/heap.hh
