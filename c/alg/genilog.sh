@@ -45,6 +45,8 @@ function render_ilog10 {
 gen_c() {
 	cat <<'EOF'
 /********* Automatically generated file - don't edit **********/
+/**** entire family of ilog_u functions for each arg size *****/
+
 #include "ilog.h"
 
 EOF
@@ -113,7 +115,11 @@ EOF
 # render .h file
 gen_h() {
 	cat <<'EOF'
-/********* Automatically generated - don't edit **********/
+/********* Automatically generated file - don't edit **********/
+/**** entire family of ilog_u functions for each arg size *****/
+
+#ifndef __ILOG_H__
+#define __ILOG_H__
 
 #include <inttypes.h>
 
@@ -142,7 +148,7 @@ int ilog10_u8(uint8_t n);
 #ifdef __cplusplus
 }
 #endif
-
+#endif /* __ILOG_H_ */
 EOF
 }
 
@@ -151,25 +157,48 @@ gen_hh() {
 	cat <<'EOF'
 /********* Automatically generated - don't edit **********/
 
-#include "ilog.h"
+#ifndef __ILOG_HH__
+#define __ILOG_HH__
 
-inline int ilog2(uint64_t n) { return ilog2_u64(n); }
-inline int ilog2(int64_t n) { return ilog2_u64(n); }
-inline int ilog2(uint32_t n) { return ilog2_u32(n); }
-inline int ilog2(int32_t n) { return ilog2_u32(n); }
-inline int ilog2(uint16_t n) { return ilog2_u16(n); }
-inline int ilog2(int16_t n) { return ilog2_u16(n); }
-inline int ilog2(uint8_t n) { return ilog2_u8(n); }
-inline int ilog2(int8_t n) { return ilog2_u8(n); }
+#include <cinttypes>
+#include <type_traits>
 
-inline int ilog10(uint64_t n) { return ilog10_u64(n); }
-inline int ilog10(int64_t n) { return ilog10_u64(n); }
-inline int ilog10(uint32_t n) { return ilog10_u32(n); }
-inline int ilog10(int32_t n) { return ilog10_u32(n); }
-inline int ilog10(uint16_t n) { return ilog10_u16(n); }
-inline int ilog10(int16_t n) { return ilog10_u16(n); }
-inline int ilog10(uint8_t n) { return ilog10_u8(n); }
-inline int ilog10(int8_t n) { return ilog10_u8(n); }
+EOF
+	render_ilog2 uint64_t ULL 0 64
+	echo
+	render_ilog2 uint32_t UL 0 32
+	echo 
+	render_ilog2 uint16_t '' 0 16
+	echo 
+	render_ilog2 uint8_t '' 0 8
+	echo 
+	render_ilog10 uint64_t ULL 0 20
+	echo 
+	render_ilog10 uint32_t UL 0 10
+	echo 
+	render_ilog10 uint16_t '' 0 5
+	echo 
+	render_ilog10 uint8_t '' 0 3
+	cat <<'EOF'
+
+namespace __ilogu {
+	template<typename U> inline int ilog2u(U n);
+	template<> inline int ilog2u<uint64_t>(uint64_t n) { return __ILOG2_uint64_t_00_64(n); }
+	template<> inline int ilog2u<uint32_t>(uint32_t n) { return __ILOG2_uint32_t_00_32(n); }
+	template<> inline int ilog2u<uint16_t>(uint16_t n) { return __ILOG2_uint16_t_00_16(n); }
+	template<> inline int ilog2u<uint8_t>(uint8_t n) { return __ILOG2_uint8_t_00_08(n); }
+
+	template<typename U> inline int ilog10u(U n);
+	template<> inline int ilog10u<uint64_t>(uint64_t n) { return __ILOG10_uint64_t_00_20(n); }
+	template<> inline int ilog10u<uint32_t>(uint32_t n) { return __ILOG10_uint32_t_00_10(n); }
+	template<> inline int ilog10u<uint16_t>(uint16_t n) { return __ILOG10_uint16_t_00_05(n); }
+	template<> inline int ilog10u<uint8_t>(uint8_t n) { return __ILOG10_uint8_t_00_03(n); }
+};
+
+template<typename I> inline int ilog2(I n) { return __ilogu::ilog2u<typename std::make_unsigned<I>::type>(n); }
+template<typename I> inline int ilog10(I n) { return __ilogu::ilog10u<typename std::make_unsigned<I>::type>(n); }
+
+#endif // __ILOG_HH__
 
 EOF
 }
@@ -181,10 +210,11 @@ EOF
 
 set -e
 
+# C code
 gen_h >ilog.h.new
-gen_hh >ilog.hh.new
 gen_c >ilog.c.new
-
 mv ilog.h.new ilog.h
-mv ilog.hh.new ilog.hh
 mv ilog.c.new ilog.c
+# C++ code
+gen_hh >ilog.hh.new
+mv ilog.hh.new ilog.hh

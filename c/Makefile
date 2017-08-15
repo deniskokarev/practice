@@ -46,12 +46,10 @@ alg/ilog.hh:  alg/ilog.h
 alg/ilog.h: alg/genilog.sh
 	cd alg && ./genilog.sh
 
-alg/ilog.o: alg/ilog.h
-
-alg/ilog_test.o: alg/ilog_test.cc alg/ilog.h
+alg/ilog_test.o: alg/ilog_test.cc alg/ilog.hh
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c alg/ilog_test.cc
 
-alg/ilog_test: alg/ilog.o alg/ilog_test.o $(LIBGTMAIN) $(LIBGT)
+alg/ilog_test: alg/ilog_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
 alg/heap_test.o: alg/heap.hh
@@ -78,6 +76,7 @@ test: ./alg/comb_test ./alg/heap_test
 	./draft/mapmul_test
 
 clean:
+	rm -f alg/ilog.c alg/ilog.h alg/ilog.hh
 	for d in . alg draft; do rm -f $$d/*.o $$d/*~; done
 	rm -rf libgt
 	rm -f $(BINS)
