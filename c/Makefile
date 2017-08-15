@@ -69,11 +69,12 @@ draft/lcs_test.o: draft/lcs.hh
 draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) -o $(@) $(+)
 
-test: ./alg/comb_test ./alg/heap_test
+test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./draft/knapsack_test ./draft/matmul_test
 	./alg/comb_test
+	./alg/ilog_test
 	./alg/heap_test
 	./draft/knapsack_test
-	./draft/mapmul_test
+	./draft/matmul_test
 
 clean:
 	rm -f alg/ilog.c alg/ilog.h alg/ilog.hh
