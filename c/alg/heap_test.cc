@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <chrono>
 
 template<typename T> bool test_sort(T *begin, T *end) {
 	std::vector<T> s(begin, end);
@@ -80,5 +81,5 @@ TEST(HeapTest, Performance) {
 	EXPECT_TRUE(std::is_sorted(&b[0], &b[sz], std::greater<int>()));
 	std::chrono::duration<double> ours = end-start;
 	std::cerr << "[			 ] our heap sort performance = " << ours.count() << std::endl;
-	EXPECT_TRUE(stock * .9 > ours);	// ours must be no slower than 10%
+	EXPECT_TRUE(stock.count() * 1.1 > ours.count());	// ours must be no slower than 10%
 }
