@@ -13,7 +13,8 @@ LIBGTMAIN = ./libgt/googlemock/gtest/libgtest_main.a
 CXXFLAGS += -std=c++11 -Wall -g -O -I$(INCGT) 
 CFLAGS += -std=c99 -Wall -g -O
 LINK.o = $(LINK.cc)
-LDFLAGS = -lpthread
+LDFLAGS =
+EXTRA_LIBS = -lpthread
 
 all: $(BINS)
 
@@ -38,7 +39,7 @@ alg/comb_test.o: alg/comb_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
 
 alg/comb_test: alg/comb.o alg/comb_test.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 alg/ilog.c: alg/ilog.h
 
@@ -49,24 +50,24 @@ alg/ilog_test.o: alg/ilog_test.cc alg/ilog.hh alg/ilog.h
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c alg/ilog_test.cc
 
 alg/ilog_test: alg/ilog_test.o alg/ilog.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 alg/heap_test.o: alg/heap.hh
 alg/heap_test: alg/heap_test.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 draft/knapsack.o: draft/knapsack.hh
 draft/knapsack_test: draft/knapsack_test.o draft/knapsack.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 draft/matmul.o: draft/matmul.hh
 draft/matmul_test.o: draft/matmul.hh
 draft/matmul_test: draft/matmul_test.o draft/matmul.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 draft/lcs_test.o: draft/lcs.hh
 draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./draft/knapsack_test ./draft/matmul_test
 	./alg/comb_test

@@ -32,7 +32,7 @@ uint64_t lcm(uint64_t a, uint64_t b) {
 uint64_t choose(int n, int k) {
 	assert(k <= n);
 	uint64_t res = 1;
-	for (uint64_t i=n,j=1; j<=k; i--,j++) {
+	for (int i=n,j=1; j<=k; i--,j++) {
 		res *= i;
 		res /= j;
 		assert(res > 0);	// 64bit overflow
