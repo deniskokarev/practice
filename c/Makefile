@@ -10,8 +10,8 @@ INCGT = ./googletest/googletest/include
 LIBGT = ./libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ./libgt/googlemock/gtest/libgtest_main.a
 
-CXXFLAGS += -std=c++11 -Wall -g -O0 -I$(INCGT) 
-CFLAGS += -std=c99 -Wall
+CXXFLAGS += -std=c++11 -Wall -g -O -I$(INCGT) 
+CFLAGS += -std=c99 -Wall -g -O
 LINK.o = $(LINK.cc)
 LDFLAGS = -lpthread
 
@@ -38,19 +38,17 @@ alg/comb_test.o: alg/comb_test.cc
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c $(?)
 
 alg/comb_test: alg/comb.o alg/comb_test.o $(LIBGTMAIN) $(LIBGT)
-	$(CXX) $(CXXFLAGS) -o $(@) $(+)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
 
 alg/ilog.c: alg/ilog.h
 
-alg/ilog.h:  alg/ilog.hh
-
-alg/ilog.hh: alg/genilog.sh
+alg/ilog.h:  alg/genilog.sh
 	cd alg && ./genilog.sh
 
-alg/ilog_test.o: alg/ilog_test.cc alg/ilog.hh
+alg/ilog_test.o: alg/ilog_test.cc alg/ilog.hh alg/ilog.h
 	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c alg/ilog_test.cc
 
-alg/ilog_test: alg/ilog_test.o $(LIBGTMAIN) $(LIBGT)
+alg/ilog_test: alg/ilog_test.o alg/ilog.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+)
 
 alg/heap_test.o: alg/heap.hh
@@ -78,7 +76,7 @@ test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./draft/knapsack_test ./dr
 	./draft/matmul_test
 
 clean:
-	rm -f alg/ilog.c alg/ilog.h alg/ilog.hh
+	rm -f alg/ilog.c alg/ilog.h
 	for d in . alg draft; do rm -f $$d/*.o $$d/*~; done
 	rm -rf libgt
 	rm -f $(BINS)
