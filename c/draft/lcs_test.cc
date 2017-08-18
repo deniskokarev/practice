@@ -7,9 +7,9 @@ TEST(LCSTest, T0) {
 	const char *b = "1";
 	std::pair<size_t,size_t> res[2];
 	size_t rc1 = lcs::lcs(a, a+strlen(a), b, b+strlen(b), res);
-	EXPECT_EQ(1, rc1);
+	EXPECT_EQ(1U, rc1);
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
-	EXPECT_EQ(1, rc2);
+	EXPECT_EQ(1U, rc2);
 }
 
 TEST(LCSTest, T1) {
@@ -17,9 +17,9 @@ TEST(LCSTest, T1) {
 	const char *b = "2";
 	std::pair<size_t,size_t> res[2];
 	size_t rc1 = lcs::lcs(a, a+strlen(a), b, b+strlen(b), res);
-	EXPECT_EQ(0, rc1);
+	EXPECT_EQ(0U, rc1);
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
-	EXPECT_EQ(0, rc2);
+	EXPECT_EQ(0U, rc2);
 }
 
 TEST(LCSTest, T2) {
@@ -27,9 +27,9 @@ TEST(LCSTest, T2) {
 	const char *b = "2";
 	std::pair<size_t,size_t> res[2];
 	size_t rc1 = lcs::lcs(a, a+strlen(a), b, b+strlen(b), res);
-	EXPECT_EQ(0, rc1);
+	EXPECT_EQ(0U, rc1);
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
-	EXPECT_EQ(0, rc2);
+	EXPECT_EQ(0U, rc2);
 }
 
 TEST(LCSTest, T3) {
@@ -37,9 +37,9 @@ TEST(LCSTest, T3) {
 	const char *b = "";
 	std::pair<size_t,size_t> res[2];
 	size_t rc1 = lcs::lcs(a, a+strlen(a), b, b+strlen(b), res);
-	EXPECT_EQ(0, rc1);
+	EXPECT_EQ(0U, rc1);
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
-	EXPECT_EQ(0, rc2);
+	EXPECT_EQ(0U, rc2);
 }
 
 TEST(LCSTest, T4) {
@@ -47,9 +47,9 @@ TEST(LCSTest, T4) {
 	const char *b = "";
 	std::pair<size_t,size_t> res[2];
 	size_t rc1 = lcs::lcs(a, a+strlen(a), b, b+strlen(b), res);
-	EXPECT_EQ(0, rc1);
+	EXPECT_EQ(0U, rc1);
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
-	EXPECT_EQ(0, rc2);
+	EXPECT_EQ(0U, rc2);
 }
 
 TEST(LCSTest, T5) {
@@ -57,9 +57,9 @@ TEST(LCSTest, T5) {
 	const char *b = "91929394959697912";
 	std::pair<size_t,size_t> res[128];
 	size_t rc1 = lcs::lcs(a, a+strlen(a), b, b+strlen(b), res);
-	EXPECT_EQ(7, rc1);
+	EXPECT_EQ(7U, rc1);
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
-	EXPECT_EQ(7, rc2);
+	EXPECT_EQ(7U, rc2);
 	std::string s;
 	for (size_t i=0; i<rc1; i++)
 		s += a[res[i].first];
@@ -71,9 +71,9 @@ TEST(LCSTest, T6) {
 	std::string b("0123456789");
 	std::vector<std::pair<size_t,size_t>> res;
 	size_t rc1 = lcs::lcs(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(res));
-	EXPECT_EQ(10, rc1);
+	EXPECT_EQ(10U, rc1);
 	size_t rc2 = lcs::lcs(a.begin(), a.end(), b.begin(), b.end());
-	EXPECT_EQ(10, rc2);
+	EXPECT_EQ(10U, rc2);
 	std::string s;
 	for (auto p:res)
 		s += a[p.first];
@@ -85,9 +85,9 @@ TEST(LCSTest, T7) {
 	std::string b("testing123testing");
 	std::vector<std::pair<size_t,size_t>> res;
 	size_t rc1 = lcs::lcs(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(res));
-	EXPECT_EQ(7, rc1);
+	EXPECT_EQ(7U, rc1);
 	size_t rc2 = lcs::lcs(a.begin(), a.end(), b.begin(), b.end());
-	EXPECT_EQ(7, rc2);
+	EXPECT_EQ(7U, rc2);
 	std::string s;
 	for (auto p:res)
 		s += a[p.first];
@@ -99,7 +99,7 @@ TEST(LCSTest, T8) {
 	std::list<size_t> b {3, 4, 1, 2, 1, 3};
 	std::list<std::pair<size_t,size_t>> res;
 	size_t rc1 = lcs::lcs(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(res));
-	EXPECT_EQ(3, rc1);
+	EXPECT_EQ(3U, rc1);
 	size_t rc2 = lcs::lcs(a.begin(), a.end(), b.begin(), b.end());
-	EXPECT_EQ(3, rc2);
+	EXPECT_EQ(3U, rc2);
 }
