@@ -2,6 +2,7 @@
  * Matrix multiplication optimization
  */
 #include "matmul.hh"
+#include <limits>
 
 using namespace mm;
 
