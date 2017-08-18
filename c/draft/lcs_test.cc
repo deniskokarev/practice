@@ -61,7 +61,7 @@ TEST(LCSTest, T5) {
 	size_t rc2 = lcs::lcs(a, a+strlen(a), b, b+strlen(b));
 	EXPECT_EQ(7, rc2);
 	std::string s;
-	for (int i=0; i<rc1; i++)
+	for (size_t i=0; i<rc1; i++)
 		s += a[res[i].first];
 	EXPECT_EQ(s, "1234567");
 }
