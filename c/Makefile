@@ -20,7 +20,7 @@ all: $(BINS)
 
 $(LIBGTMAIN): $(LIBGT)
 $(LIBGT):
-	mkdir libgt
+	[ -d libgt ] || mkdir libgt
 	cd libgt && cmake ../googletest && $(MAKE)
 
 libgt: $(LIBGTMAIN)
