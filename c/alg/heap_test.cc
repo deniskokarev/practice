@@ -2,6 +2,8 @@
 #include "gtest/gtest.h"
 #include <vector>
 #include <memory>
+#include <algorithm>
+#include <chrono>
 
 template<typename T> bool test_sort(T *begin, T *end) {
 	std::vector<T> s(begin, end);
@@ -59,23 +61,25 @@ TEST(HeapTest, Random) {
 }
 
 TEST(HeapTest, Performance) {
-	int sz = 1<<24;
-	std::unique_ptr<int[]> a(new int[sz]);
-	for (int i=0; i<sz; i++)
-		a[i] = rand();
+	constexpr int sz = 1<<22;
+	std::vector<int> b(sz);
+	for (auto &bi:b)
+		bi = rand();
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
-	std::sort_heap(&a[0], &a[sz], std::greater<int>());
+	std::make_heap(&b[0], &b[sz], std::greater<int>());
+	std::sort_heap(&b[0], &b[sz], std::greater<int>());
 	end = std::chrono::system_clock::now();
+	EXPECT_TRUE(std::is_sorted(&b[0], &b[sz], std::greater<int>()));
 	std::chrono::duration<double> stock = end-start;
 	std::cerr << "[			 ] system heap sort performance = " << stock.count() << std::endl;
-	for (int i=0; i<sz; i++)
-		a[i] = rand();
+	for (auto &bi:b)
+		bi = rand();
 	start = std::chrono::system_clock::now();
-	int *b = a.get();
-	heapsort(b, b+sz);
+	heapsort(&b[0], &b[sz]);
 	end = std::chrono::system_clock::now();
+	EXPECT_TRUE(std::is_sorted(&b[0], &b[sz], std::greater<int>()));
 	std::chrono::duration<double> ours = end-start;
 	std::cerr << "[			 ] our heap sort performance = " << ours.count() << std::endl;
+	EXPECT_TRUE(stock.count() * 1.1 > ours.count());	// ours must be no slower than 10%
 }
-

@@ -1,73 +1,57 @@
 #include <cstdlib>
 #include <algorithm>
 
-inline size_t parent(size_t node) {
-	return (node-1) >> 1;
-}
-inline size_t leftChild(size_t root) {
-	return ((root+1) << 1) - 1;
-}
-inline size_t rightChild(size_t root) {
-	return (root+1) << 1;
-}
-template <typename TI> inline TI smallest(TI left, TI right, TI end) {
-	if (left < end) {
-		if (right < end) {
-			if (*left < *right)
-				return left;
-			else
-				return right;
-		} else {
-			return left;
-		}
-	} else {
-		return end;
-	}
-}
-	
 /**
  * when our root element increased we need to sieve it down to bring
  * the next smallest up
- * @param a - entire heap
- * @param root - increased element that you need to sieve
- * @param sz - size of the heap in array a
+ * @param n - the node that we need to bring down 
+ * @param begin - vector (random access iterator) of values
+ * @param sz - vector size
  */
-template <typename TI> void siftDown(TI begin, TI root, TI end) {
-	while (true) {
-		size_t l = leftChild(root-begin);
-		size_t r = rightChild(root-begin);
-		TI sm = smallest(begin+l, begin+r, end);
-		if (sm < end && *sm < *root) {
-			std::swap(*sm, *root);
-			root = sm;
-		} else {
+template <typename TI> void sift_node(
+	  typename std::iterator_traits<TI>::difference_type n,
+	  TI const begin,
+	  const typename std::iterator_traits<TI>::difference_type sz
+) {
+	auto c = n*2+1;	// left child
+	while (c+1 < sz) { // while right child available
+		if (begin[c+1] < begin[c])
+			c++; // switch to right child
+		if (begin[c] < begin[n])
+			std::swap(begin[c], begin[n]);
+		else
 			break;
-		}
+		n = c;
+		c = n*2+1; // left child
 	}
+	if (c < sz && begin[c] < begin[n])
+		std::swap(begin[c], begin[n]);
 }
 
 /**
- * Turn elements of array a into min-heap. The smallest element will be on top
- * @param a
- * @param sz
+ * Turn elements of random access container into min-heap. The smallest element will be at pos 0
+ * @param begin
+ * @param end
+ * expecting (end-begin) > 0
  */
 template <typename TI> void heapify(TI begin, TI end) {
-	size_t sz = end-begin;
-	size_t root=(sz>>1);
-	for (; root > 0; root--)
-		siftDown(begin, begin+root, end);
-	siftDown(begin, begin, end);
+	const auto sz = end-begin;
+	const auto hsz = sz/2-1;
+	for (auto r=hsz; r>=0; r--)
+		sift_node(r, begin, sz);
 }
 
 /**
  * Perform inverted sorting - greatest element will be first
- * @param a array to be sorted
+ * @param begin, end - the vector to be sorted
+ * expecting (end-begin) > 0
  */
 template <typename TI> void heapsort(TI begin, TI end) {
 	heapify(begin, end);
-	TI p = end;
-	for (--p; p>begin; --p) {
+	TI p(end);
+	auto sz = end-begin;
+	for (--p,--sz; p>begin; --p,--sz) {
 		std::swap(*begin, *p);
-		siftDown(begin, begin, p);
+		sift_node(0, begin, sz);
 	}
 }
