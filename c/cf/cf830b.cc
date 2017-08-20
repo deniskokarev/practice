@@ -61,12 +61,21 @@ int main(int argc, char **argv) {
 	auto it = mx.begin();
 	int64_t ans = it->second+1;
 	auto lel = *it;
+	auto pos = *it;
 	taken.add(lel.second, 1);
 	mx.erase(it);
 	while (!mx.empty()) {
-		it = mx.upper_bound(lel);
-		if (it->first != lel.first)
-			it = mx.upper_bound(make_pair(lel.first, -1));
+		it = mx.upper_bound(make_pair(pos.first, -1));
+		if (pos.first != it->first) {
+			pos = make_pair(it->first, pos.second);
+			continue;
+		} else {
+			it = mx.upper_bound(pos);
+			if (it == mx.end() || it->first != pos.first) {
+				pos.second = -1;
+				continue;
+			}
+		}
 		if (it->second > lel.second) {
 			ans += it->second - lel.second - taken.between(lel.second, it->second) + 1;
 		} else {
@@ -74,6 +83,7 @@ int main(int argc, char **argv) {
 			ans += it->second - taken.between(0, it->second) + 1;
 		}
 		lel = *it;
+		pos = *it;
 		taken.add(lel.second, 1);
 		mx.erase(it);
 	}
