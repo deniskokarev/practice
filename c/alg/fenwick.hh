@@ -13,22 +13,22 @@
 template<typename IT> struct FenwickTree {
 	using value_type = typename std::iterator_traits<IT>::value_type;
 	using difference_type = typename std::iterator_traits<IT>::difference_type;
-    IT vv;
+	IT vv;
 	int sz;
 	// initialize the tree with 0s 
-    FenwickTree(IT begin, IT end):vv(begin),sz(end-begin) {
+	FenwickTree(IT begin, IT end):vv(begin),sz(end-begin) {
 		std::fill(begin, end, 0);
 	}
 	// increment the element at pos by delta
-    void inc(difference_type pos, value_type delta) {
-        do vv[pos] += delta; while((pos=pos|(pos+1)) < sz);
-    }
-    // @return sum[0..last]
-    value_type sum(difference_type last) {
-        value_type sum = 0;
-        do sum += vv[last]; while ((last=(last&(last+1))-1) >= 0);
-        return sum;
-    }
+	void inc(difference_type pos, value_type delta) {
+		do vv[pos] += delta; while((pos=pos|(pos+1)) < sz);
+	}
+	// @return sum[0..last]
+	value_type sum(difference_type last) {
+		value_type sum = 0;
+		do sum += vv[last]; while ((last=(last&(last+1))-1) >= 0);
+		return sum;
+	}
 };
 
 // helper function to simplify the use
