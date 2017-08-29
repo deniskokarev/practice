@@ -2,7 +2,7 @@
 #define __MMERGE_HH__
 /**
  * Multistage binary merge primitive for binary decomposition
- * Allows O(Nlog(N)) complexity for [0..pos) interval operations
+ * Allows O(log(N)) complexity for [0..pos) interval operations
  * Needs O(Nlog(N)) time to initialize
  * Needs O(Nlog(N)) space
  * Used in acmp/acmp112.cpp and cf/cf811b.cc
