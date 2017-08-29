@@ -1,68 +1,87 @@
-#include <iostream>
+/* CodeForces CF811B problem */
+
+/**
+ * Multistage binary merge primitive for binary decomposition
+ * Allows O(Nlog(N)) complexity for [0..pos) interval operations
+ * Needs O(Nlog(N)) time to initialize
+ * Needs O(Nlog(N)) space
+ */
 #include <algorithm>
 #include <vector>
-#include <climits>
-/* CodeForces CF811B problem */
-/* advanced version with O(N*log(N) + M*log(N)*log(N)) */
-using namespace std;
+#include <cmath>
+ 
+template<typename T>
+struct mmerge {
+    int sz;
+    int l2;	// ilog2(sz)
+    std::vector<std::vector<T>> mm; // our 2D array [l2+1][sz]
+    using value_type = T;
+    using it = typename std::vector<T>::iterator;
+    using cit = typename std::vector<T>::const_iterator;
+	/**
+	 * @param sz - number of elements we need to deal with
+	 */
+    mmerge(int _sz):sz(_sz),l2(int(ceil(log2(sz)))),mm(l2+1, std::vector<T>(sz)) {
+    }
+	/**
+	 * use [] operator to populate the main level
+	 */
+    T& operator[](int i) {
+        return mm[0][i];
+    }
+	/**
+	 * Run multistage merge using std::merge at each stage
+	 * Each level gets sorted bins. The bin sizes double with each level
+	 */
+    template<class Cmp = std::less<T>> void merge_merge() {
+        Cmp cmp;
+        for (int l=0,p2=1,dp2=p2*2; l<l2 && dp2<sz; l++,p2=dp2,dp2*=2)
+            for (int x=0; x+dp2<=sz; x+=dp2)
+                std::merge(mm[l].begin()+x, mm[l].begin()+x+p2, mm[l].begin()+x+p2, mm[l].begin()+x+dp2, mm[l+1].begin()+x, cmp);
+    }
+	/**
+	 * Run ReduceOp for every sorted binary bin to the left of the element pos
+	 */
+    template<class ReduceOp> void reduce_lt(int pos, ReduceOp &&rop) const {
+        for (int b=pos,l=0; b>0; b>>=1,l++) {
+            if ((b&1)) {
+                auto bi = mm[l].cbegin()+(((pos>>l)-1)<<l);
+                auto ei = mm[l].cbegin()+((pos>>l)<<l);
+                rop(bi, ei);
+            }
+        }
+    }
+};
 
-int bcnt_lt(const vector<int> &v, int b, int e, int n) {
-	int m;
-	int f = b;
-	int t = e;
-	while (f<t) {
-		m = f+(t-f)/2;
-		if (v[m] < n)
-			f = m+1;
-		else
-			t = m;
-	}
-	if (v[m]<n)
-		return m-b+1;
-	else
-		return m-b;
-}
-
-int lt_count(vector<vector<int>> &msrt, int pos, int n) {
-	int b = 0;
-	int cnt = 0;
-	int msz = msrt[0].size();
-	for (int i=msrt.size()-1; i>=0; i--) {
-		if (pos-b >= msz) {
-			cnt += bcnt_lt(msrt[i], b, b+msz, n);
-			b += msz;
-		}
-		msz /= 2;
-	}
-	return cnt;
-}
+#include <stdio.h>
 
 int main(int argc, char **argv) {
 	int n, m;
-	cin >> n >> m;
-	int pp[n];
-	for (auto &p:pp)
-		cin >> p;
-	// keep all mergesort stages to get count of less than elements to the left in ~O(log(n)*log(n))
-	int p2, p;
-	for (p2=0,p=1; p<n; p2++,p<<=1);
-	vector<vector<int>> msrt(p2+1, vector<int>(p));
-	copy(pp, pp+n, &msrt[0][0]);
-	fill(&msrt[0][n], &msrt[0][p], INT_MAX); // fill up the tail to simplify things
-	int msz = 1;
-	for (int i=1; i<p2+1; i++) {
-		copy(&msrt[i-1][0], &msrt[i-1][p], &msrt[i][0]);
-		for (int j=0; j<p/msz/2; j++)
-			inplace_merge(&msrt[i][j*2*msz], &msrt[i][j*2*msz+msz], &msrt[i][(j+1)*2*msz]);
-		msz *= 2;
-	}
+	scanf("%d %d", &n, &m);
+	using TMM = mmerge<uint16_t>;
+	TMM pp(n);
+	for (int i=0; i<n; i++)
+		scanf("%hu", &pp[i]);
+	pp.merge_merge();
 	for (int i=0; i<m; i++) {
 		int l, r, x;
-		cin >> l >> r >> x;
-		int cr = lt_count(msrt, r, pp[x-1]);
-		int cl = lt_count(msrt, l-1, pp[x-1]);
-		int c = cr-cl;
-		cout << ((c+l == x)?"Yes":"No") << endl;
+		scanf("%d %d %d", &l, &r, &x);
+		struct CountGreater {
+			int &cnt;
+			uint16_t el;
+			CountGreater(int &_c,uint16_t _e):cnt(_c),el(_e){cnt=0;}
+			void operator()(TMM::cit b, TMM::cit e) {
+				auto it = std::upper_bound(b, e, el);
+				cnt += e-it;
+			}
+		};
+		int lc, rc;
+		pp.reduce_lt(l-1, CountGreater(lc, pp[x-1]));
+		pp.reduce_lt(r, CountGreater(rc, pp[x-1]));
+		if (r-(rc-lc) == x)
+			printf("Yes\n");
+		else
+			printf("No\n");
 	}
 	return 0;
 }
