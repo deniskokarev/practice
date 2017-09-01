@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 				ln=0;
 			}
 		}
-		ans = ((cuts&1)==0);
+		ans = (cuts>1) && ((cuts&1)==0);
 	}
 	cout << (ans?"Yes":"No") << endl;
 	return 0;
