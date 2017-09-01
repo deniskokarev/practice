@@ -17,12 +17,16 @@ int main(int argc, char **argv) {
 	} else {
 		int cuts = 0;
 		int ln = 1;
+		int lcut = 0;
 		for (int i=0; i<n-1; i++,ln++) {
 			if (aa[i]&1 && aa[i+1]&1 && ln&1) {
 				cuts++;
 				ln=0;
+				lcut = i;
 			}
 		}
+		if (cuts > 0 && lcut < n-1 && ((n-1-lcut)&1)==0)
+			cuts--;
 		ans = (cuts>1) && ((cuts&1)==0);
 	}
 	cout << (ans?"Yes":"No") << endl;
