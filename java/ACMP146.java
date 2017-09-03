@@ -3,6 +3,7 @@ import java.math.BigInteger;
 import java.util.Scanner;
 
 public class ACMP146 {
+//public class Main { // ACMP requirement
 	/**
 	 * solution result
 	 */
@@ -28,25 +29,25 @@ public class ACMP146 {
 		}
 	};
 
+	static String repeatZero(int n) {
+		return new String(new char[n]).replace("\0", "0");
+	}
+	
 	/**
 	 * solver function
 	 */
 	public static Answer solve(Input in) {
-		BigInteger f = BigInteger.ONE;
-		BigInteger t = in.a;
-		BigInteger TWO = new BigInteger("2");
-		while (f.compareTo(t) < 0) {
-			BigInteger m = f.add(t).divide(TWO);
-			BigInteger sq = m.multiply(m);
-			if (sq.compareTo(in.a) < 0) {
-				f = m.add(BigInteger.ONE);
-			} else {
-				t = m;
-			}
-		}
-		if (f.multiply(f).compareTo(in.a) > 0)
-			f = f.subtract(BigInteger.ONE);
-		Answer ans = new Answer(f);
+		final BigInteger TWO = new BigInteger("2");
+		String sa = in.a.toString();
+		BigInteger x = new BigInteger("1"+repeatZero((sa.length()+1)/2));
+		BigInteger d = BigInteger.ZERO;
+		do {
+			x = x.subtract(d);
+			d = x.subtract(in.a.divide(x)).divide(TWO);
+		} while(d.compareTo(BigInteger.ZERO)>0);
+		if (x.multiply(x).compareTo(in.a)>0)
+			x = x.subtract(BigInteger.ONE);
+		Answer ans = new Answer(x);
 		return ans;
 	}
 
