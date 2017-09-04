@@ -13,6 +13,7 @@ struct lnum10 {
 	constexpr static int base = 1000*1000*1000;
 	using VEC = std::vector<int>;
 	VEC a;
+	// NB: this is not == 0
 	lnum10():a() {
 	}
 	lnum10(const std::string &s):a() {
@@ -96,7 +97,7 @@ struct lnum10 {
 		if (a.size()<b.a.size()) {
 			return true;
 		} else if (a.size() == b.a.size()) {
-			for (int i=a.size()-1; i>=0; i--) {
+			for (int i=(int)a.size()-1; i>=0; i--) {
 				if (a[i] < b.a[i])
 					return true;
 				else if (a[i] > b.a[i])
@@ -108,30 +109,80 @@ struct lnum10 {
 	bool operator==(const lnum10 &b) const {
 		return a == b.a;
 	}
+	// @return *this mod b
+	lnum10 operator /=(const lnum10 &b) {
+		if (*this < b) {
+			lnum10 r(*this);
+			a.resize(0);
+			return r;
+		} else {
+			lnum10 r(*this);
+			lnum10 q;
+			int app = (int)r.a.size()-(int)b.a.size();
+			if (r.a.back() < b.a.back())
+				app--;
+			while (app >= 0) {
+				lnum10 s;
+				for (int i=0; i<app; i++)
+					s.a.push_back(0);
+				std::copy(b.a.begin(), b.a.end(), std::back_inserter(s.a));
+				unsigned f=0, t=base;
+				lnum10 mn;
+				while (f<t) {
+					unsigned m = f+(t-f)/2;
+					mn = s;
+					mn *= m;
+					if (mn<r)
+						f = m+1;
+					else
+						t = m;
+				}
+				if (t >= base) {
+					t--;
+				} else {
+					mn = s;
+					mn *= t;
+					if (r<mn) {
+						t--;
+						mn -= s;
+					}
+				}
+				q.a.push_back(t);
+				r -= mn;
+				app--;
+			}
+			reverse(q.a.begin(), q.a.end());
+			a = q.a;
+			while (a.size() > 1 && a.back() == 0)
+				a.pop_back();
+			return r;
+		}
+	}
 };
 
 int main(int argc, char **argv) {
+	string ss;
+	cin >> ss;
+	lnum10 s(ss);
+	string sx = "1"+string((ss.length()+1)/2, '0');
+	lnum10 x(sx);
+	lnum10 d;
+	const lnum10 zero("0");
 	const lnum10 one("1");
-	string sa;
-	cin >> sa;
-	lnum10 a(sa);
-	lnum10 f("1");
-	lnum10 t(sa.substr(0, sa.length()/2+1));
-	while (f<t) {
-		lnum10 d(t); d -= f; d /= 2;
-		lnum10 m(f); m += d;
-		lnum10 sq(m); sq *= sq;
-		//cerr << "f: " << f.to_string() << " t: " << t.to_string() << " m: " << m.to_string() << " sq: " << sq.to_string() << endl;
-		if (sq < a) {
-			f = m;
-			f += one;
-		} else {
-			t = m;
-		}
-	}
-	lnum10 sq(f); sq *= sq;
-	if (a < sq)
-		f -= one;
-	cout << f.to_string() << endl;
+	lnum10 a("4"), b("2");
+	do {
+		x -= d;
+		lnum10 s1(s);
+		s1 /= x;
+		d = x;
+		d -= s1;
+		d /= 2;
+		//cerr << "x: " << x.to_string() << " d: " << d.to_string() << " s/x: " << s1.to_string() << endl;
+	} while(zero<d);
+	lnum10 sq(x);
+	sq *= sq;
+	if (s<sq)
+		x -= one;
+	cout << x.to_string() << endl;
 	return 0;
 }
