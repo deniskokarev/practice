@@ -1,19 +1,16 @@
 /* ACMP 146 */
 
-#include <iostream>
-#include <algorithm>
-
-using namespace std;
-
 /* composition of http://e-maxx.ru/algo/big_integer */
 #include <vector>
 #include <cstdio>
 #include <cassert>
+#include <string>
+
 struct lnum10 {
 	constexpr static int base = 1000*1000*1000;
 	using VEC = std::vector<int>;
 	VEC a;
-	// NB: this is not == 0
+	// NB!: this is not == 0
 	lnum10():a() {
 	}
 	lnum10(const std::string &s):a() {
@@ -44,15 +41,19 @@ struct lnum10 {
 			if (carry)  a[i] -= base;
 		}
 	}
-	void operator-=(const lnum10 &b) {
+	void sub(int pa, const lnum10 &b) {
+		assert(a.size()-pa>=b.a.size());
 		int carry = 0;
 		for (size_t i=0; i<b.a.size() || carry; ++i) {
-			a[i] -= carry + (i < b.a.size() ? b.a[i] : 0);
-			carry = a[i] < 0;
-			if (carry)  a[i] += base;
+			a[i+pa] -= carry + (i < b.a.size() ? b.a[i] : 0);
+			carry = a[i+pa] < 0;
+			if (carry)  a[i+pa] += base;
 		}
-		while (a.size() > 1 && a.back() == 0)
+		while (a.size() > pa+1 && a.back() == 0)
 			a.pop_back();
+	}
+	void operator-=(const lnum10 &b) {
+		sub(0, b);
 	}
 	void operator*=(unsigned b) {
 		assert(b<base);
@@ -93,96 +94,111 @@ struct lnum10 {
 			a.pop_back();
 		return carry;
 	}
-	bool operator<(const lnum10 &b) const {
-		if (a.size()<b.a.size()) {
+	bool less(int pa, const lnum10 &b, int pb) const {
+		if (a.size()-pa<b.a.size()-pb) {
 			return true;
-		} else if (a.size() == b.a.size()) {
-			for (int i=(int)a.size()-1; i>=0; i--) {
-				if (a[i] < b.a[i])
+		} else if (a.size()-pa == b.a.size()-pb) {
+			for (int i=(int)a.size()-1,j=(int)b.a.size()-1; i>=pa; i--,j--) {
+				if (a[i] < b.a[j])
 					return true;
-				else if (a[i] > b.a[i])
+				else if (a[i] > b.a[j])
 					return false;
 			}
 		}
 		return false;
 	}
+	bool operator<(const lnum10 &b) const {
+		return less(0, b, 0);
+	}
 	bool operator==(const lnum10 &b) const {
 		return a == b.a;
 	}
-	// @return *this mod b
+	// long division
+	// @return remainder *this mod b
 	lnum10 operator /=(const lnum10 &b) {
-		if (*this < b) {
-			lnum10 r(*this);
-			a.resize(0);
-			return r;
-		} else {
-			lnum10 r(*this);
-			lnum10 q;
-			int app = (int)r.a.size()-(int)b.a.size();
-			if (r.a.back() < b.a.back())
-				app--;
-			while (app >= 0) {
-				lnum10 s;
-				for (int i=0; i<app; i++)
-					s.a.push_back(0);
-				std::copy(b.a.begin(), b.a.end(), std::back_inserter(s.a));
-				unsigned f=0, t=base;
-				lnum10 mn;
-				while (f<t) {
-					unsigned m = f+(t-f)/2;
-					mn = s;
-					mn *= m;
-					if (mn<r)
-						f = m+1;
-					else
-						t = m;
-				}
-				if (t >= base) {
-					t--;
-				} else {
-					mn = s;
-					mn *= t;
-					if (r<mn) {
-						t--;
-						mn -= s;
-					}
-				}
-				q.a.push_back(t);
-				r -= mn;
-				app--;
-			}
-			reverse(q.a.begin(), q.a.end());
-			a = q.a;
-			while (a.size() > 1 && a.back() == 0)
+		int pa = (int)a.size()-(int)b.a.size();
+		lnum10::VEC q(pa+1); // quotient
+		unsigned long long bhi = b.a.back();
+		while (pa>=0) {
+			while (a.size() > 1 && a.back() == 0) {
+				q[pa] = 0;
 				a.pop_back();
-			return r;
+				pa--;
+			}
+			if (pa<0)
+				break;
+			// making an estimate instead of doing a binary search in entire [0..base) range
+			unsigned long long rhi = a[pa+b.a.size()-1];
+			if (a.size() > pa+b.a.size())
+				rhi += ((unsigned long long)a[pa+b.a.size()])*base;
+			unsigned f = unsigned(rhi/(bhi+1));
+			unsigned t = unsigned((rhi+1)/bhi+1);
+			if (t>base)
+				t=base;
+			while (f<t-1) {
+				int m = f+(t-f)/2;
+				lnum10 s = b;
+				s *= m;
+				if (s.less(0, *this, pa))
+					f = m;
+				else
+					t = m;
+			}
+			if (t==base)
+				t--;
+			lnum10 s = b;
+			s *= t;
+			if (less(pa, s, 0)) {
+				t--;
+				s -= b;
+			}
+			q[pa] = t;
+			sub(pa, s);
+			pa--;
 		}
+		while (q.size() > 1 && q.back() == 0)
+			q.pop_back();
+		lnum10 r;
+		std::swap(a, r.a);
+		std::swap(a, q);
+		return r;
 	}
 };
+
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+
+using namespace std;
+
+static lnum10 sqrt_le(const lnum10 &sq) {
+	const static lnum10 zero("0");
+	const static lnum10 one("1");
+	string sx = "1"+string((sq.a.size()*9+1)/2, '0');
+	lnum10 x(sx);
+	lnum10 d;
+	do {
+		x -= d;
+		lnum10 s1(sq);
+		s1 /= x;
+		d = x;
+		d -= s1;
+		d /= 2;
+		//cerr << "x: " << x.to_string() << " d: " << d.to_string() << " s1: " << s1.to_string() << endl;
+	} while(zero<d);
+	lnum10 sq1(x);
+	sq1 *= sq1;
+	if (sq<sq1)
+		x -= one;
+	return x;
+}
 
 int main(int argc, char **argv) {
 	string ss;
 	cin >> ss;
 	lnum10 s(ss);
-	string sx = "1"+string((ss.length()+1)/2, '0');
-	lnum10 x(sx);
-	lnum10 d;
-	const lnum10 zero("0");
-	const lnum10 one("1");
-	lnum10 a("4"), b("2");
-	do {
-		x -= d;
-		lnum10 s1(s);
-		s1 /= x;
-		d = x;
-		d -= s1;
-		d /= 2;
-		//cerr << "x: " << x.to_string() << " d: " << d.to_string() << " s/x: " << s1.to_string() << endl;
-	} while(zero<d);
-	lnum10 sq(x);
-	sq *= sq;
-	if (s<sq)
-		x -= one;
-	cout << x.to_string() << endl;
+	lnum10 ans = sqrt_le(s);
+	string sans = ans.to_string();
+	cout << sans << endl;
 	return 0;
 }
