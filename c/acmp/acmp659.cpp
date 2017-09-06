@@ -7,7 +7,6 @@ using namespace std;
 struct SEL {
 	SEL *p;
 	int i;
-	int ftt;
 	int nftt;
 };
 
@@ -15,10 +14,10 @@ struct SEL_CTX {
 	vector<vector<bool>> ff;
 	vector<vector<int>> ffcnt;
 	vector<int> sel;
-	int ans;
+	int mn_nftt;
 };
 
-void choose_team(int k, int f, int t, SEL *p, int m, SEL_CTX &sc) {
+void choose_team(int k, int f, int t, SEL *p, SEL_CTX &sc) {
 	if (k>0) {
 		SEL mysel = {p};
 		for (int i=f; i<t; i++) {
@@ -27,27 +26,22 @@ void choose_team(int k, int f, int t, SEL *p, int m, SEL_CTX &sc) {
 				if (sc.ff[cn->i][i])
 					ftt++;
 			}
-			int nftt = sc.ffcnt[i][i-1] - ftt; // friends in other team
+			int nftt = sc.ffcnt[i][i] - ftt; // friends in other team
 			mysel.i = i;
-			if (p) {
-				mysel.ftt = p->ftt + ftt;
+			if (p)
 				mysel.nftt = p->nftt + nftt;
-			} else {
-				mysel.ftt = ftt;
+			else
 				mysel.nftt = nftt;
-			}
-			choose_team(k-1, i+1, t, &mysel, m, sc);
+			choose_team(k-1, i+1, t, &mysel, sc);
 		}
 	} else {
-		int cnt = m-p->nftt;
-		if (cnt > sc.ans) {
-			sc.ans = cnt;
+		if (p->nftt <= sc.mn_nftt) {
+			sc.mn_nftt = p->nftt;
 			vector<int> sel;
 			for (SEL *cn=p; cn!=NULL; cn=cn->p)
 				sel.push_back(cn->i);
 			swap(sc.sel, sel);
 		}
-		sc.ans = max(sc.ans, cnt);
 	}
 }
 
@@ -58,7 +52,7 @@ int main(int argc, char **argv) {
 		vector<vector<bool>>(n, vector<bool>(n, false)),
 		vector<vector<int>>(n, vector<int>(n, 0)),
 		vector<int>(k),
-		0
+		INT_MAX
 	};
 	for (int i=0; i<m; i++) {
 		int v1, v2;
@@ -70,7 +64,7 @@ int main(int argc, char **argv) {
 	for (auto &r:sc.ffcnt)
 		for (int i=0; i<n-1; i++)
 			r[i+1] += r[i];
-	choose_team(k, 0, n, NULL, m, sc);
+	choose_team(k, 0, n, NULL, sc);
 	for (auto &p:sc.sel)
 		cout << p+1 << ' ';
 	cout << endl;
