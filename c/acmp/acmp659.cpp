@@ -1,20 +1,19 @@
 /* ACMP 659 */
 #include <iostream>
 #include <vector>
+#include <set>
 
 using namespace std;
 
 struct SEL {
 	const SEL *p;
 	int i;
-	int nftt;
 };
 
 struct SEL_CTX {
 	const vector<vector<bool>> &ff;
-	const vector<vector<int>> &ffcnt;
 	vector<int> sel;
-	int mn_nftt;
+	int mxf;
 };
 
 void choose_team(int k, int f, int t, const SEL *p, SEL_CTX &sc) {
@@ -22,21 +21,32 @@ void choose_team(int k, int f, int t, const SEL *p, SEL_CTX &sc) {
 		SEL mysel = {p};
 		for (int i=f; i<t; i++) {
 			mysel.i = i;
-			int ftt = 0; // friends in this team
-			for (auto cn=p; cn->i >= 0; cn=cn->p) {
-				if (sc.ff[i][cn->i])
-					ftt++;
-			}
-			int nftt = sc.ffcnt[i][i] - ftt; // friends in other team
-			mysel.nftt = p->nftt + nftt;
 			choose_team(k-1, i+1, t, &mysel, sc);
 		}
 	} else {
-		if (p->nftt <= sc.mn_nftt) {
-			sc.mn_nftt = p->nftt;
-			int i=0;
-			for (auto cn=p; cn->i >= 0; cn=cn->p,i++)
-				sc.sel[i] = cn->i;
+		vector<int> tt(sc.sel.size()); // this team
+		vector<int> ot(t-tt.size()); // other team
+		int i=tt.size()-1;
+		for (auto cn=p; cn->i >= 0; cn=cn->p,i--)
+			tt[i] = cn->i;
+		int j = 0;
+		int oti = 0;
+		for (auto &t:tt)
+			while (j<t)
+				ot[oti++] = j++;
+		int ttcnt = 0;
+		for (int i=0; i<tt.size()-1; i++)
+			for (int j=i+1; j<tt.size(); j++)
+				if (sc.ff[tt[i]][tt[j]])
+					ttcnt++;
+		int otcnt = 0;
+		for (int i=0; i<ot.size()-1; i++)
+			for (int j=i+1; j<ot.size(); j++)
+				if (sc.ff[ot[i]][ot[j]])
+					otcnt++;
+		if (ttcnt+otcnt >= sc.mxf) {
+			sc.sel = tt;
+			sc.mxf = ttcnt+otcnt;
 		}
 	}
 }
@@ -56,8 +66,8 @@ int main(int argc, char **argv) {
 	for (auto &r:ffcnt)
 		for (int i=0; i<n-1; i++)
 			r[i+1] += r[i];
-	SEL_CTX sc {ff,	ffcnt, vector<int>(k), INT_MAX};
-	SEL ssel {NULL, -1, 0};
+	SEL_CTX sc {ff,	vector<int>(k), 0};
+	SEL ssel {NULL, -1};
 	choose_team(k, 0, n, &ssel, sc);
 	for (auto &p:sc.sel)
 		cout << p+1 << ' ';
