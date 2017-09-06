@@ -5,42 +5,38 @@
 using namespace std;
 
 struct SEL {
-	SEL *p;
+	const SEL *p;
 	int i;
 	int nftt;
 };
 
 struct SEL_CTX {
-	vector<vector<bool>> ff;
-	vector<vector<int>> ffcnt;
+	const vector<vector<bool>> &ff;
+	const vector<vector<int>> &ffcnt;
 	vector<int> sel;
 	int mn_nftt;
 };
 
-void choose_team(int k, int f, int t, SEL *p, SEL_CTX &sc) {
+void choose_team(int k, int f, int t, const SEL *p, SEL_CTX &sc) {
 	if (k>0) {
 		SEL mysel = {p};
 		for (int i=f; i<t; i++) {
+			mysel.i = i;
 			int ftt = 0; // friends in this team
-			for (SEL *cn=p; cn!=NULL; cn=cn->p) {
-				if (sc.ff[cn->i][i])
+			for (auto cn=p; cn->i >= 0; cn=cn->p) {
+				if (sc.ff[i][cn->i])
 					ftt++;
 			}
 			int nftt = sc.ffcnt[i][i] - ftt; // friends in other team
-			mysel.i = i;
-			if (p)
-				mysel.nftt = p->nftt + nftt;
-			else
-				mysel.nftt = nftt;
+			mysel.nftt = p->nftt + nftt;
 			choose_team(k-1, i+1, t, &mysel, sc);
 		}
 	} else {
 		if (p->nftt <= sc.mn_nftt) {
 			sc.mn_nftt = p->nftt;
-			vector<int> sel;
-			for (SEL *cn=p; cn!=NULL; cn=cn->p)
-				sel.push_back(cn->i);
-			swap(sc.sel, sel);
+			int i=0;
+			for (auto cn=p; cn->i >= 0; cn=cn->p,i++)
+				sc.sel[i] = cn->i;
 		}
 	}
 }
@@ -48,23 +44,21 @@ void choose_team(int k, int f, int t, SEL *p, SEL_CTX &sc) {
 int main(int argc, char **argv) {
 	int n, k, m;
 	cin >> n >> k >> m;
-	SEL_CTX sc {
-		vector<vector<bool>>(n, vector<bool>(n, false)),
-		vector<vector<int>>(n, vector<int>(n, 0)),
-		vector<int>(k),
-		INT_MAX
-	};
+	vector<vector<bool>> ff(n, vector<bool>(n, false));
+	vector<vector<int>> ffcnt(n, vector<int>(n, 0));
 	for (int i=0; i<m; i++) {
 		int v1, v2;
 		cin >> v1 >> v2;
 		v1--; v2--;
-		sc.ff[v1][v2] = sc.ff[v2][v1] = true;
-		sc.ffcnt[v1][v2] = sc.ffcnt[v2][v1] = 1;
+		ff[v1][v2] = ff[v2][v1] = true;
+		ffcnt[v1][v2] = ffcnt[v2][v1] = 1;
 	}
-	for (auto &r:sc.ffcnt)
+	for (auto &r:ffcnt)
 		for (int i=0; i<n-1; i++)
 			r[i+1] += r[i];
-	choose_team(k, 0, n, NULL, sc);
+	SEL_CTX sc {ff,	ffcnt, vector<int>(k), INT_MAX};
+	SEL ssel {NULL, -1, 0};
+	choose_team(k, 0, n, &ssel, sc);
 	for (auto &p:sc.sel)
 		cout << p+1 << ' ';
 	cout << endl;
