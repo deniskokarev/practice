@@ -1,43 +1,79 @@
 /* ACMP 659 */
 #include <iostream>
+#include <algorithm>
 #include <vector>
 #include <set>
  
 using namespace std;
- 
-struct SEL {
-	const SEL *p;
-	int i;
+
+// bitset::bitset performance is not exactly clear
+// using our own O(n)
+struct BITS_CNT {
+	int n[256];
+	BITS_CNT() {
+		fill(n, n+256, 0);
+		for (int i=0; i<256; i++)
+			for (int j=0; j<8; j++)
+				n[i] += (i>>j)&1;
+	}
 };
- 
+
+union BITS {
+	static const BITS_CNT bitcnt;
+	uint64_t i;
+	uint8_t bb[8];
+	void set(int n) {
+		i |= 1ULL<<n;
+	};
+	bool isset(int n) {
+		return i & 1ULL<<n;
+	};
+	void clear(int n) {
+		i &= ~(1ULL<<n);
+	};
+	int count() {
+		int cnt = 0;
+			for (auto b:bb)
+				cnt += bitcnt.n[b];
+			return cnt;
+	};
+};
+
+const BITS_CNT BITS::bitcnt;
+
 struct SEL_CTX {
-	const vector<vector<int>> &ff;
-	const vector<vector<int>> &ffcnt;
+	const vector<BITS> &ff;
+	const vector<int> &ffcnt;
 	const int m;
-	vector<int> sel;
 	int mxf;
+	BITS sel;
+	BITS best;
 };
- 
-void choose_team(int k, int f, int t, const SEL *p, SEL_CTX &sc) {
+
+void choose_team(int k, int f, int t, SEL_CTX &sc) {
 	if (k>0) {
-		SEL mysel = {p};
 		for (int i=f; i<t; i++) {
-			mysel.i = i;
-			choose_team(k-1, i+1, t, &mysel, sc);
+			sc.sel.set(i);
+			choose_team(k-1, i+1, t, sc);
+			sc.sel.clear(i);
 		}
 	} else {
-		vector<int> tt(sc.sel.size()); // this team
-		int i=(int)tt.size()-1;
-		int fr = 2*sc.m; // total friend pairs
-		for (auto cn=p; cn->i>=0; cn=cn->p) {
-			tt[i--] = cn->i;
-			fr -= sc.ffcnt[cn->i][t-1];
+		int tt = 0;
+		int ot = 0;
+		for (int i=0; i<t; i++) {
+			if (sc.sel.isset(i)) {
+				BITS b = sc.ff[i];
+				b.i &= sc.sel.i;
+				tt += b.count();
+			} else {
+				BITS b = sc.ff[i];
+				b.i &= ~sc.sel.i;
+				ot += b.count();
+			}
 		}
-		for (int i=0; i<tt.size()-1; i++)
-			for (int j=i+1; j<tt.size(); j++)
-				fr += 2*sc.ff[tt[i]][tt[j]];
+		int fr = tt+ot;
 		if (fr >= sc.mxf) {
-			sc.sel = tt;
+			sc.best = sc.sel;
 			sc.mxf = fr;
 		}
 	}
@@ -46,23 +82,23 @@ void choose_team(int k, int f, int t, const SEL *p, SEL_CTX &sc) {
 int main(int argc, char **argv) {
 	int n, k, m;
 	cin >> n >> k >> m;
-	vector<vector<int>> ff(n, vector<int>(n, 0));
-	vector<vector<int>> ffcnt(n, vector<int>(n, 0));
+	vector<BITS> ff(n);
+	vector<int> ffcnt(n);
 	for (int i=0; i<m; i++) {
 		int v1, v2;
 		cin >> v1 >> v2;
-		v1--; v2--;
-		ff[v1][v2] = ff[v2][v1] = 1;
-		ffcnt[v1][v2] = ffcnt[v2][v1] = 1;
+		v1--, v2--;
+		int mn_v = min(v1, v2);
+		int mx_v = max(v1, v2);
+		ff[mn_v].set(mx_v);
 	}
-	for (auto &r:ffcnt)
-		for (int i=0; i<n-1; i++)
-			r[i+1] += r[i];
-	SEL_CTX sc {ff, ffcnt, m, vector<int>(k), 0};
-	SEL ssel {NULL, -1};
-	choose_team(k, 0, n, &ssel, sc);
-	for (auto &p:sc.sel)
-		cout << p+1 << ' ';
+	for (int i=0; i<n; i++)
+		ffcnt[i] = ff[i].count();
+	SEL_CTX sc {ff, ffcnt, m, 0, {0}, {0}};
+	choose_team(k, 0, n, sc);
+	for (int p=0; p<n; p++)
+		if (sc.best.isset(p))
+			cout << p+1 << ' ';
 	cout << endl;
 	return 0;
 }
