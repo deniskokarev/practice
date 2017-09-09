@@ -1,24 +1,29 @@
 /* ACMP 87 */
 #include <iostream>
 #include <unordered_set>
+#include <vector>
 
 using namespace std;
 
 int main(int argc, char **argv) {
 	unordered_set<string> ss;
-	string s;
-	while (getline(cin, s)) {
-		if (s == "ENDOFINPUT")
+	vector<string> vss;
+	string inps;
+	while (getline(cin, inps)) {
+		if (inps == "ENDOFINPUT")
 			break;
-		ss.insert(s);
+		ss.insert(inps);
+		vss.push_back(inps);
 	}
 	int ans = 0;
-	for (auto &s:ss) {
-		for (int i=1; i<s.length()-1; i++) {
+	for (auto &s:vss) {
+		for (int i=1; i<s.length(); i++) {
 			string l = s.substr(0, i);
 			string r = s.substr(i, s.length()-i);
-			if (ss.find(l) != ss.end() && ss.find(r) != ss.end())
+			if (ss.find(l) != ss.end() && ss.find(r) != ss.end()) {
 				ans++;
+				break;
+			}
 		}
 	}
 	cout << ans << endl;
