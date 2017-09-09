@@ -8,29 +8,29 @@ TODO:
 
 * [Целочисленная арифметика](https://acmp.ru/asp/do/index.asp?main=section&id_course=2&id_section=11)
 
- + [НОД и НОК](https://acmp.ru/asp/do/index.asp?main=topic&id_course=2&id_section=11&id_topic=5)
+..* [НОД и НОК](https://acmp.ru/asp/do/index.asp?main=topic&id_course=2&id_section=11&id_topic=5)
  
-  148. [НОД](https://acmp.ru/index.asp?main=task&id_task=148) [C++](./acmp148.cpp)
-  14. [НОК](https://acmp.ru/index.asp?main=task&id_task=14) [C++](./acmp14.cpp)
-  85. [Единичный НОД](https://acmp.ru/index.asp?main=task&id_task=85) [C++](./acmp85.cpp)
-  394. [Апельсины](https://acmp.ru/index.asp?main=task&id_task=394) [C++](./acmp394.cpp)
+....148. [НОД](https://acmp.ru/index.asp?main=task&id_task=148) [C++](./acmp148.cpp)
+....14. [НОК](https://acmp.ru/index.asp?main=task&id_task=14) [C++](./acmp14.cpp)
+....85. [Единичный НОД](https://acmp.ru/index.asp?main=task&id_task=85) [C++](./acmp85.cpp)
+....394. [Апельсины](https://acmp.ru/index.asp?main=task&id_task=394) [C++](./acmp394.cpp)
   
- * Простые числа
+..* Простые числа
  
- * Целые числа
+..* Целые числа
  
 * Алгоритмы сортировки
 
- * Сортировка - 1
+..* Сортировка - 1
  
- * Сортировка - 2
+..* Сортировка - 2
  
 * Длинная арифметика
 
- * Сложение и вычитание
+..* Сложение и вычитание
  
- * Умножение и деление
+..* Умножение и деление
  
 * C++ Standard Template Library
 
- * Перестановки
+..* Перестановки
