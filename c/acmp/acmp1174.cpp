@@ -1,48 +1,31 @@
 /* ACMP 1174 */
-#include <iostream>
-#include <memory>
+#include <unordered_map>
 #include <vector>
-#include <cassert>
-
+#include <string>
+#include <stdio.h>
+ 
 using namespace std;
-
-struct Trie {
-	unique_ptr<Trie> node['z'-'a'];
-	pair<int,int> pos;
-	
-	Trie *operator[](char ch) {
-		assert(ch >= 'a' && ch <= 'z');
-		int ni = ch-'a';
-		if (!node[ni])
-			node[ni] = unique_ptr<Trie>(new Trie());
-		return node[ni].get();
-	}
-};
-
+ 
 int main(int argc, char **argv) {
 	int n, m;
-	string s;
-	cin >> n >> m >> s;
+	scanf("%d%d", &n, &m);
+	char sc[n];
+	char *sp = sc;
+	scanf("%s", sp);
+	string s(sp);
 	int l = s.length()/m;
-	vector<pair<int,int>> pos; // (prev,val)
-	Trie root;
+	unordered_map<string, vector<int>> mm;
 	for (int i=0; i<m; i++) {
-		string ms;
-		cin >> ms;
-		Trie *np = &root;
-		for (char ch:ms)
-			np = (*np)[ch];
-		pos.push_back(np->pos);
-		np->pos = make_pair(pos.size()-1, i);
+		char ms[l];
+		scanf("%s", ms);
+		mm[ms].push_back(i);
 	}
 	for (int i=0; i<s.length()/l; i++) {
-		Trie *np = &root;
-		for (int j=0,p=i*l; j<l; j++,p++)
-			np = (*np)[s[p]];
-		auto &vv = np->pos;
-		cout << vv.second+1 << ' ';
-		vv = pos[vv.first];
+		string seg = s.substr(i*l, l);
+		auto &vv = mm[seg];
+		printf("%d ", vv.back()+1);
+		vv.pop_back();
 	}
-	cout << endl;
+	printf("\n");
 	return 0;
 }
