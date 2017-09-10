@@ -1,34 +1,27 @@
 /* ACMP 1029 */
 #include <iostream>
-#include <unordered_map>
 #include <vector>
+#include <map>
+#include <tuple>
 
 using namespace std;
 
-struct P {
-	int x, y, z;
-	bool operator==(const P &b) const {
-		return x==b.x && y==b.y && z==b.z;
-	}
-};
+using P = tuple<int,int,int>;
 
-namespace std {
-	template<> struct hash<P> {
-		size_t operator()(const P &p) const {
-			return 1000003*p.x+1009*p.y+p.z;
-		}
-	};
-}
+int &x(P &p) { return get<0>(p); }
+int &y(P &p) { return get<1>(p); }
+int &z(P &p) { return get<2>(p); }
 
-bool match2(const P &p1, const P &p2, P &o) {
-	if (p1.x == p2.x && p1.y*p2.y + p1.z*p2.z == 0) {
-		o = P {p1.x, p1.y+p2.y, p1.z+p2.z};
+// @return intersection point of two axises if they collide
+bool match2(P &p1, P &p2, P &o) {
+	if (x(p1) == x(p2) && y(p1)*y(p2) + z(p1)*z(p2) == 0) {
+		o = P {x(p1), y(p1)+y(p2), z(p1)+z(p2)};
 		return true;
-	} else if (p1.y == p2.y && p1.x*p2.x + p1.z*p2.z == 0) {
-		o = P {p1.x+p2.x, p1.y, p1.z+p2.z};
+	} else if (y(p1) == y(p2) && x(p1)*x(p2) + z(p1)*z(p2) == 0) {
+		o = P {x(p1)+x(p2), y(p1), z(p1)+z(p2)};
 		return true;		
-	} else if (p1.z == p2.z && p1.x*p2.x + p1.y*p2.y == 0) {
-		o = P {p1.x+p2.x, p1.y+p2.y, p1.z};
+	} else if (z(p1) == z(p2) && x(p1)*x(p2) + y(p1)*y(p2) == 0) {
+		o = P {x(p1)+x(p2), y(p1)+y(p2), z(p1)};
 		return true;
 	} else {
 		return false;
@@ -41,10 +34,10 @@ int main(int argc, char **argv) {
 	vector<P> pp(np);
 	int ans = 0;
 	for (auto &p:pp) {
-		cin >> p.x >> p.y >> p.z;
+		cin >> x(p) >> y(p) >> z(p);
 		ans += n;
 	}
-	unordered_map<P, int> oo;
+	map<P, int> oo; // intersection points
 	for (int i=0; i<np-1; i++) {
 		for (int j=i+1; j<np; j++) {
 			P o;
@@ -53,11 +46,10 @@ int main(int argc, char **argv) {
 		}
 	}
 	for (auto &o:oo) {
-		//cerr << o.first.x << ',' << o.first.y << ',' << o.first.z << " : " << o.second << endl;
 		if (o.second == 1)
-			ans -= 1;
+			ans -= 1; // 2 axis
 		else
-			ans -= 2;
+			ans -= 2; // 3 axis
 	}
 	cout << n*n*n-ans << endl;
 	return 0;
