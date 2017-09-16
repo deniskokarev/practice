@@ -22,10 +22,10 @@ enum {
 
 struct P {
 	int p, stop, dir;
-	int ai, bi;
+	long long ai, bi;
 	int on;
 	int s; // sit/stand
-	int d;
+	long long d;
 	bool operator<(const P &b) const {
 		return d < b.d || (d == b.d && p < b.p);
 	}
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) {
 		int ci, di;
 		int j = i*2;
-		scanf("%d%d%d%d", &pp[j].ai, &pp[j].bi, &ci, &di);
+		scanf("%lld%lld%d%d", &pp[j].ai, &pp[j].bi, &ci, &di);
 		pp[j].p = i;
 		pp[j].d = pp[j].ai-pp[j].bi;
 		pp[j].stop = ci;
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 	set<P, greater<P>> stand;
 	P tram[n]; // use p and ai of the person inside
 	fill(tram, tram+n, P{-1,-1,DIR_NONE,-1,-1,-1,P_NOT_IN});
-	int64_t h = 0;
+	long long h = 0;
 	for (auto &p:pp) {
 		if (p.dir == DIR_IN) {
 			assert(tram[p.p].s == P_NOT_IN && "passenger is already on board");
