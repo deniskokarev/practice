@@ -1,4 +1,6 @@
 /* ACMP 11 */
+/* NB: just like 544 only with variable k and with long arithmetic */
+
 /* composition of http://e-maxx.ru/algo/big_integer */
 #include <vector>
 #include <cstdio>
@@ -50,7 +52,7 @@ using namespace std;
 int main(int argc, char **argv) {
 	int k, n;
 	cin >> k >> n;
-	k++;
+	k++; // for simplicity
 	vector<lnum10> cc(k);
 	const lnum10 zero("0");
 	fill(cc.begin(), cc.end(), zero);
