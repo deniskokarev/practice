@@ -6,6 +6,8 @@
 TODO: 
 Длинное деление на C++ для [146](https://acmp.ru/index.asp?main=task&id_task=146)
 
+## Решенные разделы
+
 * [Целочисленная арифметика](https://acmp.ru/asp/do/index.asp?main=section&id_course=2&id_section=11)
 
   * [НОД и НОК](https://acmp.ru/asp/do/index.asp?main=topic&id_course=2&id_section=11&id_topic=5)
@@ -34,3 +36,11 @@ TODO:
 * C++ Standard Template Library
 
   * Перестановки
+
+  * Структуры данных
+
+  * Библиотека алгоритмов
+
+* Динамическое программирование
+
+  * Динамика - 1
