@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <bitset>
+#include <map>
 #include <cassert>
 
 using namespace std;
@@ -21,27 +22,35 @@ uint64_t gcd(uint64_t a, uint64_t b) {
 
 struct FCTX {
 	const vector<unsigned> &aa;
-	const vector<vector<bool>> &allow;
+	const vector<vector<bool>> &allow;	// allowed neighbors
 	const unsigned n;
-	bitset<16> taken;
-	int level;
 	unsigned m;
+	int level;
 	vector<unsigned> sel;
+	bitset<16> taken;
+	map<pair<unsigned, unsigned long>, unsigned> cache; // [head,tail] -> num of allowed permutations
 };
 
 bool fnd(FCTX &f) {
 	if (f.level < f.n) {
 		for (int i=0; i<f.n; i++) {
 			if (!f.taken.test(i) && (f.sel.size()==0 || f.allow[f.sel.back()][i])) {
-				f.taken.set(i);
-				f.sel.push_back(i);
-				f.level++;
-				bool rc = fnd(f);
-				if (rc)
-					return rc;
-				f.level--;
-				f.sel.pop_back();
-				f.taken.set(i, false);
+				auto c = f.cache.find(make_pair(i, f.taken.to_ulong()));
+				if (c != f.cache.end() && c->second < f.m) {
+					f.m -= c->second;
+				} else {
+					unsigned lm = f.m;
+					f.taken.set(i);
+					f.sel.push_back(i);
+					f.level++;
+					bool rc = fnd(f);
+					if (rc)
+						return rc;
+					f.level--;
+					f.sel.pop_back();
+					f.taken.set(i, false);
+					f.cache[make_pair(i, f.taken.to_ulong())] = lm-f.m;
+				}
 			}
 		}
 	} else {
@@ -65,7 +74,7 @@ int main(int argc, char **argv) {
 		for (int j=i+1; j<n; j++)
 			if (gcd(aa[i], aa[j]) >= k)
 				allow[i][j] = allow[j][i] = true;
-	FCTX fctx = {aa, allow, n, bitset<16>(0), 0, m, vector<unsigned>()};
+	FCTX fctx = {aa, allow, n, m, 0};
 	if (fnd(fctx))
 		for (auto &i:fctx.sel)
 			cout << aa[i] << ' ';
