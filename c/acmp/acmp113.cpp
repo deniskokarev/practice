@@ -28,9 +28,13 @@ int main(int argc, char **argv) {
 			if (mm[i][j].y)
 				mm[i][j].y += mm[i-1][j].y;
 	int a = 0;
-	for (int i=0; i<n; i++)
-		for (int j=0; j<n; j++)
+	for (int i=1; i<n; i++) {
+		for (int j=1; j<n; j++) {
+			mm[i][j].x = min(mm[i][j-1].x+1, min(mm[i-1][j-1].x+1, mm[i][j].x));
+			mm[i][j].y = min(mm[i-1][j].y+1, min(mm[i-1][j-1].y+1, mm[i][j].y));
 			a = max(a, min(mm[i][j].x, mm[i][j].y));
+		}
+	}
 	cout << a*a << endl;
 	return 0;
 }
