@@ -1,4 +1,6 @@
 /* ACMP 1464 */
+/* max subsequence */
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -16,11 +18,11 @@ int main(int argc, char **argv) {
 	vector<pair<int,int>> ll(n+1, make_pair(INT_MAX, -1)); // mxlen -> (val,s_idx)
 	int mx = 2;
 	ll[0] = make_pair(INT_MIN, -1);
-	vector<pair<int,int>> ss;
+	vector<pair<int,int>> ss;	// (val,prev_s_idx) list
 	for (int i=0; i<n; i++) {
 		int a = aa[i];
 		auto f = upper_bound(ll.begin(), ll.begin()+mx, make_pair(a, INT_MAX));
-		if ((f-1)->first < a) {
+		if ((f-1)->first < a) { // ll[i] cannot be equal to ll[i+1]
 			if (a < f->first) {
 				ss.push_back(make_pair(a, (f-1)->second));
 				*f = make_pair(a, ss.size()-1);
