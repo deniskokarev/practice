@@ -8,7 +8,7 @@ using namespace std;
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	int l2n = int(ceil(log2(n)))+1;
+	int l2n = int(ceil(log2(n+1)));
 	vector<vector<uint64_t>> cc(l2n, vector<uint64_t>(n+1));
 	for (int i=0; i<=n; i++)
 		cc[0][i] = 1;
