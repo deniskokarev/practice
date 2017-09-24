@@ -4,8 +4,8 @@
 
 using namespace std;
 
-// cell->(n, nxt1, nxt2)
-int nn[10][4] = {
+// cell->(n, nxt1, nxt2, nxt3)
+const static int nn[10][4] = {
 	{2, 4, 6},
 	{2, 6, 8},
 	{2, 7, 9},
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	int r = (n+1)&1;
-	uint64_t s = accumulate(cc[r], cc[r]+10, 0);
+	uint64_t s = accumulate(cc[r], cc[r]+10, 0ULL);
 	cout << s << endl;
 	return 0;
 }
