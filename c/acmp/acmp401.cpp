@@ -173,25 +173,18 @@ struct lnum10 {
 
 using namespace std;
 
-lnum10 cnt(int n, int a, vector<vector<lnum10>> &cache) {
-	if (cache[n][a] == 0) {
-		lnum10 s(0);
-		if (n>0)
-			for (int i=0; i<=a; i++)
-				s += cnt(n-1, i, cache);
-		else
-			s += 1;
-		cache[n][a] = s;
-	}
-	return cache[n][a];
-}
-
 int main(int argc, char **argv) {
-	int n, a, b;
-	cin >> n >> a >> b;
-	vector<vector<lnum10>> cache(n+1, vector<lnum10>(max(a, b)+1, 0));
-	lnum10 ans = cnt(n, a, cache);
-	ans *= cnt(n, b, cache);
+	int N, A, B;
+	cin >> N >> A >> B;
+	vector<vector<lnum10>> bb(2, vector<lnum10>(max(A, B)+1, 1));
+	for (int n=1; n<=N; n++) {
+		for (int ab=1; ab<=max(A,B); ab++) {
+			bb[n&1][ab] = bb[n&1][ab-1];
+			bb[n&1][ab] += bb[(n+1)&1][ab];
+		}
+	}
+	lnum10 ans = bb[N&1][A];
+	ans *= bb[N&1][B];
 	cout << ans.to_string() << endl;
 	return 0;
 }
