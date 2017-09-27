@@ -29,11 +29,10 @@ int main(int argc, char **argv) {
 		s += (n+1-i)*t;
 		s += (n+1-i)*12*60*60 - (ss[n]-ss[i-1]);
 		if (s < mn) {
-			fprintf(stderr, "%02d:%02d:%02d   %lld\n", t/3600, (t/60)%60, t%60, s);
 			mnt = t;
 			mn = s;
 		}
 	}
-	printf("%02d:%02d:%02d\n", mnt/3600, (mnt/60)%60, mnt%60);
+	printf("%d:%02d:%02d\n", mnt/3600, (mnt/60)%60, mnt%60);
 	return 0;
 }
