@@ -32,6 +32,6 @@ int main(int argc, char **argv) {
 			h %= mod;
 	}
 	uint64_t ans = accumulate(hh[(n+1)&1].begin(), hh[(n+1)&1].end(), 0ULL);
-	cout << ans << endl;
+	cout << ans % mod << endl;
 	return 0;
 }
