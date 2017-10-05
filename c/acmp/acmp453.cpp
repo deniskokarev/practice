@@ -175,22 +175,18 @@ int main(int argc, char **argv) {
 	int n;
 	cin >> n;
 	lnum10 l(2);
-	lnum10 p10(10);
-	lnum10 dp10(20);
+	lnum10 p10(1);
 	lnum10 p2(2);
-	/* look at the description on the site */
-	/* X == 2^n*(k) where k odd -> add leading 1 */
-	/* X == 2^n*(k) where k even -> add leadong 2 */
+	lnum10 zero(0);
+	/* look at the solution on the site */
 	for (int i=2; i<=n; i++) {
-		lnum10 q = l;
-		q /= p2;
-		if ((q.a.back()&1) == 0)
-			l += dp10;
-		else
-			l += p10;
 		p10 *= 10;
-		dp10 *= 10;
 		p2 *= 2;
+		l += p10;
+		lnum10 q = l;
+		lnum10 r = q /= p2;
+		if (!(r == zero))
+			l += p10;
 	}
 	cout << l.to_string() << endl;
 	return 0;
