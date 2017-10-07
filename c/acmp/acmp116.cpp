@@ -21,13 +21,6 @@ int main(int argc, char **argv) {
 		for (int j=0; j<m; j++)
 			if (pp[i][j] > 0)
 				pp[i][j] = pp[i-1][j] + pp[i][j];
-	// debug
-	cerr << endl;
-	for (int i=0; i<n; i++) {
-		for (int j=0; j<m; j++)
-			cerr << pp[i][j];
-		cerr << endl;
-	}
 	unsigned mxs = 0;
 	for (int i=0; i<n; i++) {
 		struct {unsigned x, h;} hh[m]; // stack of hights and their x start coord
