@@ -6,49 +6,48 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-	string sa, sb;
-	cin >> sa >> sb;
-	string &s1 = (sa.length() < sb.length()) ? sa : sb;
-	string &s2 = (sa.length() >= sb.length()) ? sa : sb;
+	string s1, s2;
+	cin >> s1 >> s2;
 	/* matrix a-la max substring */
-	vector<vector<uint16_t>> ss(s1.length()+2, vector<uint16_t>(s2.length()+2, 0));
+	vector<vector<uint16_t>> ssl(s1.length()+2, vector<uint16_t>(s2.length()+2, 0));
 	for (int i=1; i<=s1.length(); i++)
 		for (int j=1; j<=s2.length(); j++)
 			if (s1[i-1] == s2[j-1])
-				ss[i][j] = ss[i-1][j-1]+1;
-	for (int i=s1.length(); i>=0; i--)
+				ssl[i][j] = ssl[i-1][j-1]+1;
+	vector<vector<uint16_t>> ssr(s1.length()+2, vector<uint16_t>(s2.length()+2, 0));
+	for (int i=s1.length(); i>=1; i--)
 		for (int j=s2.length(); j>=1; j--)
-			if (ss[i][j] != 0)
-				ss[i][j] = max(ss[i][j], ss[i+1][j+1]);
+			if (s1[i-1] == s2[j-1])
+				ssr[i][j] = ssr[i+1][j+1]+1;
 	int mx = 0;
-	int ai = 0, al = 0;
-	int bi = 0, bl = 0;
-	for (int j=1; j<=s2.length(); j++) {
-		/* max from left */
-		vector<uint16_t> mxl(s1.length()+2, 0);
-		for (int i=1; i<=s1.length(); i++)
-			mxl[i] = max(ss[i][j], mxl[i-1]);
-		/* max from right */
-		vector<uint16_t> mxr(s1.length()+2, 0);
-		for (int i=s1.length(); i>=1; i--)
-			mxr[i] = max(ss[i][j], mxr[i+1]);
-		for (int i=1; i<s1.length(); i++) {
-			if (mx < mxl[i]+mxr[i+1]) {
-				mx = mxl[i]+mxr[i+1];
-				ai = i-1;
-				al = mxl[i];
+	int a = 0, al = 0;
+	int b = 0, bl = 0;
+	/* max from left */
+	vector<uint16_t> mxl(s2.length()+2, 0);
+	/* max from right */
+	vector<uint16_t> mxr(s2.length()+2, 0);
+	for (int i=1; i<=s1.length(); i++) {
+		for (int j=1; j<=s2.length(); j++)
+			mxl[j] = max(mxl[j], max(ssl[i][j], mxl[j-1]));
+		for (int j=s2.length(); j>=1; j--)
+			mxr[j] = max(mxr[j], max(ssr[i][j], mxr[j+1]));
+		for (int j=1; j<=s2.length(); j++) {
+			if (mx < mxl[j]+mxr[j+1]) {
+				mx = mxl[j]+mxr[j+1];
+				a = j-mxl[j];
+				al = mxl[j];
+				bl = mxr[j+1];
 			}
 		}
-		for (int i=s1.length(); i>ai+mx; i--) {
-			if (mxr[ai+1] == mxr[i]) {
-				bi = i-mxr[i];
-				bl = mxr[i];
+		for (int j=s2.length(); j>=1; j--) {
+			if (bl == mxr[j]) {
+				b = j-1;
 				break;
 			}
 		}
 	}
-	//cerr << mx << endl; // debug
-	cout << s1.substr(ai, al) << endl;
-	cout << s1.substr(bi, bl) << endl;
+	cerr << mx << endl; // debug
+	cout << s2.substr(a, al) << endl;
+	cout << s2.substr(b, bl) << endl;
 	return 0;
 }
