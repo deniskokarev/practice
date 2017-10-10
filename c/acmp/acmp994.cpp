@@ -28,22 +28,24 @@ int main(int argc, char **argv) {
 		for (int j=s2.length(); j>=1; j--)
 			mxr[i][j] = max(ssr[i][j], max(mxr[i+1][j], mxr[i][j+1]));
 	int mx = 0;
+	int mxi = 0;
 	int a = 0, al = 0;
 	int b = 0, bl = 0;
 	for (int i=1; i<=s1.length(); i++) {
 		for (int j=1; j<=s2.length(); j++) {
 			if (mx < mxl[i][j]+mxr[i][j+1]) {
 				mx = mxl[i][j]+mxr[i][j+1];
+				mxi = i;
 				a = j-mxl[i][j];
 				al = mxl[i][j];
 				bl = mxr[i][j+1];
 			}
 		}
-		for (int j=s2.length(); j>=1; j--) {
-			if (bl == mxr[i][j]) {
-				b = j-1;
-				break;
-			}
+	}
+	for (int j=s2.length(); j>a; j--) {
+		if (bl == mxr[mxi][j]) {
+			b = j-1;
+			break;
 		}
 	}
 	//cerr << mx << endl; // debug
