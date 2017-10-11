@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 	uint64_t fk = fact(k);
 	uint64_t ans = 1;
 	if (k<=n)
-		for (uint64_t c=n; n>0; n--, c--)
+		for (uint64_t c=n; k>0; k--, c--)
 			ans *= c*c;
 	else
 		ans = 0;
