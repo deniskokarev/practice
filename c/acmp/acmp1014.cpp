@@ -6,22 +6,9 @@ using namespace std;
 
 constexpr uint64_t mod = 1e9+9;
 
-/* cache-based mod factorial */
-struct fact_mod {
-	vector<uint64_t> cache;
-	fact_mod(uint64_t mod, int sz):cache(sz) {
-		cache[0] = 1;
-		for (uint64_t i=1; i<sz; i++) {
-			cache[i] = cache[i-1]*i;
-			cache[i] %= mod;
-		}
-	}
-	uint64_t operator()(int n) const {
-		return cache[n];
-	}
-};
-
 /*
+ * Short answer is "deranegemts" 
+ *
  * Need to consider Hamilton path in entire graph, plus the combination of a ham path without
  * 2 nodes, plus the combination of the ham path in 3 node graph and the rest of the graph
  * without those 3 nodes, etc
@@ -31,31 +18,33 @@ struct fact_mod {
  *      | (n < 2) = 0 
  *      | otherwise = (n-1)! + sum(i=[1,n-3], choose(n-1, i)*f(n-i-1)*i!)
  *
- * Which may be translated into
+ * Which may be folded into
  *
  * f(n) = (n-1)! + (n-1) * (f(n-2) + f(n-1) - (n-2)!)
  *
+ * Yes, you can consider the list as a combination of Hamiltonian paths,
+ * but at the end, it gets to the number of derangements (all elements palced in wrong spot)
+ *
+ * f(n) = (n-1)! + (n-1) * (f(n-2) + f(n-1) - (n-2)!)
+ * f(n) = (n-1) * (n-2)! + (n-1) * (f(n-2) + f(n-1) - (n-2)!)
+ * f(n) = (n-1) * ((n-2)! + f(n-2) + f(n-1) - (n-2)!)
+ * f(n) = (n-1) * (f(n-2) + f(n-1))
+ * ^^^^
+ * this is a recursive formula for derangements: !n
+ *
  */
 int main(int argc, char **argv) {
-	int n;
-	cin >> n;
-	uint64_t ans;
-	fact_mod fact_mod(mod, n+1);
-	if (n > 2) {
-		ans = 0;
-		uint64_t a1 = 1; // f(i-1)
-		uint64_t a2 = 0; // f(i-2)
-		for (int i=3; i<=n; i++) {
-			ans = fact_mod(i-1) + (((a1+mod-fact_mod(i-2)) + a2) % mod) * (i-1);
-			ans %= mod;
-			a2 = a1;
-			a1 = ans;
-		}
-	} else if (n == 2) {
-		ans = 1;
-	} else {
-		ans = 0;
+	int cnt;
+	cin >> cnt;
+	uint64_t n1 = 1; // !(n-1)
+	uint64_t n2 = 0; // !(n-2)
+	uint64_t n;
+	for (unsigned i=3; i<cnt+2; i++) {
+		n = (n1 + n2) * (i-1);
+		n %= mod;
+		n2 = n1;
+		n1 = n;
 	}
-	cout << ans << endl;
+	cout << n2 << endl;
 	return 0;
 }
