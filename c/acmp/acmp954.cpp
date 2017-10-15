@@ -35,6 +35,6 @@ int main(int argc, char **argv) {
 		s += nn[k].n[T][j];
 		s += nn[k].n[B][j];
 	}
-	cout << s << endl;
+	cout << s % mod << endl;
 	return 0;
 }
