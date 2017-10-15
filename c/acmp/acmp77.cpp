@@ -1,6 +1,7 @@
 /* ACMP 77 */
 #include <iostream>
 #include <cassert>
+#include <bitset>
 
 using namespace std;
 
@@ -18,25 +19,37 @@ uint64_t choose(int n, int k) {
 	return res;
 }
 
-int nbits(uint64_t n) {
-	int b = 0;
-	for (; n>0; n>>=1,b++);
-	return b;
+uint64_t f(const bitset<64> nn, int k, int b) {
+	uint64_t s = 0;
+	if (k < b) {
+		int zm = 0;
+		for (int i=b-2; i>=0; i--) {
+			if (nn[i]) {
+				if (zm <= k && i >= k-zm-1)
+					s += choose(i, k-zm-1);
+				else
+					break;
+			} else {
+				zm++;
+			}
+		}
+		if (zm == k)
+			s++;
+		for (int i=k; i<b-1; i++)
+			s += choose(i, k);
+	}
+	return s;
 }
 
 int main(int argc, char **argv) {
 	uint64_t n;
 	int k;
 	cin >> n >> k;
-	int b = nbits(n);
-	int b2 = nbits(n - (1ULL << (b-1))); // second hi bit
-	// all smaller bit scenarios
-	uint64_t s = 0;
-	for (int i=k; i<b-1; i++)
-		s += choose(i, k);
-	// try to place remaning 0s on or after second hi bit
-	if (b-b2-1 < k && b2 >= k-(b-b2-1))
-		s += choose(b2, k-(b-b2-1));
-	cout << s << endl;
+	bitset<64> nn(n);
+	int b = 0;
+	for (int i=0; i<64; i++)
+		if (nn[i])
+			b = i+1;
+	cout << f(nn, k, b) << endl;
 	return 0;
 }
