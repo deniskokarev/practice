@@ -3,8 +3,9 @@
 ## Решение Олимпиадных Задач
 (https://acmp.ru/asp/do/index.asp?main=course&id_course=2)
 
-TODO: 
-Длинное деление на C++ для [146](https://acmp.ru/index.asp?main=task&id_task=146)
+TODO:
+
+- Длинное деление на C++ для [146](https://acmp.ru/index.asp?main=task&id_task=146)
 
 ## Решенные разделы
 
@@ -44,3 +45,13 @@ TODO:
 * Динамическое программирование
 
   * Динамика - 1
+
+  * Динамика - 2
+
+  * Динамика - 3
+
+  * Динамика - 4
+
+  * Динамика - 5
+
+  * Динамика - 6
