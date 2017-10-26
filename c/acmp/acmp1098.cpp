@@ -3,7 +3,7 @@
 #include <cassert>
 
 // screw any further optimization
-// it takes about 3min to precompute all values
+// it takes about 5min to precompute all values
 
 //#define _PRECOMPUTE_ 
 
@@ -14,6 +14,7 @@ int sumsq(int n) {
 	return n*(n+1)*(2*n+1)/6;
 }
 
+// hypothetically we could go upto n=15
 struct Brd {
     int n;
     // free column
@@ -34,7 +35,7 @@ inline unsigned place(Brd &brd, int r, int kq, int kr) {
         int n = brd.n;
         int im = n-kq-kr+1;
         for (int i=r; i<im; i++) {
-            uint64_t dl = 1<<(i+20);
+            uint64_t dl = 1<<(i+n+n);
             uint64_t dr = 1<<(n-i-1);
             uint64_t dmsk = dl|dr;
             uint16_t c = 1;
