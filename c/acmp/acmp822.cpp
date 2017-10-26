@@ -1,6 +1,5 @@
 /* ACMP 822 */
 #include <iostream>
-#include <cmath>
 
 using namespace std;
 
