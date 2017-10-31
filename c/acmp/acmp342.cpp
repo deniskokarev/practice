@@ -255,12 +255,16 @@ int main(int argc, char **argv) {
 	}
 	oa *= 1.0/n;
 	r2a *= 1.0/n;
-	double e = 1e-3;
+	constexpr double e = 1e-4;
 	for (i=0; i<n; i++) {
 		auto &o = oo[i];
 		if (fabs(oa.x - o.x) >= e || fabs(oa.y - o.y) >= e)
 			break;
 	}
+	if (fabs(oa.x) < e)
+		oa.x = 0;
+	if (fabs(oa.y) < e)
+		oa.y = 0;
 	if (i == n) {
 		cout << "YES" << endl;
 		cout << fixed << setprecision(3);
