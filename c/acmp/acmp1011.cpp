@@ -1,7 +1,7 @@
 /* ACMP 1011 */
 
 /*
- * Our generic Matrix stuff
+ * Our naive Matrix arithmetic
  */
 #include <vector>
 #include <cassert>
@@ -36,6 +36,8 @@ template<typename N> struct Mat {
 	int rows, cols;
 	VEC vv;
 	Mat(int _r, int _c):rows(_r),cols(_c),vv(rows*cols){}
+	Mat(const Mat &m):rows(m.rows),cols(m.cols),vv(m.vv){}
+	Mat(Mat &&m):rows(m.rows),cols(m.cols),vv(std::move(m.vv)){}
 	typename VEC::iterator operator[](int r) {
 		return vv.begin()+r*cols;
 	}
@@ -119,6 +121,22 @@ template<typename N> struct Mat {
 		for (int i=0; i<vv.size(); i++)
 			vv[i] += b.vv[i];
 	}
+	void operator=(const Mat<N> &b) {
+		assert(vv.size() == b.vv.size());
+		copy(b.vv.begin(), b.vv.end(), vv.begin());
+	}
+	Mat<N> operator-(const Mat<N> &b) const {
+		assert(vv.size() == b.vv.size());
+		Mat<N> res(*this);
+		res -= b;
+		return res;
+	}
+	Mat<N> operator+(const Mat<N> &b) const {
+		assert(vv.size() == b.vv.size());
+		Mat<N> res(*this);
+		res += b;
+		return res;
+	}
 	N len_sq() const {
 		N s = 0;
 		for (auto &v:vv)
@@ -148,24 +166,25 @@ using namespace std;
 struct P : public Mat<double> {
 	double &x, &y;
 	P():Mat(1,2),x(vv[0]),y(vv[1]) {}
+	P(Mat<double> &&m):Mat(m),x(vv[0]),y(vv[1]) {}
+	P(const Mat<double> &m):Mat(m),x(vv[0]),y(vv[1]) {}
 	P(double _x, double _y):P() {
 		x = _x;
 		y = _y;
 	}
-	void operator=(const P &b) {
-		x = b.x;
-		y = b.y;
+	void operator=(const P&b) {
+		Mat<double>::operator=(b);
 	}
-	P operator-(const P &b) const {
-		P res(x-b.x, y-b.y);
-		return res;
+	P operator-(const P&b) const {
+		return Mat<double>::operator-(b);
 	}
 	double cross(const P &b) const {
 		return x*b.y - y*b.x;
 	}
 };
 
-// take statistical median
+// find and print statistical median of 3 values just in case if our triangle
+// was severely degenerate and the result is unstable
 void prn_median(const P oo[3], double rrv[3]) {  
 	double xx[3] = {oo[0].x, oo[1].x, oo[2].x};
 	double yy[3] = {oo[0].y, oo[1].y, oo[2].y};
@@ -176,6 +195,11 @@ void prn_median(const P oo[3], double rrv[3]) {
 	cout << o.x << " " << o.y << " " << sqrt(rrv[1]) << endl;
 }
 
+// Iterate over all vertices and make
+// isosceles triangle every time to get mid reference point through
+// which the bisect goes
+// Then find the point of said bisection intersects
+// We're doing it by solving parametric line equation
 void i(const P pp[3]) {
 	P mid[3];
 	for (int i=0; i<3; i++) {
@@ -209,9 +233,12 @@ void i(const P pp[3]) {
 		cc[1][0] = pp[j].y-pp[i].y;
 		Mat<double> inv(2,2);
 		if (mm.inv(inv)) {
-			auto res = inv.mul(cc);
-			oo[i] = P(res[0][0]*mid[i].x, res[1][0]*mid[i].y);
+			auto tt = inv.mul(cc);
+			oo[i] = P(tt[0][0]*mid[i].x, tt[0][0]*mid[i].y);
+			oo[i] += P(tt[1][0]*mid[j].x, tt[1][0]*mid[j].y);
 			oo[i] += pp[i];
+			oo[i] += pp[j];
+			oo[i] *= .5; // average two parameters t1 and t2
 		}
 	}
 	double rrv[3];
@@ -221,12 +248,12 @@ void i(const P pp[3]) {
 		double cr = (pp[j]-oo[i]).cross(pp[k]-oo[i]);
 		rrv[i] = cr*cr/(pp[k]-pp[j]).len_sq();
 	}
-	prn_median(oo, rrv);	
+	prn_median(oo, rrv);	// prn statistical median just in case	
 }
 
-
-// working of the fact that dot product between vectors representing the side
-// and the vector from center to the middle of side must be == 0
+// working of the fact that vectors representing sides
+// and the radial vector from center to the side must be
+// perpendicular (dot product == 0)
 void o(const P pp[3]) {
 	Mat<double> mm(2,2);
 	Mat<double> cc(2,1);
@@ -250,7 +277,7 @@ void o(const P pp[3]) {
 			rrv[i] = rv.len_sq();
 		}
 	}
-	prn_median(oo, rrv);	
+	prn_median(oo, rrv);	// prn statistical median just in case
 }
 
 int main(int argc, char **argv) {
