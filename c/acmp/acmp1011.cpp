@@ -140,6 +140,7 @@ template<typename N> struct Mat {
 
 /* actual ACMP 1011 solution */
 #include <iostream>
+#include <algorithm>
 #include <cmath>
 
 using namespace std;
@@ -164,36 +165,63 @@ struct P : public Mat<double> {
 	}
 };
 
+// take statistical median
+void prn_median(const P oo[3], double rrv[3]) {  
+	double xx[3] = {oo[0].x, oo[1].x, oo[2].x};
+	double yy[3] = {oo[0].y, oo[1].y, oo[2].y};
+	sort(xx, xx+3);
+	sort(yy, yy+3);
+	sort(rrv, rrv+3);
+	P o(xx[1], yy[1]);
+	cout << o.x << " " << o.y << " " << sqrt(rrv[1]) << endl;
+}
+
 void i(const P pp[3]) {
-	P o;
-	double ar2 = 0; // average r square
-	for (double e = 10.0; e >= .00001; e/=5) {
-		double mnerr = 1e10;
-		P mno;
-		for (int ny=-10; ny<=10; ny++) {
-			for (int nx=-10; nx<=10; nx++) {
-				P oo = o - P(nx*e, ny*e);
-				double rr2[3];
-				ar2 = 0;
-				for (int i=0; i<3; i++) {
-					int j=(i+1)%3;
-					double cr = (pp[i]-oo).cross(pp[j]-oo);
-					rr2[i] = cr*cr/(pp[j]-pp[i]).len_sq();
-					ar2 += rr2[i];
-				}
-				ar2 /= 3.0;
-				double err = 0;
-				for (auto r2:rr2)
-					err += fabs(r2-ar2);
-				if (mnerr > err) {
-					mno = oo;
-					mnerr = err;
-				}
-			}
+	P mid[3];
+	for (int i=0; i<3; i++) {
+		int j=(i+1)%3;
+		int k=(i+2)%3;
+		P vj = (pp[j]-pp[i]);
+		P vk = (pp[k]-pp[i]);
+		double lj = vj.len_sq();
+		double lk = vk.len_sq();
+		if (lj > lk) {
+			vk *= sqrt(lj/lk);
+			vk += vj;
+			mid[i] = vk;
+		} else {
+			vj *= sqrt(lk/lj);
+			vj += vk;
+			mid[i] = vj;
 		}
-		o = mno;
+		mid[i] *= .5;
 	}
-	cout << o.x << " " << o.y << " " << sqrt(ar2) << endl;
+	P oo[3];
+	for (int i=0; i<3; i++) {
+		int j=(i+1)%3;
+		Mat<double> mm(2,2);
+		Mat<double> cc(2,1);
+		mm[0][0] = mid[i].x;
+		mm[0][1] = -mid[j].x;
+		mm[1][0] = mid[i].y;
+		mm[1][1] = -mid[j].y;
+		cc[0][0] = pp[j].x-pp[i].x;
+		cc[1][0] = pp[j].y-pp[i].y;
+		Mat<double> inv(2,2);
+		if (mm.inv(inv)) {
+			auto res = inv.mul(cc);
+			oo[i] = P(res[0][0]*mid[i].x, res[1][0]*mid[i].y);
+			oo[i] += pp[i];
+		}
+	}
+	double rrv[3];
+	for (int i=0; i<3; i++) {
+		int j=(i+1)%3;
+		int k=(i+2)%3;
+		double cr = (pp[j]-oo[i]).cross(pp[k]-oo[i]);
+		rrv[i] = cr*cr/(pp[k]-pp[j]).len_sq();
+	}
+	prn_median(oo, rrv);	
 }
 
 
@@ -203,7 +231,7 @@ void o(const P pp[3]) {
 	Mat<double> mm(2,2);
 	Mat<double> cc(2,1);
 	P oo[3];
-	double rrv = 0;
+	double rrv[3];
 	for (int i=0; i<3; i++) {
 		int j=(i+1)%3;
 		int k=(i+2)%3;
@@ -219,15 +247,10 @@ void o(const P pp[3]) {
 			oo[i] = P(res[0][0], res[1][0]);
 			P rv = pp[i];
 			rv -= oo[i];
-			rrv += rv.len_sq();
+			rrv[i] = rv.len_sq();
 		}
 	}
-	P o;
-	for (auto &op:oo) {
-		o.x += op.x;
-		o.y += op.y;
-	}
-	cout << o.x/3 << " " << o.y/3 << " " << sqrt(rrv/3) << endl;
+	prn_median(oo, rrv);	
 }
 
 int main(int argc, char **argv) {
