@@ -167,7 +167,7 @@ struct P : public Mat<double> {
 void i(const P pp[3]) {
 	P o;
 	double ar2 = 0; // average r square
-	for (double e = 10.0; e >= .00001; e/=10) {
+	for (double e = 10.0; e >= .00001; e/=5) {
 		double mnerr = 1e10;
 		P mno;
 		for (int ny=-10; ny<=10; ny++) {
@@ -202,6 +202,8 @@ void i(const P pp[3]) {
 void o(const P pp[3]) {
 	Mat<double> mm(2,2);
 	Mat<double> cc(2,1);
+	P oo[3];
+	double rrv = 0;
 	for (int i=0; i<3; i++) {
 		int j=(i+1)%3;
 		int k=(i+2)%3;
@@ -214,13 +216,18 @@ void o(const P pp[3]) {
 		Mat<double> inv(2,2);
 		if (mm.inv(inv)) {
 			auto res = inv.mul(cc);
-			P o(res[0][0], res[1][0]);
+			oo[i] = P(res[0][0], res[1][0]);
 			P rv = pp[i];
-			rv -= o;
-			cout << o.x << " " << o.y << " " << sqrt(rv.len_sq()) << endl;
-			break;
+			rv -= oo[i];
+			rrv += rv.len_sq();
 		}
 	}
+	P o;
+	for (auto &op:oo) {
+		o.x += op.x;
+		o.y += op.y;
+	}
+	cout << o.x/3 << " " << o.y/3 << " " << sqrt(rrv/3) << endl;
 }
 
 int main(int argc, char **argv) {
