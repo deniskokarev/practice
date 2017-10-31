@@ -1,6 +1,5 @@
 /* ACMP 370 */
-#include <iostream>
-#include <iomanip>
+#include <cstdio>
 #include <cmath>
 
 using namespace std;
@@ -14,15 +13,15 @@ struct P {
 
 int main(int argc, char **argv) {
 	int n;
-	cin >> n;
+	scanf("%d", &n);
 	P vv[n];
 	for (auto &v:vv)
-		cin >> v.x >> v.y;
+		scanf("%lf%lf", &v.x, &v.y);
 	double s = 0;
 	for (int i=0; i<n; i++) {
 		int j = (i+1)%n;
 		s += vv[i].cross(vv[j]);
 	}
-	cout << fixed << setprecision(1) << fabs(s/2) << endl;
+	printf("%.1f\n", fabs(s/2));
 	return 0;
 }
