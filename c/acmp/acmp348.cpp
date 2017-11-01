@@ -2,7 +2,7 @@
 /*
  * Our naive Matrix arithmetic
  */
-#include <vector>
+#include <memory>
 #include <cassert>
 
 template<typename I, typename F> void __heaps_perm_r(const I &beg, const I &end, const I &last, F &&f);
@@ -31,17 +31,20 @@ template<typename I, typename F> void __heaps_perm_r(const I &beg, const I &end,
 }
 
 template<typename N> struct Mat {
-	using VEC = std::vector<N>;
 	int rows, cols;
-	VEC vv;
-	Mat(int _r, int _c):rows(_r),cols(_c),vv(rows*cols){}
-	Mat(const Mat &m):rows(m.rows),cols(m.cols),vv(m.vv){}
-	Mat(Mat &&m):rows(m.rows),cols(m.cols),vv(std::move(m.vv)){}
-	typename VEC::iterator operator[](int r) {
-		return vv.begin()+r*cols;
+	int size;
+	std::unique_ptr<N[]> vv;
+
+	Mat(int _r, int _c):rows(_r),cols(_c),size(rows*cols),vv(new N[size]){}
+	Mat(const Mat &m):Mat(m.rows,m.cols) {
+		std::copy(m.vv.get(), m.vv.get()+size, vv.get());
 	}
-	typename VEC::const_iterator operator[](int r) const {
-		return vv.cbegin()+r*cols;
+	Mat(Mat &&m):rows(m.rows),cols(m.cols),vv(std::move(m.vv)){}
+	const N* operator[](int r) const {
+		return vv.get()+r*cols;
+	}
+	N* operator[](int r) {
+		return vv.get()+r*cols;
 	}
 	N det() const {
 		assert(rows == cols);
@@ -107,27 +110,33 @@ template<typename N> struct Mat {
 		return res;
 	}
 	void operator*=(N n) {
-		for (auto &v:vv)
-			v *= n;
+		N *av = vv.get();
+		for (int i=0; i<size; i++,av++)
+			*av *= n;
 	}
 	void operator-=(const Mat &b) {
-		assert(vv.size() == b.vv.size());
-		for (int i=0; i<vv.size(); i++)
-			vv[i] -= b.vv[i];
+		assert(size == b.size);
+		N *av = vv.get();
+		const N *bv = b.vv.get();
+		for (int i=0; i<size; i++,av++,bv++)
+			*av -= *bv;
 	}
 	void operator+=(const Mat &b) {
-		assert(vv.size() == b.vv.size());
-		for (int i=0; i<vv.size(); i++)
-			vv[i] += b.vv[i];
+		assert(size == b.size);
+		N *av = vv.get();
+		const N *bv = b.vv.get();
+		for (int i=0; i<size; i++,av++,bv++)
+			*av += *bv;
 	}
 	void operator=(const Mat<N> &b) {
-		assert(vv.size() == b.vv.size());
-		copy(b.vv.begin(), b.vv.end(), vv.begin());
+		assert(size == b.size);
+		std::copy(b.vv.get(), b.vv.get()+size, vv.get());
 	}
 	N len_sq() const {
 		N s = 0;
-		for (auto &v:vv)
-			s += v*v;
+		const N *av = vv.get();
+		for (int i=0; i<size; i++,av++)
+			s += (*av)*(*av);
 		return s;
 	}
 	// 1/d won't work properly on integral matrixes
@@ -145,16 +154,25 @@ template<typename N> struct Mat {
 
 /* actual ACMP 348 solution */
 #include <iostream>
-#include <cmath>
 #include <algorithm>
 
 using namespace std;
 
-struct P : public Mat<int> {
-	int &x, &y;
-	P():Mat(1,2),x(vv[0]),y(vv[1]) {}
-	int cross(const P &b) const {
+using INT = int64_t;
+
+struct P : public Mat<INT> {
+public:
+	INT &x, &y;
+	P():Mat(1,2),x(vv[0]),y(vv[1]){}
+	P(const P &p):Mat(p),x(vv[0]),y(vv[1]){}
+	INT cross(const P &b) const {
 		return x*b.y - b.x*y;
+	}
+	INT dot(const P &b) const {
+		return x*b.x + b.x*b.y;
+	}
+	void operator=(const P &b) {
+		Mat<INT>::operator=(b);
 	}
 };
 
@@ -164,50 +182,64 @@ int main(int argc, char **argv) {
 	P aa[2];
 	cin >> aa[0].x >> aa[0].y;
 	cin >> aa[1].x >> aa[1].y;
-	aa[1] -= aa[0];
 	P bb[2];
 	cin >> bb[0].x >> bb[0].y;
 	cin >> bb[1].x >> bb[1].y;
-	bb[1] -= bb[0];
-	Mat<int> mm(2,2);
-	Mat<int> cc(2,1);
-	mm[0][0] = aa[1].x;
-	mm[0][1] = -bb[1].x;
-	mm[1][0] = aa[1].y;
-	mm[1][1] = -bb[1].y;
+	P va = aa[1];
+	va -= aa[0];
+	P vb = bb[1];
+	vb -= bb[0];
+	if (va.x*va.x + va.y*va.y < vb.x*vb.x + vb.y*vb.y) {
+		// making va the longest vector
+		swap(aa[0], bb[0]);
+		swap(aa[1], bb[1]);
+		swap(va, vb);
+	}
+	Mat<INT> mm(2,2);
+	Mat<INT> cc(2,1);
+	mm[0][0] = va.x;
+	mm[0][1] = -vb.x;
+	mm[1][0] = va.y;
+	mm[1][1] = -vb.y;
 	cc[0][0] = bb[0].x-aa[0].x;
 	cc[1][0] = bb[0].y-aa[0].y;
 	bool rc;
-	int det = mm.det();
+	INT det = mm.det();
 	if (det != 0) {
-		int det_sign = (det>0)?1:-1;
-		int det_abs = abs(det);
-		Mat<int> adj = mm.adj();
-		Mat<int> tt = adj.mul(cc);
-		tt *= det_sign;
-		//cerr << "t1: " << tt[0][0] << " t2: " << tt[1][0] << endl;
+		Mat<INT> adj = mm.adj();
+		INT det_sign = (det>0)?1:-1;
+		adj *= det_sign;
+		const Mat<INT> tt = adj.mul(cc);
+		INT det_abs = abs(det);
 		if (tt[0][0] >= 0 && tt[0][0] <= det_abs && tt[1][0] >= 0 && tt[1][0] <= det_abs)
 			rc = true;
 		else
 			rc = false;
 	} else {
-		// chk if on the straight line
-		P p1 = bb[0];
-		p1 -= aa[0];
-		P p2 = bb[1];
-		p2 += bb[0];
-		p2 -= aa[0];
-		if (aa[1].cross(p1) == 0 && aa[1].cross(p2) == 0) {
-			int da[2] = {aa[0].x+aa[0].y, aa[0].x+aa[0].y+aa[1].x+aa[1].y};
-			int db[2] = {bb[0].x+bb[0].y, bb[0].x+bb[0].y+bb[1].x+bb[1].y};
-			sort(da, da+2);
-			sort(db, db+2);
-			if (da[0] > db[1] || db[0] > da[1])
+		if (va.x != 0 || va.y != 0) {
+			// chk if on the straight line
+			P p1 = bb[0];
+			p1 -= aa[0];
+			P p2 = bb[1];
+			p2 -= aa[0];
+			if (va.cross(p1) == 0 && va.cross(p2) == 0) {
+				INT da[2] = {va.dot(aa[0]), va.dot(aa[1])};
+				INT db[2] = {va.dot(bb[0]), va.dot(bb[1])};
+				sort(da, da+2);
+				sort(db, db+2);
+				if (da[0] > db[1] || db[0] > da[1])
+					rc = false;
+				else
+					rc = true; // on the straight line and overlap
+			} else {
 				rc = false;
-			else
-				rc = true; // on the straight line and overlap
+			}
 		} else {
-			rc = false;
+			// both a and b are points
+			if (aa[0].x == bb[0].x && aa[0].y == bb[0].y)
+				rc = true;
+			else
+				rc = false;
 		}
 	}
 	cout << (rc?"Yes":"No") << endl;
