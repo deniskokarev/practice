@@ -159,6 +159,7 @@ struct P : public Mat<int> {
 };
 
 // using parametric line intersection approach
+// use integers everywhere
 int main(int argc, char **argv) {
 	P aa[2];
 	cin >> aa[0].x >> aa[0].y;
@@ -168,19 +169,24 @@ int main(int argc, char **argv) {
 	cin >> bb[0].x >> bb[0].y;
 	cin >> bb[1].x >> bb[1].y;
 	bb[1] -= bb[0];
-	Mat<double> mm(2,2);
-	Mat<double> cc(2,1);
+	Mat<int> mm(2,2);
+	Mat<int> cc(2,1);
 	mm[0][0] = aa[1].x;
 	mm[0][1] = -bb[1].x;
 	mm[1][0] = aa[1].y;
 	mm[1][1] = -bb[1].y;
 	cc[0][0] = bb[0].x-aa[0].x;
 	cc[1][0] = bb[0].y-aa[0].y;
-	Mat<double> inv(2,2);
 	bool rc;
-	if (mm.inv(inv)) {
-		const Mat<double> tt = inv.mul(cc);
-		if (tt[0][0] >= 0.0 && tt[0][0] <= 1.0 && tt[1][0] >= 0.0 && tt[1][0] <= 1.0)
+	int det = mm.det();
+	if (det != 0) {
+		int det_sign = (det>0)?1:-1;
+		int det_abs = abs(det);
+		Mat<int> adj = mm.adj();
+		Mat<int> tt = adj.mul(cc);
+		tt *= det_sign;
+		//cerr << "t1: " << tt[0][0] << " t2: " << tt[1][0] << endl;
+		if (tt[0][0] >= 0 && tt[0][0] <= det_abs && tt[1][0] >= 0 && tt[1][0] <= det_abs)
 			rc = true;
 		else
 			rc = false;
@@ -199,7 +205,7 @@ int main(int argc, char **argv) {
 			if (da[0] > db[1] || db[0] > da[1])
 				rc = false;
 			else
-				rc = true;
+				rc = true; // on the straight line and overlap
 		} else {
 			rc = false;
 		}
