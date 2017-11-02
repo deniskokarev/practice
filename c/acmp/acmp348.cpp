@@ -128,11 +128,17 @@ template<typename N> struct Mat {
 		while (va!=vv.end())
 			*va++ += *vb++;
 	}
-	N len_sq() const {
+	N dot(const Mat<N> &b) const {
+		assert(vv.size() == b.vv.size());
 		N s = 0;
-		for (auto &v:vv)
-			s += v*v;
+		auto va = vv.begin();
+		auto vb = b.vv.begin();
+		while (va!=vv.end())
+			s += (*va++) * (*vb++);
 		return s;
+	}
+	N len_sq() const {
+		return dot(*this);
 	}
 	// 1/d won't work properly on integral matrixes
 	bool inv(Mat &res) const {
@@ -184,13 +190,10 @@ struct P : public Mat<INT> {
 	INT cross(const P &b) const {
 		return x*b.y - b.x*y;
 	}
-	INT dot(const P &b) const {
-		return x*b.x + b.x*b.y;
-	}
 };
  
 // Solution from MAXimal
-inline int area (const P &a, const P &b, const P &c) {
+inline INT area (const P &a, const P &b, const P &c) {
 	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
   
@@ -252,12 +255,15 @@ int main(int argc, char **argv) {
 			rc = false;
 	} else {
 		if (va.x != 0 || va.y != 0) {
-			// chk if on the straight line
-			P p1 = bb[0];
-			p1 -= aa[0];
-			if (va.cross(p1) == 0) {
-				if (intersect_1(aa[0].x, aa[1].x, bb[0].x, bb[1].x) &&
-					intersect_1(aa[0].y, aa[1].y, bb[0].y, bb[1].y))
+			// we know they don't intersect, now chk if on the straight line
+			P pb0 = bb[0];
+			pb0 -= aa[0];
+			if (va.cross(pb0) == 0) {
+				P pb1 = bb[1];
+				pb1 -= aa[0];
+				INT pa[2] = {0, va.dot(va)};
+				INT pb[2] = {va.dot(pb0), va.dot(pb1)};
+				if ((pb[0] >= pa[0] && pb[0] <= pa[1]) || (pb[1] >= pa[0] && pb[1] <= pa[1]))
 					rc = true; // on the straight line and overlap
 				else
 					rc = false;
