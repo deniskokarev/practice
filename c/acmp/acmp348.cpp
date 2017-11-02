@@ -41,6 +41,17 @@ template<typename N> struct Mat {
 	}
 	Mat(Mat &&m):rows(m.rows),cols(m.cols),vv(std::move(m.vv)) {
 	}
+	void operator=(const Mat &m) {
+		rows = m.rows;
+		cols = m.cols;
+		vv.resize(m.vv.size());
+		std::copy(m.vv.begin(), m.vv.end(), vv.begin());
+	}
+	void operator=(Mat &&m) {
+		rows = m.rows;
+		cols = m.cols;
+		vv = std::move(m.vv);
+	}
 	typename VEC::iterator operator[](int r) {
 		return vv.begin()+r*cols;
 	}
@@ -192,28 +203,6 @@ struct P : public Mat<INT> {
 	}
 };
  
-// Solution from MAXimal
-inline INT area (const P &a, const P &b, const P &c) {
-	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-  
-inline bool intersect_1 (INT a, INT b, INT c, INT d) {
-	if (a > b)	swap (a, b);
-	if (c > d)	swap (c, d);
-	return max(a,c) <= min(b,d);
-}
- 
-inline int sign(INT v) {
-	return v>0?1:v<0?-1:0;
-}
- 
-bool intersect(const P &a, const P &b, const P &c, const P &d) {
-	return intersect_1 (a.x, b.x, c.x, d.x)
-		&& intersect_1 (a.y, b.y, c.y, d.y)
-		&& sign(area(a,b,c)) * sign(area(a,b,d)) <= 0
-		&& sign(area(c,d,a)) * sign(area(c,d,b)) <= 0;
-}
- 
 // using parametric line intersection approach
 // use integers everywhere
 int main(int argc, char **argv) {
@@ -228,11 +217,11 @@ int main(int argc, char **argv) {
 	P vb = bb[1];
 	vb -= bb[0];
 	if (va.x*va.x + va.y*va.y < vb.x*vb.x + vb.y*vb.y) {
-		// making va the longest vector
-		swap(aa[0].vv, bb[0].vv);
-		swap(aa[1].vv, bb[1].vv);
-		swap(va.vv, vb.vv);
+		// making "a" our longest vector
+		swap(aa, bb);
+		swap(va, vb);
 	}
+	// solve parametric line eq
 	Mat<INT> mm(2,2);
 	Mat<INT> cc(2,1);
 	mm[0][0] = va.x;
@@ -256,18 +245,18 @@ int main(int argc, char **argv) {
 	} else {
 		if (va.x != 0 || va.y != 0) {
 			// we know they don't intersect, now chk if on the straight line
-			P pb0 = bb[0];
-			pb0 -= aa[0];
-			if (va.cross(pb0) == 0) {
-				P pb1 = bb[1];
-				pb1 -= aa[0];
-				INT pa[2] = {0, va.dot(va)};
-				INT pb[2] = {va.dot(pb0), va.dot(pb1)};
-				if ((pb[0] >= pa[0] && pb[0] <= pa[1]) || (pb[1] >= pa[0] && pb[1] <= pa[1]))
+			P pb = bb[0];
+			pb -= aa[0];
+			if (va.cross(pb) == 0) {
+				// project both seqments on the va vect
+				INT dta[2] = {va.dot(aa[0]), va.dot(aa[1])};
+				INT dtb[2] = {va.dot(bb[0]), va.dot(bb[1])};
+				sort(dta, dta+2);
+				sort(dtb, dtb+2);
+				if ((dtb[0] >= dta[0] && dtb[0] <= dta[1]) || (dtb[1] >= dta[0] && dtb[1] <= dta[1]))
 					rc = true; // on the straight line and overlap
 				else
 					rc = false;
-				assert(rc == intersect(aa[0], aa[1], bb[0], bb[1]));
 			} else {
 				rc = false;
 			}
