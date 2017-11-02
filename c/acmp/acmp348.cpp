@@ -257,10 +257,8 @@ int main(int argc, char **argv) {
 		adj *= det_sign;
 		const Mat<INT> tt = adj.mul(cc); // tt is scaled by det_abs
 		INT det_abs = abs(det);
-		if (tt[0][0] >= 0 && tt[0][0] <= det_abs && tt[1][0] >= 0 && tt[1][0] <= det_abs)
-			rc = true;
-		else
-			rc = false;
+		// if both t[0] and t[1] lay in [0..det_abs] range
+		rc = (tt[0][0] >= 0 && tt[0][0] <= det_abs && tt[1][0] >= 0 && tt[1][0] <= det_abs);
 	} else {
 		if (va.x != 0 || va.y != 0) {
 			// we know they don't intersect, now chk if on the straight line
@@ -272,19 +270,13 @@ int main(int argc, char **argv) {
 				INT dtb[2] = {va.dot(bb[0]), va.dot(bb[1])};
 				sort(dta, dta+2);
 				sort(dtb, dtb+2);
-				if ((dtb[1] >= dta[0] && dtb[0] <= dta[1]))
-					rc = true; // on the straight line and overlap
-				else
-					rc = false;
+				rc = ((dtb[1] >= dta[0] && dtb[0] <= dta[1])); // if overlap
 			} else {
-				rc = false;
+				rc = false; // just ||
 			}
 		} else {
 			// both a and b are points
-			if (aa[0] == bb[0])
-				rc = true;
-			else
-				rc = false;
+			rc = (aa[0] == bb[0]);
 		}
 	}
 	cout << (rc?"Yes":"No") << endl;
