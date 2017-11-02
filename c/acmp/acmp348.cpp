@@ -1,6 +1,6 @@
 /* ACMP 348 */
 /*
- * Our naive Matrix arithmetic
+ * "naive" Matrix operations
  */
 #include <vector>
 #include <cassert>
@@ -30,11 +30,12 @@ template<typename I, typename F> void __heaps_perm_r(const I &beg, const I &end,
 	}
 }
  
-template<typename N> struct Mat {
+template<typename N> class Mat {
+protected:
 	using VEC = std::vector<N>;
 	int rows, cols;
 	VEC vv;
-	 
+public:
 	Mat(int _r, int _c):rows(_r),cols(_c),vv(rows*cols) {
 	}
 	Mat(const Mat &m):rows(m.rows),cols(m.cols),vv(m.vv) {
@@ -139,6 +140,19 @@ template<typename N> struct Mat {
 		while (va!=vv.end())
 			*va++ += *vb++;
 	}
+	bool operator==(const Mat &b) {
+		if (vv.size() != b.vv.size())
+			return false;
+		auto va = vv.begin();
+		auto vb = b.vv.begin();
+		while (va!=vv.end())
+			if (*va++ != *vb++)
+				return false;
+		return true;
+	}
+	bool operator!=(const Mat &b) {
+		return !operator==(b);
+	}
 	N dot(const Mat<N> &b) const {
 		assert(vv.size() == b.vv.size());
 		N s = 0;
@@ -162,10 +176,14 @@ template<typename N> struct Mat {
 			return false;
 		}
 	}
-	// in case if want to access some matrix cells by name
-	struct F {
+	// in case if you want to "name" a cell
+	class F {
+	protected:
 		Mat<N> &parent;
 		int ofs;
+	public:
+		F(Mat &_p, int _ofs):parent(_p), ofs(_ofs){
+		}
 		operator N() const {
 			return parent.vv[ofs];
 		}
@@ -193,11 +211,12 @@ using INT = int64_t;
 struct P : public Mat<INT> {
 	F x, y;
 	 
-	P():Mat(1,2),x{*this, 0},y{*this, 1} {
+	P():Mat(1,2),x(*this,0),y(*this,1) {
 	}
 	P(const P &p):P() {
 		copy(p.vv.begin(), p.vv.end(), vv.begin());
 	}
+	// cross (vector) product
 	INT cross(const P &b) const {
 		return x*b.y - b.x*y;
 	}
@@ -216,7 +235,7 @@ int main(int argc, char **argv) {
 	va -= aa[0];
 	P vb = bb[1];
 	vb -= bb[0];
-	if (va.x*va.x + va.y*va.y < vb.x*vb.x + vb.y*vb.y) {
+	if (va.len_sq() < vb.len_sq()) {
 		// making "a" our longest vector
 		swap(aa, bb);
 		swap(va, vb);
@@ -233,10 +252,10 @@ int main(int argc, char **argv) {
 	bool rc;
 	INT det = mm.det();
 	if (det != 0) {
-		Mat<INT> adj = mm.adj();
+		Mat<INT> adj = mm.adj(); // don't divide by det
 		INT det_sign = (det>0)?1:-1;
 		adj *= det_sign;
-		const Mat<INT> tt = adj.mul(cc);
+		const Mat<INT> tt = adj.mul(cc); // tt is scaled by det_abs
 		INT det_abs = abs(det);
 		if (tt[0][0] >= 0 && tt[0][0] <= det_abs && tt[1][0] >= 0 && tt[1][0] <= det_abs)
 			rc = true;
@@ -248,12 +267,12 @@ int main(int argc, char **argv) {
 			P pb = bb[0];
 			pb -= aa[0];
 			if (va.cross(pb) == 0) {
-				// project both seqments on the va vect
+				// project both seqments on the va vect (extra scaling by |va| doesn't hurt)
 				INT dta[2] = {va.dot(aa[0]), va.dot(aa[1])};
 				INT dtb[2] = {va.dot(bb[0]), va.dot(bb[1])};
 				sort(dta, dta+2);
 				sort(dtb, dtb+2);
-				if ((dtb[0] >= dta[0] && dtb[0] <= dta[1]) || (dtb[1] >= dta[0] && dtb[1] <= dta[1]))
+				if ((dtb[1] >= dta[0] && dtb[0] <= dta[1]))
 					rc = true; // on the straight line and overlap
 				else
 					rc = false;
@@ -262,7 +281,7 @@ int main(int argc, char **argv) {
 			}
 		} else {
 			// both a and b are points
-			if (aa[0].x == bb[0].x && aa[0].y == bb[0].y)
+			if (aa[0] == bb[0])
 				rc = true;
 			else
 				rc = false;
