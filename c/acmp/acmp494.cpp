@@ -13,6 +13,10 @@ struct P {
 	int64_t cross(const P &b) const {
 		return x*b.y - y*b.x;
 	}
+	void operator=(const P &b) {
+		x = b.x;
+		y = b.y;
+	}
 };
 
 int sign(int64_t n) {
@@ -26,6 +30,8 @@ int64_t isqrt(int64_t value) {
 int main(int argc, char **argv) {
 	P aa[2];
 	cin >> aa[0].x >> aa[0].y >> aa[1].x >> aa[1].y;
+	if (aa[0].len2() > aa[1].len2())
+		swap(aa[0], aa[1]);
 	P va = {aa[1].x-aa[0].x, aa[1].y-aa[0].y};
 	int64_t len2 = va.len2();
 	// find normal vector scaled up to |len2|
@@ -34,19 +40,23 @@ int main(int argc, char **argv) {
 		-va.x*(aa[0].x*va.y-aa[0].y*va.x)
 	};
 	// sq distances
-	int64_t dn = isqrt(nr.len2()/len2/len2);
-	int64_t d0 = isqrt(aa[0].len2());
-	int64_t d1 = isqrt(aa[1].len2());
-	//cerr << "d0: " << d0 << " d1: " << d1 << " dn: " << dn << endl;
+	int64_t dn = isqrt(nr.len2())/len2;
+	int64_t d[2] = {
+		isqrt(aa[0].len2()),
+		isqrt(aa[1].len2())
+	};
+	cerr << "d0: " << d[0] << " d1: " << d[1] << " dn: " << dn << endl;
 	int cnt;
 	if (sign(nr.cross(aa[0])) * sign(nr.cross(aa[1])) > 0) {
-		//cerr << "same side" << endl;
-		cnt = max(d0,d1) - min(d0,d1);
+		cerr << "same side" << endl;
+		cnt = d[1] - d[0];
+		if (d[0]*d[0] == aa[0].len2())
+			cnt++; // d[0] is precisely on the circle
 	} else {
-		//cerr << "opposite sides" << endl;
-		cnt = (d0-dn) + (d1-dn);
-		if (dn*dn*len2*len2 == nr.len2())
-			cnt++; // nr is precisely on the circle
+		cerr << "opposite sides" << endl;
+		cnt = (d[0]-dn) + (d[1]-dn);
+		if (dn*dn*len2*len2 == nr.len2() && nr.len2() > 0)
+			cnt++; // nr is precisely on the circle of R>=1
 	}
 	cout << cnt << endl;
 	return 0;
