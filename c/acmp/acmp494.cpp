@@ -1,6 +1,7 @@
 /* ACMP 494 */ 
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 using namespace std;
 
@@ -18,15 +19,9 @@ int sign(int64_t n) {
 	return (n>0)?+1:(n<0)?-1:0;
 }
 
-int64_t isqrt(int64_t n) {
-	int64_t xp = n;
-	int64_t x = (xp+n/xp)/2;
-	while (xp > x) {
-		xp = x;
-		x = (xp+n/xp)/2;
-	}
-	return x;
-}
+int64_t isqrt(int64_t value) {  
+	return static_cast<int64_t>(sqrt(static_cast<double>(value)));  
+} 
 
 int main(int argc, char **argv) {
 	P aa[2];
@@ -44,7 +39,7 @@ int main(int argc, char **argv) {
 	int64_t d1 = isqrt(aa[1].len2());
 	//cerr << "d0: " << d0 << " d1: " << d1 << " dn: " << dn << endl;
 	int cnt;
-	if (sign(nr.cross(aa[0])) * sign(nr.cross(aa[1])) >= 0) {
+	if (sign(nr.cross(aa[0])) * sign(nr.cross(aa[1])) > 0) {
 		//cerr << "same side" << endl;
 		cnt = max(d0,d1) - min(d0,d1);
 	} else {
