@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 
 using namespace std;
 
@@ -36,8 +37,8 @@ int main(int argc, char **argv) {
 	int64_t len2 = va.len2();
 	// find normal vector scaled up to |len2|
 	P nr = {
-		va.y*(aa[0].x*va.y-aa[0].y*va.x),
-		-va.x*(aa[0].x*va.y-aa[0].y*va.x)
+		va.y*(aa[0].cross(va)),
+		-va.x*(aa[0].cross(va))
 	};
 	// sq distances
 	int64_t dn = isqrt(nr.len2())/len2;
@@ -47,7 +48,7 @@ int main(int argc, char **argv) {
 	};
 	cerr << "d0: " << d[0] << " d1: " << d[1] << " dn: " << dn << endl;
 	int cnt;
-	if (sign(nr.cross(aa[0])) * sign(nr.cross(aa[1])) > 0) {
+	if (sign(nr.cross(aa[0])) * sign(nr.cross(aa[1])) >= 0 && va.len2() <= aa[1].len2()) {
 		cerr << "same side" << endl;
 		cnt = d[1] - d[0];
 		if (d[0]*d[0] == aa[0].len2())
@@ -55,9 +56,12 @@ int main(int argc, char **argv) {
 	} else {
 		cerr << "opposite sides" << endl;
 		cnt = (d[0]-dn) + (d[1]-dn);
-		if (dn*dn*len2*len2 == nr.len2() && nr.len2() > 0)
-			cnt++; // nr is precisely on the circle of R>=1
+		if (dn*dn*len2*len2 == nr.len2())
+			cnt++; // nr is precisely on the circle
 	}
+	// subtract if goes via O point
+	if (va.cross(aa[1]) == 0 && va.len2() >= aa[1].len2())
+		cnt--;
 	cout << cnt << endl;
 	return 0;
 }
