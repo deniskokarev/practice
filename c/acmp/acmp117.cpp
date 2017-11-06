@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <set>
 
 using namespace std;
 
@@ -25,6 +26,13 @@ struct Q {
 int sign(int n) {
 	return (n>0) - (n<0);
 }
+
+struct UniqP {
+	int x, y;
+	bool operator<(const UniqP &b) const {
+		return x<b.x || (x==b.x && y<b.y);
+	}
+};
 
 struct P {
 	int x, y;
@@ -55,9 +63,9 @@ int orientation(const P &a, const P &b, const P &c) {
 }
 
 // Building positive convex hull using Graham method
-// All angles as signed sin^2 represented in rational numbers
+// All angles are signed sin^2 represented in rational numbers
 // for accuracy
-vector<P> conv(const P *pp, int n, int sidx) {
+vector<P> conv(const vector<P> &pp, int n, int sidx) {
 	vector<pair<Q,P>> ordp;
 	for (int i=0; i<n; i++) {
 		if (i!=sidx)
@@ -78,19 +86,27 @@ vector<P> conv(const P *pp, int n, int sidx) {
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	P pp[n];
-	int sidx = 0; // lower left point
+	set<UniqP> spp;
 	for (int i=0; i<n; i++) {
-		P &p = pp[i];
+		UniqP p;
 		cin >> p.x >> p.y;
-		if (pp[sidx].x > p.x || (pp[sidx].x >= p.x && pp[sidx].y > p.y))
+		spp.insert(p);
+	}
+	n = spp.size();
+	vector<P> pp(n);
+	int sidx = 0; // lower left point
+	int i=0;
+	for (auto sp:spp) {
+		pp[i] = P {sp.x, sp.y};
+		if (pp[sidx].x > sp.x || (pp[sidx].x >= sp.x && pp[sidx].y > sp.y))
 			sidx = i;
+		i++;
 	}
 	if (n > 2) {
 		int64_t s = 0;
 		auto ch = conv(pp, n, sidx);
-		for (auto &c:ch)
-			cerr << "x: " << c.x << " y: " << c.y << endl;
+		//for (auto &c:ch)
+		//	cerr << "x: " << c.x << " y: " << c.y << endl;
 		for (int i=0; i<ch.size()-1; i++)
 			s += ch[i].cross(ch[i+1]);
 		s += ch.back().cross(ch.front());
