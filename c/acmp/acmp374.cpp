@@ -5,42 +5,23 @@
 #include <iomanip>
 #include <cmath>
 #include <cassert>
+#include <cstdio>
 
 using namespace std;
 
-// rational number to represent accuratre angle
-struct Q {
-	int64_t n, d;
-	Q(int _n, int _d) {
-		if (d<0) {
-			n = -_n;
-			d = -_d;
-		} else {
-			n = _n;
-			d = _d;
-		}
-	}
-	bool operator==(const Q &b) const {
-		return n*b.d == b.n*d;
-	}
-	bool operator<(const Q &b) const {
-		return n*b.d < b.n*d;
-	}
-};
-
-int sign(int n) {
+int sign(int64_t n) {
 	return (n>0) - (n<0);
 }
 
 struct P {
-	int x, y;
+	int64_t x, y;
 	bool operator==(const P &b) const {
 		return x==b.x && y == b.y;
 	}
 	bool operator<(const P &b) const {
 		return x*x+y*y < b.x*b.x+b.y*b.y;
 	}
-	int len2() const {
+	int64_t len2() const {
 		return x*x + y*y;
 	}
 	P operator-(const P &b) const {
@@ -52,20 +33,20 @@ struct P {
 };
 
 // signed sin^2 between a,b and b,c
-Q sin2(const P &a, const P &b, const P &c) {
-	int x1 = b.x-a.x, y1 = b.y-a.y;
-	int x2 = c.x-b.x, y2 = c.y-b.y;
-	int lab2 = x1*x1+y1*y1;
-	int lbc2 = x2*x2+y2*y2;
-	int cr = x1*y2-y1*x2;
-	return Q(cr*cr*sign(cr), lab2*lbc2);
+double sin2(const P &a, const P &b, const P &c) {
+	int64_t x1 = b.x-a.x, y1 = b.y-a.y;
+	int64_t x2 = c.x-b.x, y2 = c.y-b.y;
+	double lab2 = x1*x1+y1*y1;
+	double lbc2 = x2*x2+y2*y2;
+	double cr = x1*y2-y1*x2;
+	return cr/lab2/lbc2;
 }
 
 // a->b->c turns left = +1, right = -1
 int orientation(const P &a, const P &b, const P &c) {
-	int x1 = b.x-a.x, y1 = b.y-a.y;
-	int x2 = c.x-b.x, y2 = c.y-b.y;
-	int cr = x1*y2-y1*x2;
+	int64_t x1 = b.x-a.x, y1 = b.y-a.y;
+	int64_t x2 = c.x-b.x, y2 = c.y-b.y;
+	int64_t cr = x1*y2-y1*x2;
 	return sign(cr);
 }
 
@@ -81,7 +62,7 @@ vector<P> conv(const vector<P> &pp) {
 			sidx = i;
 		i++;
 	}
-	vector<pair<Q,P>> ordp;
+	vector<pair<double,P>> ordp;
 	for (int i=0; i<pp.size(); i++) {
 		if (i!=sidx)
 			ordp.push_back(make_pair(sin2(P{pp[sidx].x-1,pp[sidx].y}, pp[sidx], pp[i]), pp[i]));
@@ -104,9 +85,6 @@ int main(int argc, char **argv) {
 	vector<P> pp(n);
 	for (auto &p:pp)
 		cin >> p.x >> p.y;
-	//!NB: must remove duplicate points, otherwise Wrong Answer on 10
-	sort(pp.begin(), pp.end());
-	pp.erase(unique(pp.begin(), pp.end()), pp.end());
 	if (pp.size() > 1) {
 		double pr = 0;
 		auto ch = conv(pp);
@@ -114,7 +92,7 @@ int main(int argc, char **argv) {
 			P v = ch[i]-ch[(i+1)%ch.size()];
 			pr += sqrt(v.len2());
 		}
-		cout << fixed << setprecision(1) << pr << endl;
+		printf("%.2f\n", pr);
 	} else {
 		cout << 0 << endl;
 	}
