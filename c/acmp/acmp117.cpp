@@ -2,14 +2,14 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <set>
+#include <cassert>
 
 using namespace std;
 
-// rational number
+// rational number to represent accuratre angle
 struct Q {
 	int64_t n, d;
-	Q(int64_t _n, int64_t _d) {
+	Q(int _n, int _d) {
 		if (d<0) {
 			n = -_n;
 			d = -_d;
@@ -17,6 +17,9 @@ struct Q {
 			n = _n;
 			d = _d;
 		}
+	}
+	bool operator==(const Q &b) const {
+		return n*b.d == b.n*d;
 	}
 	bool operator<(const Q &b) const {
 		return n*b.d < b.n*d;
@@ -27,15 +30,11 @@ int sign(int n) {
 	return (n>0) - (n<0);
 }
 
-struct UniqP {
-	int x, y;
-	bool operator<(const UniqP &b) const {
-		return x<b.x || (x==b.x && y<b.y);
-	}
-};
-
 struct P {
 	int x, y;
+	bool operator==(const P &b) const {
+		return x==b.x && y == b.y;
+	}
 	bool operator<(const P &b) const {
 		return x*x+y*y < b.x*b.x+b.y*b.y;
 	}
@@ -63,11 +62,19 @@ int orientation(const P &a, const P &b, const P &c) {
 }
 
 // Building positive convex hull using Graham method
-// All angles are signed sin^2 represented in rational numbers
+// All angles are signed sin^2 in rational numbers
 // for accuracy
-vector<P> conv(const vector<P> &pp, int n, int sidx) {
+vector<P> conv(const vector<P> &pp) {
+	assert(pp.size() > 1);
+	int sidx = 0;
+	int i = 0;
+	for (auto &p:pp) {
+		if (pp[sidx].x > p.x || (pp[sidx].x >= p.x && pp[sidx].y > p.y))
+			sidx = i;
+		i++;
+	}
 	vector<pair<Q,P>> ordp;
-	for (int i=0; i<n; i++) {
+	for (int i=0; i<pp.size(); i++) {
 		if (i!=sidx)
 			ordp.push_back(make_pair(sin2(P{pp[sidx].x-1,pp[sidx].y}, pp[sidx], pp[i]), pp[i]));
 	}
@@ -75,7 +82,7 @@ vector<P> conv(const vector<P> &pp, int n, int sidx) {
 	vector<P> conv;
 	conv.push_back(pp[sidx]);
 	conv.push_back(ordp[0].second);
-	for (int i=1; i<n-1; i++) {
+	for (int i=1; i<ordp.size(); i++) {
 		while (orientation(*(conv.end()-2), *(conv.end()-1), ordp[i].second) < 0)
 			conv.pop_back();
 		conv.push_back(ordp[i].second);
@@ -86,30 +93,19 @@ vector<P> conv(const vector<P> &pp, int n, int sidx) {
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	set<UniqP> spp;
-	for (int i=0; i<n; i++) {
-		UniqP p;
-		cin >> p.x >> p.y;
-		spp.insert(p);
-	}
-	n = spp.size();
 	vector<P> pp(n);
-	int sidx = 0; // lower left point
-	int i=0;
-	for (auto sp:spp) {
-		pp[i] = P {sp.x, sp.y};
-		if (pp[sidx].x > sp.x || (pp[sidx].x >= sp.x && pp[sidx].y > sp.y))
-			sidx = i;
-		i++;
-	}
-	if (n > 2) {
-		int64_t s = 0;
-		auto ch = conv(pp, n, sidx);
+	for (auto &p:pp)
+		cin >> p.x >> p.y;
+	//!NB: must remove duplicate points, otherwise Wrong Answer on 10
+	sort(pp.begin(), pp.end());
+	pp.erase(unique(pp.begin(), pp.end()), pp.end());
+	if (pp.size() > 1) {
+		int s = 0;
+		auto ch = conv(pp);
 		//for (auto &c:ch)
 		//	cerr << "x: " << c.x << " y: " << c.y << endl;
-		for (int i=0; i<ch.size()-1; i++)
-			s += ch[i].cross(ch[i+1]);
-		s += ch.back().cross(ch.front());
+		for (int i=0; i<ch.size(); i++)
+			s += ch[i].cross(ch[(i+1)%ch.size()]);
 		if (s&1)
 			cout << s/2+1 << endl;
 		else
