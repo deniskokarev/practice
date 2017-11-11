@@ -70,12 +70,12 @@ int main(int argc, char **argv) {
 		int64_t xl = ceil(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) - l*sqrt(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
 		int64_t xr = floor(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) + l*sqrt(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
 		//cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
-		xl = max(xl, -y);
-		xr = min(xr, y);
-		if (xr>=xl) {
-			//cerr << "y: " << y << " xl: " << xl << " xr: " << xr << " cnt: " << xr-xl+1 << endl;
-			s += (xr-xl)/2+1;
-		}
+		xl += y;
+		xr += y;
+		int cr = min(xr, 2*y)/2;
+		int cl = (max(xl, 0LL)+1)/2;
+		s += cr-cl+1;
+		//cerr << "y: " << y << " cnt: " << cr-cl+1 << endl;
 	}
 	cout << s << endl;
 	return 0;
