@@ -72,10 +72,12 @@ int main(int argc, char **argv) {
 		cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
 		xl += y;
 		xr += y;
-		int64_t cr = min(xr, 2*y)/2;
-		int64_t cl = (max(xl, 0LL)+1)/2;
-		s += cr-cl+1;
-		//cerr << "y: " << y << " cnt: " << cr-cl+1 << endl;
+		if (xl <= 2*y && xr >= 0) {
+			int64_t cr = min(xr, 2*y)/2;
+			int64_t cl = (max(xl, 0LL)+1)/2;
+			s += cr-cl+1;
+			//cerr << "y: " << y << " cnt: " << cr-cl+1 << endl;
+		}
 	}
 	cout << s << endl;
 	return 0;
