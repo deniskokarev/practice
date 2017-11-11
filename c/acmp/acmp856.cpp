@@ -5,15 +5,6 @@
 
 using namespace std;
 
-struct P {
-	long double x, y;
-	void operator+=(const P &b) {
-		x += b.x;
-		y += b.y;
-	}
-};
-
-
 /*
  * I'm too old for this shit - using python sympy to solve the system
  *
@@ -51,7 +42,11 @@ print sol[1][x]
 # (c.x*v.y**2 - c.y*v.x*v.y + v.x*v.y*y - sqrt(l**2*v.y**2*(v.x**2 + v.y**2)))/v.y**2
 # (c.x*v.y**2 - c.y*v.x*v.y + v.x*v.y*y + sqrt(l**2*v.y**2*(v.x**2 + v.y**2)))/v.y**2
 
- */
+*/
+
+struct P {
+	long double x, y;
+};
 
 int main(int argc, char **argv) {
 	int64_t r, n;
@@ -62,11 +57,13 @@ int main(int argc, char **argv) {
 	cin >> c.x >> c.y;
 	P v;
 	cin >> v.x >> v.y;
-	assert(v.y != 0);
+	assert(v.y > 0);
 	// augmented radius of the ball
 	long double l = r+q;
 	int64_t s = 0;
 	for (int64_t y=0; y<n; y++) {
+		// we know v.y > 0, so simplify a bit to avoid overflow
+		// also don't forget that l is given with factor of 1000
 		int64_t xl = ceil(c.x - (c.y*v.x - v.x*y + l*sqrtl(v.x*v.x + v.y*v.y)/1e3)/v.y);
 		int64_t xr = floor(c.x - (c.y*v.x - v.x*y - l*sqrtl(v.x*v.x + v.y*v.y)/1e3)/v.y);
 		//cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
@@ -76,7 +73,6 @@ int main(int argc, char **argv) {
 			int64_t cr = min(xr, 2*y)/2;
 			int64_t cl = (max(xl, 0LL)+1)/2;
 			s += cr-cl+1;
-			//cerr << "y: " << y << " cnt: " << cr-cl+1 << endl;
 		}
 	}
 	cout << s << endl;
