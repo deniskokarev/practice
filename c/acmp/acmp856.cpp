@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 	for (int64_t y=0; y<n; y++) {
 		int64_t xl = ceil(c.x - (c.y*v.x - v.x*y + l*sqrtl(v.x*v.x + v.y*v.y)/1e3)/v.y);
 		int64_t xr = floor(c.x - (c.y*v.x - v.x*y - l*sqrtl(v.x*v.x + v.y*v.y)/1e3)/v.y);
-		cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
+		//cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
 		xl += y;
 		xr += y;
 		if (xl <= 2*y && xr >= 0) {
