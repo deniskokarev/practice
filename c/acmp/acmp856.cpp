@@ -6,7 +6,7 @@
 using namespace std;
 
 struct P {
-	int64_t x, y;
+	long double x, y;
 	void operator+=(const P &b) {
 		x += b.x;
 		y += b.y;
@@ -64,16 +64,16 @@ int main(int argc, char **argv) {
 	cin >> v.x >> v.y;
 	assert(v.y != 0);
 	// augmented radius of the ball
-	int64_t l = r+q;
+	long double l = r+q;
 	int64_t s = 0;
 	for (int64_t y=0; y<n; y++) {
-		int64_t xl = ceil(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) - l*sqrt(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
-		int64_t xr = floor(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) + l*sqrt(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
+		int64_t xl = ceil(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) - l*sqrtl(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
+		int64_t xr = floor(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) + l*sqrtl(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
 		//cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
 		xl += y;
 		xr += y;
-		int cr = min(xr, 2*y)/2;
-		int cl = (max(xl, 0LL)+1)/2;
+		int64_t cr = min(xr, 2*y)/2;
+		int64_t cl = (max(xl, 0LL)+1)/2;
 		s += cr-cl+1;
 		//cerr << "y: " << y << " cnt: " << cr-cl+1 << endl;
 	}
