@@ -67,9 +67,9 @@ int main(int argc, char **argv) {
 	long double l = r+q;
 	int64_t s = 0;
 	for (int64_t y=0; y<n; y++) {
-		int64_t xl = ceil(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) - l*sqrtl(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
-		int64_t xr = floor(((c.x*v.y*v.y - c.y*v.x*v.y + v.x*v.y*y) + l*sqrtl(v.y*v.y*(v.x*v.x + v.y*v.y))/1e3)/v.y/v.y);
-		//cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
+		int64_t xl = ceil(c.x - (c.y*v.x - v.x*y + l*sqrtl(v.x*v.x + v.y*v.y)/1e3)/v.y);
+		int64_t xr = floor(c.x - (c.y*v.x - v.x*y - l*sqrtl(v.x*v.x + v.y*v.y)/1e3)/v.y);
+		cerr << "y: " << y << " xl: " << xl << " xr: " << xr << endl;
 		xl += y;
 		xr += y;
 		int64_t cr = min(xr, 2*y)/2;
