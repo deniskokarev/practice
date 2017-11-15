@@ -1,7 +1,8 @@
 /* ACMP 931 */
 #include <iostream>
 #include <tuple>
-#include <map>
+#include <vector>
+#include <cassert>
 using namespace std;
 
 /*
@@ -65,29 +66,30 @@ struct Q : public tuple<int, uint64_t, uint64_t>{
 	}
 };
 
-inline int64_t det(const P *p, int i, int j, int k) {
+inline int64_t det(const vector<P> &p, int i, int j, int k) {
 	return 2*(p[i].x*p[j].y - p[i].x*p[k].y - p[i].y*p[j].x + p[i].y*p[k].x + p[j].x*p[k].y - p[j].y*p[k].x);
 }
 
-inline Q x(const P *p, int i, int j, int k) {
+inline Q x(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k);
 	return Q((p[i].x*p[i].x*p[j].y - p[i].x*p[i].x*p[k].y + p[i].y*p[i].y*p[j].y - p[i].y*p[i].y*p[k].y - p[i].y*p[j].x*p[j].x - p[i].y*p[j].y*p[j].y + p[i].y*p[k].x*p[k].x + p[i].y*p[k].y*p[k].y + p[j].x*p[j].x*p[k].y + p[j].y*p[j].y*p[k].y - p[j].y*p[k].x*p[k].x - p[j].y*p[k].y*p[k].y), d);
 }
 
-inline Q y(const P *p, int i, int j, int k) {
+inline Q y(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k);
 	return Q((-p[i].x*p[i].x*p[j].x + p[i].x*p[i].x*p[k].x + p[i].x*p[j].x*p[j].x + p[i].x*p[j].y*p[j].y - p[i].x*p[k].x*p[k].x - p[i].x*p[k].y*p[k].y - p[i].y*p[i].y*p[j].x + p[i].y*p[i].y*p[k].x - p[j].x*p[j].x*p[k].x + p[j].x*p[k].x*p[k].x + p[j].x*p[k].y*p[k].y - p[j].y*p[j].y*p[k].x), d);
 }
 
-inline Q r2(const P *p, int i, int j, int k) {
+inline Q r2(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k); // d*d will overflow ;-( but will try if it goes thru anyways ;-)
 	return Q((p[i].x*p[i].x - 2*p[i].x*p[j].x + p[i].y*p[i].y - 2*p[i].y*p[j].y + p[j].x*p[j].x + p[j].y*p[j].y)*(p[i].x*p[i].x - 2*p[i].x*p[k].x + p[i].y*p[i].y - 2*p[i].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y)*(p[j].x*p[j].x - 2*p[j].x*p[k].x + p[j].y*p[j].y - 2*p[j].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y), d*d);
 }
 
-bool can_circle(Q &cx, Q &cy, Q &cr2, const P *p, int *s, int ns) {
-	if (ns < 3) {
+bool can_circle(const vector<P> &p, vector<int> s) {
+	if (s.size() < 3) {
 		return true;
 	} else {
+		Q cx(0,0), cy(0,0), cr2(0,0);
 		if (det(p, s[0], s[1], s[2]) != 0) {
 			cx = x(p, s[0], s[1], s[2]);
 			cy = y(p, s[0], s[1], s[2]);
@@ -95,6 +97,7 @@ bool can_circle(Q &cx, Q &cy, Q &cr2, const P *p, int *s, int ns) {
 		} else {
 			return false;
 		}
+		int ns = s.size();
 		for (int i=0; i<ns-2; i++)
 			for (int j=i+1; j<ns-1; j++)
 				for (int k=j+1; k<ns; k++)
@@ -110,43 +113,36 @@ bool can_circle(Q &cx, Q &cy, Q &cr2, const P *p, int *s, int ns) {
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	P pp[n];
-	for (int i=0; i<n; i++) {
-		auto &p = pp[i];
+	vector<P> pp(n);
+	for (auto &p:pp)
 		cin >> p.x >> p.y;
-	}
 	// for 3+4 points we can always identify the exact center/radius of one circle
 	int lmn = min(7, n);
-	Q c1x(0,0), c1y(0,0), c1r2(0,0);
-	Q c2x(0,0), c2y(0,0), c2r2(0,0);
-	int c1[7], c2[7];
-	int nc1 = 0, nc2 = 0;
+	vector<int> c1, c2;
 	for (int pw=0; pw < (1<<lmn); pw++) {
-		int s1[7], s2[7];
-		int ns1 = 0, ns2 = 0;
+		vector<int> s1, s2;
 		for (int i=0; i<lmn; i++)
 			if (pw & (1<<i))
-				s1[ns1++] = i;
+				s1.push_back(i);
 			else
-				s2[ns2++] = i;
-		if (can_circle(c1x, c1y, c1r2, pp, s1, ns1) && can_circle(c2x, c2y, c2r2, pp, s2, ns2)) {
-			if (ns1 > nc1) {
-				nc1 = ns1;
-				copy(s1, s1+ns1, c1);
-				nc2 = ns2;
-				copy(s2, s2+ns2, c2);
+				s2.push_back(i);
+		if (can_circle(pp, s1) && can_circle(pp, s2)) {
+			if (s1.size() > c1.size()) {
+				c1 = s1;
+				c2 = s2;
 			}
 		}
 	}
 	string o1, o2;
-	for (int i=0; i<nc1; i++)
-		o1 += to_string(c1[i]+1) + " ";
-	for (int i=0; i<nc2; i++)
-		o2 += to_string(c2[i]+1) + " ";
-	nc1 = 3;
+	for (auto i:c1)
+		o1 += to_string(i+1) + " ";
+	for (auto i:c2)
+		o2 += to_string(i+1) + " ";
+	//assert(c1.size() > 2);
+	c1.resize(4);
 	for (int i=lmn; i<n; i++) {
 		c1[3] = i;
-		if (can_circle(c1x, c1y, c1r2, pp, c1, 4))
+		if (can_circle(pp, c1))
 			o1 += to_string(i+1) + " ";
 		else
 			o2 += to_string(i+1) + " ";
