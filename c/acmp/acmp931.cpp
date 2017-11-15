@@ -1,11 +1,15 @@
 /* ACMP 931 */
 #include <iostream>
-#include <tuple>
 #include <vector>
-#include <cassert>
+
 using namespace std;
 
 /*
+
+#
+# center and the radius of the circle laying on 3 points
+#
+
 from sympy import *
 
 p1_x = Symbol('p[i].x', const=True)
@@ -34,41 +38,62 @@ sol = solve([eq1, eq2, eq3], x, y, r2, dict=True)
 
  */
 
+// need long arythmetic to compare long rational numbers
+struct lnum10 {
+	constexpr static int base = 1000*1000*1000;
+	int sign;
+	using VEC = std::vector<int>;
+	VEC a;
+	lnum10(int64_t n):a() {
+		sign = (n>0)-(n<0);
+		n *= sign;
+		while (n>0) {
+			a.push_back(n%base);
+			n /= base;
+		}
+	}
+	void operator*=(const lnum10 &b) {
+		VEC c(a.size()+b.a.size());
+		for (size_t i=0; i<a.size(); ++i) {
+			for (int j=0, carry=0; j<(int)b.a.size() || carry; ++j) {
+				long long cur = c[i+j] + a[i] * 1ll * (j < (int)b.a.size() ? b.a[j] : 0) + carry;
+				c[i+j] = int (cur % base);
+				carry = int (cur / base);
+			}
+		}
+		while (c.size() > 1 && c.back() == 0)
+			c.pop_back();
+		a = c;
+		sign *= b.sign;
+	}
+	bool operator==(const lnum10 &b) const {
+		return a == b.a && sign == b.sign;
+	}
+};
+
 struct P {
 	int64_t x, y;
 };
 
-/**
- * GCD(a, b) - greatest common divisor
- */
-uint64_t gcd(uint64_t a, uint64_t b) {
-	while (b > 0) {
-		uint64_t temp = b;
-		b = a % b;
-		a = temp;
+// need to compose and compare long rational numbers 
+struct Q {
+	lnum10 n, d;
+	Q():n(0),d(1) {}
+	// upto 3 numerators and 2 denominators
+	Q(int64_t _n1, int64_t _n2, int64_t _n3, int64_t _d1, int64_t _d2):n(_n1),d(_d1) {
+		n *= lnum10(_n2);
+		n *= lnum10(_n3);
+		d *= lnum10(_d2);
 	}
-	return a;
-}
-
-/* when d*d overflows */
-struct Q2 : public tuple<int, uint64_t, uint64_t, uint64_t>{
-	int sign;
-	uint64_t n, d1, d2;
-	Q2(int64_t _n, int64_t _d1, int64_t _d2):n(std::abs(_n)), d1(std::abs(_d1)), d2(std::abs(_d2)) {
-		int sn = (_n>0) - (_n<0);
-		int sd1 = (_d1>0) - (_d1<0);
-		int sd2 = (_d2>0) - (_d2<0);
-		sign = sn*sd1*sd2;
-		uint64_t g = gcd(n, d1);
-		n /= g;
-		d1 /= g;
-		g = gcd(n, d2);
-		n /= g;
-		d2 /= g;
-		get<0>(*this) = sign;
-		get<1>(*this) = n;
-		get<2>(*this) = d1;
-		get<3>(*this) = d2;
+	bool operator==(const Q &b) const {
+		lnum10 n1(n);
+		lnum10 n2(b.n);
+		n1 *= b.d;
+		n2 *= d;
+		return n1 == n2;
+	}
+	bool operator!=(const Q &b) const {
+		return !(*this == b);
 	}
 };
 
@@ -76,26 +101,28 @@ inline int64_t det(const vector<P> &p, int i, int j, int k) {
 	return 2*(p[i].x*p[j].y - p[i].x*p[k].y - p[i].y*p[j].x + p[i].y*p[k].x + p[j].x*p[k].y - p[j].y*p[k].x);
 }
 
-inline Q2 x(const vector<P> &p, int i, int j, int k) {
+inline Q x(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k);
-	return Q2((p[i].x*p[i].x*p[j].y - p[i].x*p[i].x*p[k].y + p[i].y*p[i].y*p[j].y - p[i].y*p[i].y*p[k].y - p[i].y*p[j].x*p[j].x - p[i].y*p[j].y*p[j].y + p[i].y*p[k].x*p[k].x + p[i].y*p[k].y*p[k].y + p[j].x*p[j].x*p[k].y + p[j].y*p[j].y*p[k].y - p[j].y*p[k].x*p[k].x - p[j].y*p[k].y*p[k].y), 1, d);
+	return Q(1, 1, (p[i].x*p[i].x*p[j].y - p[i].x*p[i].x*p[k].y + p[i].y*p[i].y*p[j].y - p[i].y*p[i].y*p[k].y - p[i].y*p[j].x*p[j].x - p[i].y*p[j].y*p[j].y + p[i].y*p[k].x*p[k].x + p[i].y*p[k].y*p[k].y + p[j].x*p[j].x*p[k].y + p[j].y*p[j].y*p[k].y - p[j].y*p[k].x*p[k].x - p[j].y*p[k].y*p[k].y), 1, d);
 }
 
-inline Q2 y(const vector<P> &p, int i, int j, int k) {
+inline Q y(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k);
-	return Q2((-p[i].x*p[i].x*p[j].x + p[i].x*p[i].x*p[k].x + p[i].x*p[j].x*p[j].x + p[i].x*p[j].y*p[j].y - p[i].x*p[k].x*p[k].x - p[i].x*p[k].y*p[k].y - p[i].y*p[i].y*p[j].x + p[i].y*p[i].y*p[k].x - p[j].x*p[j].x*p[k].x + p[j].x*p[k].x*p[k].x + p[j].x*p[k].y*p[k].y - p[j].y*p[j].y*p[k].x), 1, d);
+	return Q(1, 1, (-p[i].x*p[i].x*p[j].x + p[i].x*p[i].x*p[k].x + p[i].x*p[j].x*p[j].x + p[i].x*p[j].y*p[j].y - p[i].x*p[k].x*p[k].x - p[i].x*p[k].y*p[k].y - p[i].y*p[i].y*p[j].x + p[i].y*p[i].y*p[k].x - p[j].x*p[j].x*p[k].x + p[j].x*p[k].x*p[k].x + p[j].x*p[k].y*p[k].y - p[j].y*p[j].y*p[k].x), 1, d);
 }
 
-inline Q2 r2(const vector<P> &p, int i, int j, int k) {
-	int64_t d = det(p, i, j, k); // d*d would overflow
-	return Q2((p[i].x*p[i].x - 2*p[i].x*p[j].x + p[i].y*p[i].y - 2*p[i].y*p[j].y + p[j].x*p[j].x + p[j].y*p[j].y)*(p[i].x*p[i].x - 2*p[i].x*p[k].x + p[i].y*p[i].y - 2*p[i].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y)*(p[j].x*p[j].x - 2*p[j].x*p[k].x + p[j].y*p[j].y - 2*p[j].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y), d, d);
+inline Q r2(const vector<P> &p, int i, int j, int k) {
+	int64_t d = det(p, i, j, k);
+	return Q(p[i].x*p[i].x - 2*p[i].x*p[j].x + p[i].y*p[i].y - 2*p[i].y*p[j].y + p[j].x*p[j].x + p[j].y*p[j].y, (p[i].x*p[i].x - 2*p[i].x*p[k].x + p[i].y*p[i].y - 2*p[i].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y), (p[j].x*p[j].x - 2*p[j].x*p[k].x + p[j].y*p[j].y - 2*p[j].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y), d, d);
 }
 
+// check if we can build a circle around subset s of points in p
+// for > 2 points this means same center of the circle for any given 3 points
 bool can_circle(const vector<P> &p, vector<int> s) {
 	if (s.size() < 3) {
 		return true;
 	} else {
-		Q2 cx(0,0,0), cy(0,0,0), cr2(0,0,0);
+		Q cx, cy, cr2;
 		if (det(p, s[0], s[1], s[2]) != 0) {
 			cx = x(p, s[0], s[1], s[2]);
 			cy = y(p, s[0], s[1], s[2]);
@@ -123,6 +150,7 @@ int main(int argc, char **argv) {
 	for (auto &p:pp)
 		cin >> p.x >> p.y;
 	// for 3+4 points we can always identify the exact center/radius of one circle
+	// do a 2^n bruteforce trial on first 7 points
 	int lmn = min(7, n);
 	vector<int> c1, c2;
 	for (int pw=0; pw < (1<<lmn); pw++) {
@@ -145,7 +173,7 @@ int main(int argc, char **argv) {
 	for (auto i:c2)
 		o2 += to_string(i+1) + " ";
 	for (int i=lmn; i<n; i++) {
-		assert(c1.size() > 2);
+		//assert(c1.size() > 2) // we can be sure of this for 7+ points
 		c1.resize(4);
 		c1[3] = i;
 		if (can_circle(pp, c1))
@@ -154,7 +182,7 @@ int main(int argc, char **argv) {
 			o2 += to_string(i+1) + " ";
 	}
 	if (o2 == "")
-		o2 = "1";
+		o2 = "1"; // requirement says always print two lines
 	cout << o1 << endl;
 	cout << o2 << endl;
 	return 0;
