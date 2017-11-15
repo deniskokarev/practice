@@ -50,19 +50,25 @@ uint64_t gcd(uint64_t a, uint64_t b) {
 	return a;
 }
 
-struct Q : public tuple<int, uint64_t, uint64_t>{
+/* when d*d overflows */
+struct Q2 : public tuple<int, uint64_t, uint64_t, uint64_t>{
 	int sign;
-	uint64_t n, d;
-	Q(int64_t _n, int64_t _d):n(std::abs(_n)), d(std::abs(_d)) {
+	uint64_t n, d1, d2;
+	Q2(int64_t _n, int64_t _d1, int64_t _d2):n(std::abs(_n)), d1(std::abs(_d1)), d2(std::abs(_d2)) {
 		int sn = (_n>0) - (_n<0);
-		int sd = (_d>0) - (_d<0);
-		sign = sn*sd;
-		uint64_t g = gcd(n, d);
+		int sd1 = (_d1>0) - (_d1<0);
+		int sd2 = (_d2>0) - (_d2<0);
+		sign = sn*sd1*sd2;
+		uint64_t g = gcd(n, d1);
 		n /= g;
-		d /= g;
+		d1 /= g;
+		g = gcd(n, d2);
+		n /= g;
+		d2 /= g;
 		get<0>(*this) = sign;
 		get<1>(*this) = n;
-		get<2>(*this) = d;
+		get<2>(*this) = d1;
+		get<3>(*this) = d2;
 	}
 };
 
@@ -70,26 +76,26 @@ inline int64_t det(const vector<P> &p, int i, int j, int k) {
 	return 2*(p[i].x*p[j].y - p[i].x*p[k].y - p[i].y*p[j].x + p[i].y*p[k].x + p[j].x*p[k].y - p[j].y*p[k].x);
 }
 
-inline Q x(const vector<P> &p, int i, int j, int k) {
+inline Q2 x(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k);
-	return Q((p[i].x*p[i].x*p[j].y - p[i].x*p[i].x*p[k].y + p[i].y*p[i].y*p[j].y - p[i].y*p[i].y*p[k].y - p[i].y*p[j].x*p[j].x - p[i].y*p[j].y*p[j].y + p[i].y*p[k].x*p[k].x + p[i].y*p[k].y*p[k].y + p[j].x*p[j].x*p[k].y + p[j].y*p[j].y*p[k].y - p[j].y*p[k].x*p[k].x - p[j].y*p[k].y*p[k].y), d);
+	return Q2((p[i].x*p[i].x*p[j].y - p[i].x*p[i].x*p[k].y + p[i].y*p[i].y*p[j].y - p[i].y*p[i].y*p[k].y - p[i].y*p[j].x*p[j].x - p[i].y*p[j].y*p[j].y + p[i].y*p[k].x*p[k].x + p[i].y*p[k].y*p[k].y + p[j].x*p[j].x*p[k].y + p[j].y*p[j].y*p[k].y - p[j].y*p[k].x*p[k].x - p[j].y*p[k].y*p[k].y), 1, d);
 }
 
-inline Q y(const vector<P> &p, int i, int j, int k) {
+inline Q2 y(const vector<P> &p, int i, int j, int k) {
 	int64_t d = det(p, i, j, k);
-	return Q((-p[i].x*p[i].x*p[j].x + p[i].x*p[i].x*p[k].x + p[i].x*p[j].x*p[j].x + p[i].x*p[j].y*p[j].y - p[i].x*p[k].x*p[k].x - p[i].x*p[k].y*p[k].y - p[i].y*p[i].y*p[j].x + p[i].y*p[i].y*p[k].x - p[j].x*p[j].x*p[k].x + p[j].x*p[k].x*p[k].x + p[j].x*p[k].y*p[k].y - p[j].y*p[j].y*p[k].x), d);
+	return Q2((-p[i].x*p[i].x*p[j].x + p[i].x*p[i].x*p[k].x + p[i].x*p[j].x*p[j].x + p[i].x*p[j].y*p[j].y - p[i].x*p[k].x*p[k].x - p[i].x*p[k].y*p[k].y - p[i].y*p[i].y*p[j].x + p[i].y*p[i].y*p[k].x - p[j].x*p[j].x*p[k].x + p[j].x*p[k].x*p[k].x + p[j].x*p[k].y*p[k].y - p[j].y*p[j].y*p[k].x), 1, d);
 }
 
-inline Q r2(const vector<P> &p, int i, int j, int k) {
-	int64_t d = det(p, i, j, k); // d*d will overflow ;-( but will try if it goes thru anyways ;-)
-	return Q((p[i].x*p[i].x - 2*p[i].x*p[j].x + p[i].y*p[i].y - 2*p[i].y*p[j].y + p[j].x*p[j].x + p[j].y*p[j].y)*(p[i].x*p[i].x - 2*p[i].x*p[k].x + p[i].y*p[i].y - 2*p[i].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y)*(p[j].x*p[j].x - 2*p[j].x*p[k].x + p[j].y*p[j].y - 2*p[j].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y), d*d);
+inline Q2 r2(const vector<P> &p, int i, int j, int k) {
+	int64_t d = det(p, i, j, k); // d*d would overflow
+	return Q2((p[i].x*p[i].x - 2*p[i].x*p[j].x + p[i].y*p[i].y - 2*p[i].y*p[j].y + p[j].x*p[j].x + p[j].y*p[j].y)*(p[i].x*p[i].x - 2*p[i].x*p[k].x + p[i].y*p[i].y - 2*p[i].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y)*(p[j].x*p[j].x - 2*p[j].x*p[k].x + p[j].y*p[j].y - 2*p[j].y*p[k].y + p[k].x*p[k].x + p[k].y*p[k].y), d, d);
 }
 
 bool can_circle(const vector<P> &p, vector<int> s) {
 	if (s.size() < 3) {
 		return true;
 	} else {
-		Q cx(0,0), cy(0,0), cr2(0,0);
+		Q2 cx(0,0,0), cy(0,0,0), cr2(0,0,0);
 		if (det(p, s[0], s[1], s[2]) != 0) {
 			cx = x(p, s[0], s[1], s[2]);
 			cy = y(p, s[0], s[1], s[2]);
@@ -138,9 +144,9 @@ int main(int argc, char **argv) {
 		o1 += to_string(i+1) + " ";
 	for (auto i:c2)
 		o2 += to_string(i+1) + " ";
-	//assert(c1.size() > 2);
-	c1.resize(4);
 	for (int i=lmn; i<n; i++) {
+		assert(c1.size() > 2);
+		c1.resize(4);
 		c1[3] = i;
 		if (can_circle(pp, c1))
 			o1 += to_string(i+1) + " ";
