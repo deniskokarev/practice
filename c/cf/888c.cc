@@ -13,15 +13,15 @@ int main(int argc, char **argv) {
 	for (int i=0; i<s.size(); i++) {
 		short c = s[i];
 		if (p[c] != -1)
-			mxl[c] = max(mxl[c], i-p[c]);
+			mxl[c] = max(mxl[c], i+1-p[c]);
 		else
-			mxl[c] = i;
-		p[c] = i;
+			mxl[c] = i+1;
+		p[c] = i+1;
 	}
 	int i = s.size();
 	for (short c='a'; c<='z'; c++)
 		if (p[c] != -1)
-			mxl[c] = max(mxl[c], i-p[c]);
+			mxl[c] = max(mxl[c], i+1-p[c]);
 	int ans = INT_MAX;
 	for (int c='a'; c<='z'; c++)
 		if (p[c] != -1)
