@@ -2,8 +2,12 @@
 #include <iostream>
 #include <cassert>
 #include <cmath>
+#include <iomanip>
+#include <set>
 
 using namespace std;
+
+using DOUBLE = long double;
 
 /*
 #!/usr/bin/env python
@@ -42,11 +46,15 @@ rd = Symbol('rd')
 sol1 = solve([(eq1-eq2).subs(r*d, rd), (eq2-eq3).subs(r*d, rd), (eq3-eq4).subs(r*d, rd)], x, y, rd, dict=True)
 
 # c1 = (a_x - x)**2 + (a_y - y)**2 - s1*2*r*d
+# c1 = (b_x - x)**2 + (b_y - y)**2 - s2*2*r*d
 
 c1 = Symbol('c1', const=True)
-eeq1 = c1 - r**2 - d**2
-eeq2 = r*d - rd
-sol2 = solve([eeq1, eeq2], r, d, dict=True)
+c2 = Symbol('c2', const=True)
+r2 = Symbol('r2')
+d2 = Symbol('d2')
+eeq1 = c1 - r2 - d2
+eeq2 = c2 - r2 - d2
+sol2 = solve([eeq1, eeq2], r2, d2, dict=True)
 
 [(c_name, c_code), (h_name, c_header)] = codegen(("x", sol1[0][x]), "C99")
 print c_code
@@ -99,64 +107,62 @@ print c_code
 */
 
 struct P {
-	long double x, y;
+	DOUBLE x, y;
 };
 
-inline long double pow(long double b, int p) {
+inline DOUBLE pow(DOUBLE b, int p) {
 	assert(p==2);
 	return b*b;
 }
 
-void circle(long double &x, long double &y, long double &d, const P *p) {
+void circle(int64_t &x, int64_t &y, int64_t &d, const P *p) {
 	d = 2*(p[0].x - p[1].x)*(p[1].y - p[2].y) - 2*(p[0].y - p[1].y)*(p[1].x - p[2].x);
 	x = -(p[0].y - p[1].y)*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) + (p[1].y - p[2].y)*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2));
 	y = (p[0].x - p[1].x)*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) - (p[1].x - p[2].x)*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2));
 }
 
-bool find_xyrd(long double &x, long double &y, long double &r, const P *p, const long double *s) {
+constexpr long double scale = 1e7;
+
+void find_xyrd(set<tuple<int64_t,int64_t,int64_t>> &rc, const P *p, const long double *s) {
 	int64_t d = ((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
 	if (d == 0)
-		return false;
-	x = ((1.0L/2.0L)*((p[0].y - p[1].y)*(s[1] - s[2]) - (p[1].y - p[2].y)*(s[0] - s[1]))*(pow(p[2].x, 2) + pow(p[2].y, 2) - pow(p[3].x, 2) - pow(p[3].y, 2)) - 1.0L/2.0L*((p[0].y - p[1].y)*(s[2] - s[3]) - (p[2].y - p[3].y)*(s[0] - s[1]))*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) + (1.0L/2.0L)*((p[1].y - p[2].y)*(s[2] - s[3]) - (p[2].y - p[3].y)*(s[1] - s[2]))*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2)))/((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
-	y = (-1.0L/2.0L*((p[0].x - p[1].x)*(s[1] - s[2]) - (p[1].x - p[2].x)*(s[0] - s[1]))*(pow(p[2].x, 2) + pow(p[2].y, 2) - pow(p[3].x, 2) - pow(p[3].y, 2)) + (1.0L/2.0L)*((p[0].x - p[1].x)*(s[2] - s[3]) - (p[2].x - p[3].x)*(s[0] - s[1]))*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) - 1.0L/2.0L*((p[1].x - p[2].x)*(s[2] - s[3]) - (p[2].x - p[3].x)*(s[1] - s[2]))*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2)))/((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
-	long double rd = ((1.0L/2.0L)*((p[0].x - p[1].x)*(p[1].y - p[2].y) - (p[0].y - p[1].y)*(p[1].x - p[2].x))*(pow(p[2].x, 2) + pow(p[2].y, 2) - pow(p[3].x, 2) - pow(p[3].y, 2)) - 1.0L/2.0L*((p[0].x - p[1].x)*(p[2].y - p[3].y) - (p[0].y - p[1].y)*(p[2].x - p[3].x))*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) + (1.0L/2.0L)*((p[1].x - p[2].x)*(p[2].y - p[3].y) - (p[1].y - p[2].y)*(p[2].x - p[3].x))*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2)))/((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
-	long double c1 = -2*rd*s[0] + pow(p[0].x - x, 2) + pow(p[0].y - y, 2);;
-	long double ar[4] = {
+		return;
+	DOUBLE x = ((1.0L/2.0L)*((p[0].y - p[1].y)*(s[1] - s[2]) - (p[1].y - p[2].y)*(s[0] - s[1]))*(pow(p[2].x, 2) + pow(p[2].y, 2) - pow(p[3].x, 2) - pow(p[3].y, 2)) - 1.0L/2.0L*((p[0].y - p[1].y)*(s[2] - s[3]) - (p[2].y - p[3].y)*(s[0] - s[1]))*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) + (1.0L/2.0L)*((p[1].y - p[2].y)*(s[2] - s[3]) - (p[2].y - p[3].y)*(s[1] - s[2]))*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2)))/((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
+	DOUBLE y = (-1.0L/2.0L*((p[0].x - p[1].x)*(s[1] - s[2]) - (p[1].x - p[2].x)*(s[0] - s[1]))*(pow(p[2].x, 2) + pow(p[2].y, 2) - pow(p[3].x, 2) - pow(p[3].y, 2)) + (1.0L/2.0L)*((p[0].x - p[1].x)*(s[2] - s[3]) - (p[2].x - p[3].x)*(s[0] - s[1]))*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) - 1.0L/2.0L*((p[1].x - p[2].x)*(s[2] - s[3]) - (p[2].x - p[3].x)*(s[1] - s[2]))*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2)))/((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
+	DOUBLE rd = ((1.0L/2.0L)*((p[0].x - p[1].x)*(p[1].y - p[2].y) - (p[0].y - p[1].y)*(p[1].x - p[2].x))*(pow(p[2].x, 2) + pow(p[2].y, 2) - pow(p[3].x, 2) - pow(p[3].y, 2)) - 1.0L/2.0L*((p[0].x - p[1].x)*(p[2].y - p[3].y) - (p[0].y - p[1].y)*(p[2].x - p[3].x))*(pow(p[1].x, 2) + pow(p[1].y, 2) - pow(p[2].x, 2) - pow(p[2].y, 2)) + (1.0L/2.0L)*((p[1].x - p[2].x)*(p[2].y - p[3].y) - (p[1].y - p[2].y)*(p[2].x - p[3].x))*(pow(p[0].x, 2) + pow(p[0].y, 2) - pow(p[1].x, 2) - pow(p[1].y, 2)))/((p[0].x - p[1].x)*(p[1].y - p[2].y)*(s[2] - s[3]) - (p[0].x - p[1].x)*(p[2].y - p[3].y)*(s[1] - s[2]) - (p[0].y - p[1].y)*(p[1].x - p[2].x)*(s[2] - s[3]) + (p[0].y - p[1].y)*(p[2].x - p[3].x)*(s[1] - s[2]) + (p[1].x - p[2].x)*(p[2].y - p[3].y)*(s[0] - s[1]) - (p[1].y - p[2].y)*(p[2].x - p[3].x)*(s[0] - s[1]));
+	DOUBLE c1 = -2*rd*s[0] + pow(p[0].x - x, 2) + pow(p[0].y - y, 2);;
+	DOUBLE ar[4] = {
 		-sqrtl((1.0L/2.0L)*c1 - 1.0L/2.0L*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))*((1.0L/2.0L)*c1 + (1.0L/2.0L)*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))/rd,
 		sqrtl((1.0L/2.0L)*c1 - 1.0L/2.0L*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))*((1.0L/2.0L)*c1 + (1.0L/2.0L)*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))/rd,
 		-((1.0L/2.0L)*c1 - 1.0L/2.0L*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))*sqrtl((1.0L/2.0L)*c1 + (1.0L/2.0L)*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))/rd,
 		((1.0L/2.0L)*c1 - 1.0L/2.0L*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))*sqrtl((1.0L/2.0L)*c1 + (1.0L/2.0L)*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))/rd
 	};
-	long double ad[4] = {
+	DOUBLE ad[4] = {
 		-sqrtl((1.0L/2.0L)*c1 - 1.0L/2.0L*sqrtl(pow(c1, 2) - 4*pow(rd, 2))),
 		sqrtl((1.0L/2.0L)*c1 - 1.0L/2.0L*sqrtl(pow(c1, 2) - 4*pow(rd, 2))),
 		-sqrtl((1.0L/2.0L)*c1 + (1.0L/2.0L)*sqrtl(pow(c1, 2) - 4*pow(rd, 2))),
 		-sqrtl((1.0L/2.0L)*c1 + (1.0L/2.0L)*sqrtl(pow(c1, 2) - 4*pow(rd, 2)))
 	};
-	bool rc = false;
-	r = INT_MAX;
 	for (int i=0; i<4; i++) {
 		//cerr << "ar[" << i << "]= " << ar[i] << endl;
-		if (ar[i] >= 0 && ad[i] >= 0 && (s[i]>0 || ad[i]<ar[i])) {
-			rc = true;
-			r = std::min(r, ar[i]);
-		}
+		if (ar[i] > 0 && ad[i] > 0 && ar[i] > ad[i])
+			rc.insert(make_tuple(ar[i]*scale,x*scale,y*scale));
 	}
-	return rc;
 }
 
 int main(int argc, char **argv) {
 	P pp[4];
 	for (auto &p:pp)
 		cin >> p.x >> p.y;
-	long double s[4];
-	int cnt = 0;
-	long double mnr = INT_MAX;
-	long double mnx = 0, mny = 0;
-	long double det;
+	DOUBLE s[4];
+	DOUBLE mnr = INT_MAX;
+	DOUBLE mnx = 0, mny = 0;
+	DOUBLE det;
 	bool can_circle = false;
-	circle(mnx, mny, det, pp);
-	if (det != 0) {
+	int64_t cx, cy, cdet;
+	circle(cx, cy, cdet, pp);
+	//cerr << "x: " << cx << " cy: " << cy << " det: " << cdet << endl;
+	if (cdet != 0) {
 		P psel[3];
 		can_circle = true;
 		for (int i=0; i<2; i++) {
@@ -165,9 +171,10 @@ int main(int argc, char **argv) {
 					psel[0] = pp[i];
 					psel[1] = pp[j];
 					psel[2] = pp[k];
-					long double x, y, d;
+					int64_t x, y, d;
 					circle(x, y, d, psel);
-					if (x*det != mnx*d || y*det != mny*d)
+					//cerr << "x: " << x << " cy: " << y << " det: " << d << endl;
+					if (x*cdet != cx*d || y*cdet != cy*d)
 						can_circle = false;
 				}
 			}
@@ -175,26 +182,28 @@ int main(int argc, char **argv) {
 	}
 	if (can_circle) {
 		cout << "Infinity" << endl;
-		cout << mnx/det << " " << mny/det << " " << 0 << endl;
+		mnx = cx;
+		mny = cy;
+		det = cdet;
+		cout << fixed << setprecision(6) << mnx/det << " " << mny/det << " 0.0" << endl;
 	} else {
-		for (int pw=0; pw<(1<<4); pw++) {
+		set<tuple<int64_t,int64_t,int64_t>> res;
+		for (int pw=1; pw<(1<<4)-1; pw++) {
 			for (int i=0; i<4; i++)
 				if (pw & (1<<i))
 					s[i] = +1;
 				else
 					s[i] = -1;
-			long double x, y, r;
-			if (find_xyrd(x, y, r, pp, s)) {
-				cnt++;
-				if (mnr > r) {
-					mnr = r;
-					mnx = x;
-					mny = y;
-				}
-			}
+			find_xyrd(res, pp, s);
 		}
-		cout << cnt << endl;
-		cout << mnx << " " << mny << " " << mnr << endl;
+		for (auto a:res) {
+			mnr = DOUBLE(get<0>(a))/scale;
+			mnx = DOUBLE(get<1>(a))/scale;
+			mny = DOUBLE(get<2>(a))/scale;
+			break;
+		}
+		cout << res.size() << endl;
+		cout << fixed << setprecision(6) << mnx << " " << mny << " " << mnr << endl;
 	}
 	return 0;
 }
