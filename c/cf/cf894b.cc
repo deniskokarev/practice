@@ -3,9 +3,9 @@
 /* CodeForces CF894B problem */
 using namespace std;
 
-constexpr int64_t mod = 1e9+1;
+constexpr uint64_t mod = 1e9+7;
 
-int64_t pow_mod(int64_t b, int64_t p) {
+uint64_t pow_mod(uint64_t b, uint64_t p) {
 	if (p > 1)
 		return (pow_mod(b, p/2)*pow_mod(b, p-p/2))%mod;
 	else if (p > 0)
@@ -15,14 +15,12 @@ int64_t pow_mod(int64_t b, int64_t p) {
 }
 
 int main(int argc, char **argv) {
-	int64_t n, m;
+	uint64_t n, m;
 	cin >> n >> m;
-	if (n < m)
-		swap(n, m); // want n>m
 	int k;
 	cin >> k;
 	assert(k*k == 1);
-	int64_t ans = 0;
+	uint64_t ans = 0;
 	if (k > 0) {
 		// +1
 		ans = pow_mod(pow_mod(2, n-1), m-1);
