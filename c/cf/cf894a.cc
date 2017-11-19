@@ -1,0 +1,16 @@
+#include <iostream>
+/* CodeForces CF894A problem */
+using namespace std;
+
+int main(int argc, char **argv) {
+	string s;
+	cin >> s;
+	int64_t cnt = 0;
+	for (int i=0; i<s.size()-2; i++)
+		for (int j=i+1; j<s.size()-1; j++)
+			for (int k=j+1; k<s.size(); k++)
+				if (s[i] == 'Q' && s[j] == 'A' && s[k] == 'Q')
+					cnt++;
+	cout << cnt << endl;
+	return 0;
+}
