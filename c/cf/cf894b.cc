@@ -6,12 +6,17 @@ using namespace std;
 constexpr uint64_t mod = 1e9+7;
 
 uint64_t pow_mod(uint64_t b, uint64_t p) {
-	if (p > 1)
-		return (pow_mod(b, p/2)*pow_mod(b, p-p/2))%mod;
-	else if (p > 0)
+	if (p > 1) {
+		uint64_t r = pow_mod(b, p/2);
+		if ((p&1) == 0)
+			return (r*r)%mod;
+		else
+			return (((r*r)%mod)*b)%mod;
+	} else if (p > 0) {
 		return b;
-	else
+	} else {
 		return 1;
+	}
 }
 
 int main(int argc, char **argv) {
