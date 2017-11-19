@@ -1,19 +1,17 @@
 #include <iostream>
 #include <cassert>
-
 /* CodeForces CF894B problem */
 using namespace std;
 
 constexpr int64_t mod = 1e9+1;
 
-int64_t p2mod(int64_t p) {
-	if (p > 1) {
-		return (p2mod(p/2)*p2mod(p-p/2))%mod;
-	} else if (p > 0) {
-		return 2;
-	} else {
+int64_t pow_mod(int64_t b, int64_t p) {
+	if (p > 1)
+		return (pow_mod(b, p/2)*pow_mod(b, p-p/2))%mod;
+	else if (p > 0)
+		return b;
+	else
 		return 1;
-	}
 }
 
 int main(int argc, char **argv) {
@@ -25,18 +23,15 @@ int main(int argc, char **argv) {
 	cin >> k;
 	assert(k*k == 1);
 	int64_t ans = 0;
-	if (k>0) {
-		if (m<2) {
-			ans = 1;
-		} else {
-			ans = (p2mod(n-1)*p2mod(m-1))%mod;
-		}
+	if (k > 0) {
+		// +1
+		ans = pow_mod(pow_mod(2, n-1), m-1);
 	} else {
-		if (m<2) {
-			ans = 1;
-		} else {
-			ans = (p2mod(n-1)*p2mod(m-1))%mod;
-		}
+		// -1
+		if (((m+n)&1) == 1)
+			ans = 0;
+		else
+			ans = pow_mod(pow_mod(2, n-1), m-1);
 	}
 	cout << ans << endl;
 	return 0;
