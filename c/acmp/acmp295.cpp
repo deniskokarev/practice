@@ -8,19 +8,22 @@ int main(int argc, char **argv) {
 	cin >> e >> s;
 	basic_string<int> e_sq;
 	basic_string<int> s_sq;
-	int mod = 'Z' - 'A' + 1;
 	for (int i=0; i<s.size()-1; i++)
-		s_sq.push_back((int(s[i+1])-int(s[i])+mod)%mod);
+		s_sq.push_back((int(s[i+1])-int(s[i])));
 	for (int i=0; i<e.size()-1; i++)
-		e_sq.push_back((int(e[i+1])-int(e[i])+mod)%mod);
+		e_sq.push_back((int(e[i+1])-int(e[i])));
 	int k = INT_MIN;
+	bool match = false;
 	for (size_t pos=e_sq.find(s_sq); pos != string::npos; pos=e_sq.find(s_sq, pos+1)) {
-		k = max(k, (int(s[0])-int(e[pos])+mod)%mod);
+		match = true;
+		int nk = (int(s[0])-int(e[pos]));
+		if (abs(k)<abs(nk))
+			k = nk;
 		//cerr << "pos: " << pos << " k: " << k << endl;
 	}
-	if (k > INT_MIN) {
+	if (match) {
 		for (auto &c:e)
-			c = (int(c)-'A'+k)%mod + 'A';
+			c = int(c)+k;
 		cout << e << endl;
 	} else {
 		cout << "IMPOSSIBLE" << endl;
