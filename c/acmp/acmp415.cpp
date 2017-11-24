@@ -35,6 +35,24 @@ struct sstat {
 				pos = i;
 		return n2.size()-pos;
 	}
+	// 2 is inside 1 at the given pos
+	int inside12() const {
+		int pos = n1.size();
+		int j = n2.size();
+		for (int i=n1.size()-1; i>j; i--)
+			if (mm[i][j] == j)
+				pos = i-j;
+		return pos;
+	}
+	// 1 is inside 2 at the given pos
+	int inside21() const {
+		int pos = n2.size();
+		int i = n1.size();
+		for (int j=n2.size()-1; j>i; j--)
+			if (mm[i][j] == i)
+				pos = j-i;
+		return pos;
+	}
 };
 
 int main(int argc, char **argv) {
@@ -53,8 +71,14 @@ int main(int argc, char **argv) {
 	p = ss.maycat21();
 	s = n2.substr(0, p) + n1;
 	oo.push_back(s);
+	p = ss.inside12();
+	s = n1.substr(0, p) + n2 + n1.substr(min(n1.size(), p+n2.size()));
+	oo.push_back(s);
+	p = ss.inside21();
+	s = n2.substr(0, p) + n1 + n2.substr(min(n2.size(), p+n1.size()));
+	oo.push_back(s);
 #if 1
-	cerr << "p12: " << ss.maycat12() << " p21: " << ss.maycat21() << endl;
+	cerr << "p12: " << ss.maycat12() << " p21: " << ss.maycat21() << " in12: " << ss.inside12() << " in21: " << ss.inside21() << endl;
 	for (auto &o:oo)
 		cerr << "o: " << o << endl;
 #endif
