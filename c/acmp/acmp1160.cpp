@@ -6,16 +6,27 @@ using namespace std;
 int main(int argc, char **argv) {
 	string s;
 	cin >> s;
-	int pp[s.size()+1];
-	for (auto &p:pp)
-		p = 0;
-	for (int i=0; i<s.size(); i++) {
-		if (pp[i] < i && s[pp[i]] == s[i])
-			pp[i+1] = pp[i]+1;
-		else
-			pp[i+1] = 0;
+	int pp[s.size()]; // prefix fn
+	fill(pp, pp+s.size(), 0);
+	int k=0;
+	for (int i=1; i<s.size(); i++) {
+		if (i>k) {
+			if (s[i] != s[k]) {
+				while (k>0) {
+					int j;
+					for (j=0; j<k && s[i-j] == s[k-j-1]; j++);
+					if (j == k)
+						break;
+					k--;
+				}
+				pp[i] = k;
+			} else {
+				k++;
+				pp[i] = k;
+			}
+		}
 	}
-	for (int i=1; i<=s.size(); i++)
+	for (int i=0; i<s.size(); i++)
 		cout << pp[i] << ' ';
 	cout << endl;
 	return 0;
