@@ -1,25 +1,26 @@
 /* ACMP 1160 */
-#include <iostream>
-
-using namespace std;
+#include <stdio.h>
 
 int main(int argc, char **argv) {
-	string s;
-	cin >> s;
-	int pp[s.size()]; // prefix function
-	fill(pp, pp+s.size(), 0);
+	char s[1024*1024];
+	int sz = 0;
+	int c;
+	while ((c=fgetc(stdin)) >=0 && c != '\n')
+		s[sz++] = c;
+	int pp[sz]; // prefix function
 	int k=0;
-	for (int i=1; i<s.size(); i++) {
-		if (i>k) {
-			for (; k>0 && s[i] != s[k]; k=pp[k-1]);
-			if (s[i] == s[k]) {
-				k++;
-				pp[i] = k;
-			}
+	pp[0] = 0;
+	for (int i=1; i<sz; i++) {
+		for (; k>0 && s[i] != s[k]; k=pp[k-1]);
+		if (s[i] == s[k]) {
+			k++;
+			pp[i] = k;
+		} else {
+			pp[i] = 0;
 		}
 	}
-	for (int i=0; i<s.size(); i++)
-		cout << pp[i] << ' ';
-	cout << endl;
+	for (auto &p:pp)
+		printf("%d ", p);
+	printf("\n");
 	return 0;
 }
