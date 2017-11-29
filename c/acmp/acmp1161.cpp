@@ -15,9 +15,6 @@ int main(int argc, char **argv) {
 		int hd, cnt;
 		for (hd=0,cnt=0; i+cnt<sz && s[hd] == s[i+cnt]; hd++,cnt++);
 		zz[i] = cnt;
-		for (int j=0; j<cnt; j++)
-			zz[i+j+1] = zz[j+1];
-		i += cnt;
 	}
 	for (auto &z:zz)
 		printf("%d ", z);
