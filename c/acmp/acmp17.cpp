@@ -1,7 +1,5 @@
 /* ACMP 17 */
-#include <stdio.h>
-#include <inttypes.h>
-#include <limits.h>
+#include <cstdio>
 
 constexpr int MX_SZ = 1024*32;
 
