@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
 		sz++;
 	int zz[sz]; // suffix fn z function // taken from e-maxx
 	zz[0] = 0;
+	int ans = 1;
 	for (int i=1,l=0,r=0; i<sz; i++) {
 		if (i <= r)
 			zz[i] = MIN(r-i+1, zz[i-l]);
@@ -26,16 +27,11 @@ int main(int argc, char **argv) {
 			l = i;
 			r = i+cnt-1;
 		}
-	}
-#if 0
-	for (auto &z:zz)
-		fprintf(stderr, "%d ", z);
-	fprintf(stderr, "\n");
-#endif
-	int ans = 1;
-	for (int i=sz-1; i>0; i--)
-		if (i+zz[i] == sz && (sz-1)%i == 0)
+		if (i+zz[i] == sz && (sz-1)%i == 0) {
 			ans = i;
+			break;
+		}
+	}
 	printf("%d\n", ans);
     return 0;
 }
