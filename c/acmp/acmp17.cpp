@@ -6,7 +6,6 @@
 constexpr int MX_SZ = 1024*32;
 
 #define MIN(A,B) ((A<B)?A:B)
-#define MAX(A,B) ((A>B)?A:B)
 
 int main(int argc, char **argv) {
 	int s[MX_SZ];
@@ -33,13 +32,10 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%d ", z);
 	fprintf(stderr, "\n");
 #endif
-	int ans = sz-1;
-	for (int i=2; i<sz; i++) {
-		if (zz[sz-i] == i) {
-			ans = i-1;
-			break;
-		}
-	}
+	int ans = 1;
+	for (int i=sz-1; i>0; i--)
+		if (i+zz[i] == sz && (sz-1)%i == 0)
+			ans = i;
 	printf("%d\n", ans);
     return 0;
 }
