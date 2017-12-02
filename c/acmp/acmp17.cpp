@@ -8,18 +8,6 @@ constexpr int MX_SZ = 1024*32;
 #define MIN(A,B) ((A<B)?A:B)
 #define MAX(A,B) ((A>B)?A:B)
 
-/**
- * GCD(a, b) - greatest common divisor
- */
-uint64_t gcd(uint64_t a, uint64_t b) {
-	while (b > 0) {
-		uint64_t temp = b;
-		b = a % b;
-		a = temp;
-	}
-	return a;
-}
-
 int main(int argc, char **argv) {
 	int s[MX_SZ];
 	int sz = 0;
@@ -48,7 +36,7 @@ int main(int argc, char **argv) {
 	int mx = 0;
 	for (int i=0; i<sz-1; i++)
 		mx = MAX(mx, zz[i]);
-	int ans = gcd(sz-1, mx-1);
+	int ans = sz - mx;
 	printf("%d\n", ans);
     return 0;
 }
