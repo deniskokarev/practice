@@ -33,10 +33,13 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%d ", z);
 	fprintf(stderr, "\n");
 #endif
-	int mx = 0;
-	for (int i=0; i<sz-1; i++)
-		mx = MAX(mx, zz[i]);
-	int ans = sz - mx;
+	int ans = sz-1;
+	for (int i=2; i<sz; i++) {
+		if (zz[sz-i] == i) {
+			ans = i-1;
+			break;
+		}
+	}
 	printf("%d\n", ans);
     return 0;
 }
