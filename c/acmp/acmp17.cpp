@@ -1,35 +1,37 @@
 /* ACMP 17 */
 #include <cstdio>
 
-constexpr int MX_SZ = 1024*32;
+// prefix function
+// compute prefix for string s of size sz
+// pp random access iterator should have the same size
+template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t sz, RIN pp) {
+	size_t k = 0;
+	pp[0] = 0;
+	for (size_t i=1; i<sz; i++) {
+		for (; k>0 && s[i] != s[k]; k=pp[k-1]);
+		if (s[i] == s[k]) {
+			k++;
+			pp[i] = k;
+		} else {
+			pp[i] = 0;
+		}
+	}
+}
 
-#define MIN(A,B) ((A<B)?A:B)
+constexpr int MX_SZ = 1024*32;
 
 int main(int argc, char **argv) {
 	int s[MX_SZ];
 	int sz = 0;
 	int n;
-	fscanf(stdin, "%d", &n);
-	while (sz < n && sz < MX_SZ && !feof(stdin) && (fscanf(stdin, "%d", &s[sz]) == 1))
-		sz++;
-	int zz[sz]; // suffix fn z function // taken from e-maxx
-	zz[0] = 0;
-	int ans = 1;
-	for (int i=1,l=0,r=0; i<sz; i++) {
-		if (i <= r)
-			zz[i] = MIN(r-i+1, zz[i-l]);
-		int cnt;
-		for (cnt=0; i+cnt < sz && s[cnt] == s[i+cnt]; cnt++);
-		zz[i] = cnt;
-		if (i+cnt-1 > r) {
-			l = i;
-			r = i+cnt-1;
-		}
-		if (i+zz[i] == sz && (sz-1)%i == 0) {
-			ans = i;
-			break;
-		}
-	}
+	scanf("%d", &n);
+	while (sz < n)
+		scanf("%d", &s[sz++]);
+	int pp[sz]; // prefix function
+	prefix_function(s, sz, pp);
+	int ans = sz-1;
+	if ((sz-1)%(sz-1-pp[sz-2]) == 0)
+		ans = sz-1-pp[sz-2];
 	printf("%d\n", ans);
-    return 0;
+	return 0;
 }
