@@ -26,7 +26,7 @@ template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t s
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	vector<string> tt;
+	map<string, uint64_t> dict;
 	for (int i=0; i<n; i++) {
 		string t;
 		cin >> t;
@@ -34,20 +34,25 @@ int main(int argc, char **argv) {
 		prefix_function(t, t.length(), p);
 		int len = p[t.length()-1];
 		for (int j=1; j<=len; j++)
-			tt.push_back(t.substr(0, j));
-		tt.push_back(t);
+			dict[t.substr(0, j)]++;
+		dict[t]++;
 	}
-	sort(tt.begin(), tt.end());
-	for (const auto &t:tt)
-		cerr << t << endl;
+	uint64_t cum = 0;
+	for (auto &sc:dict) {
+		int c = sc.second;
+		sc.second = cum;
+		cum += c;
+		//cerr << sc.first << " " << sc.second << endl;
+	}
+	dict[string(1, 'z'+1)] = cum; 
 	int m;
 	cin >> m;
 	for (int i=0; i<m; i++) {
 		string s;
 		cin >> s;
-		auto lb = lower_bound(tt.begin(), tt.end(), s);
-		auto ub = upper_bound(tt.begin(), tt.end(), s);
-		size_t ans = ub-lb;
+		auto lb = dict.lower_bound(s);
+		auto ub = dict.upper_bound(s);
+		uint64_t ans = ub->second - lb->second;
 		cout << ans << endl;
 	}
 	return 0;
