@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <memory>
+#include <map>
 
 using namespace std;
 
@@ -23,22 +23,21 @@ template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t s
     }
 }
 
+// not quite trie - use binary search map under the hood
+// for memory conservation
 struct Trie {
-	static constexpr int sz = 'z' - 'a' + 1;
-	unique_ptr<Trie> next[sz];
+	map<char, Trie> next;
 	int cnt;
 	Trie():cnt(0){}
-	Trie *expand(uint8_t idx) {
-		uint8_t i = idx - 'a';
-		i %= sz;
-		if (next[i] == nullptr)
-			next[i] = unique_ptr<Trie>(new Trie());
-		return next[i].get();
+	Trie *expand(char idx) {
+		return &next[idx];
 	}
-	const Trie *down(uint8_t idx) const {
-		uint8_t i = idx - 'a';
-		i %= sz;
-		return next[i].get();
+	const Trie *down(char idx) const {
+		const auto t = next.find(idx);
+		if (t != next.cend())
+			return &(t->second);
+		else
+			return nullptr;
 	}
 };
 
