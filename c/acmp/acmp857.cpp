@@ -24,16 +24,21 @@ template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t s
 }
 
 struct Trie {
-	unique_ptr<Trie> next[256];
+	static constexpr int sz = 'z' - 'a' + 1;
+	unique_ptr<Trie> next[sz];
 	int cnt;
 	Trie():cnt(0){}
 	Trie *expand(uint8_t idx) {
-		if (next[idx] == nullptr)
-			next[idx] = unique_ptr<Trie>(new Trie());
-		return next[idx].get();
+		uint8_t i = idx - 'a';
+		i %= sz;
+		if (next[i] == nullptr)
+			next[i] = unique_ptr<Trie>(new Trie());
+		return next[i].get();
 	}
 	const Trie *down(uint8_t idx) const {
-		return next[idx].get();
+		uint8_t i = idx - 'a';
+		i %= sz;
+		return next[i].get();
 	}
 };
 
