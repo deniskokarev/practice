@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -26,7 +27,7 @@ template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t s
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	map<string, uint64_t> dict;
+	unordered_map<string, uint64_t> udict;
 	for (int i=0; i<n; i++) {
 		string t;
 		cin >> t;
@@ -34,9 +35,10 @@ int main(int argc, char **argv) {
 		prefix_function(t, t.length(), p);
 		int len = p[t.length()-1];
 		for (int j=1; j<=len; j++)
-			dict[t.substr(0, j)]++;
-		dict[t]++;
+			udict[t.substr(0, j)]++;
+		udict[t]++;
 	}
+	map<string, uint64_t> dict(udict.begin(), udict.end());
 	uint64_t cum = 0;
 	for (auto &sc:dict) {
 		int c = sc.second;
