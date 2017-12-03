@@ -23,59 +23,31 @@ template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t s
     }
 }
 
-// not quite trie - use binary search map under the hood
-// for memory conservation
-struct Trie {
-	map<char, Trie> next;
-	int cnt;
-	Trie():cnt(0){}
-	Trie *expand(char idx) {
-		return &next[idx];
-	}
-	const Trie *down(char idx) const {
-		const auto t = next.find(idx);
-		if (t != next.cend())
-			return &(t->second);
-		else
-			return nullptr;
-	}
-};
-
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	Trie root;
+	vector<string> tt;
 	for (int i=0; i<n; i++) {
 		string t;
 		cin >> t;
 		int p[t.length()];
 		prefix_function(t, t.length(), p);
 		int len = p[t.length()-1];
-		Trie *chld = &root;
-		int j = 0;
-		while (j<len) {
-			chld = chld->expand(t[j++]);
-			chld->cnt++;
-		}
-		while (j<t.length())
-			chld = chld->expand(t[j++]);
-		chld->cnt++;
+		for (int j=1; j<=len; j++)
+			tt.push_back(t.substr(0, j));
+		tt.push_back(t);
 	}
+	sort(tt.begin(), tt.end());
+	for (const auto &t:tt)
+		cerr << t << endl;
 	int m;
 	cin >> m;
 	for (int i=0; i<m; i++) {
-		int ans = 0;
 		string s;
 		cin >> s;
-		int j = 0;
-		int len = s.length();
-		const Trie *chld = &root;
-		while (j<len && chld != nullptr) {
-			chld = chld->down(s[j]);
-			j++;
-		}
-		if (chld != nullptr && j==len)
-			ans += chld->cnt;
+		auto lb = lower_bound(tt.begin(), tt.end(), s);
+		auto ub = upper_bound(tt.begin(), tt.end(), s);
+		size_t ans = ub-lb;
 		cout << ans << endl;
 	}
 	return 0;
