@@ -1,25 +1,40 @@
 /* ACMP 1159 */
 #include <iostream>
-#include <algorithm>
 #include <numeric>
 
 using namespace std;
 
+// palindrome finding code in O(n)
 // taken from e-maxx forum
-// NB! the code at http://e-maxx.ru/algo/palindromes_count
+// NB! the code at the article http://e-maxx.ru/algo/palindromes_count
 // is incorrect
 void manacher(string s, int *d1, int *d2) {
 	int n = s.length();
-	int *d[2] = {d1, d2};
-	for (int p = 0; p < 2; ++p) {
-		int l = 0, r = -1;
-		for (int i = 0; i < n; ++i) {
-			int k = (i > r ? 0 : min(d[p][l + r - i] - p, r - i)) + 1;
-			while (i + k - 1 < n && i - k + p >= 0 && s[i + k - 1] == s[i - k + p]) ++k;
-			d[p][i] = --k;
-			if (i + k > r)
-				l = i - k + p, r = i + k - 1;
-		}
+	int l=0, r=-1;
+	for(int i = 0; i < n; i++) {
+		int k;
+		if (i > r)
+			k = 1;
+		else
+			k = min(d1[l + r - i], r - i);
+		while(0 <= i-k && i+k < n && s[i - k] == s[i + k])
+			k++;
+		d1[i] = k;
+		if (i + k - 1 > r)
+			r = i + k - 1, l = i - k + 1;
+	}
+	l=0, r=-1;
+	for(int i = 0; i < n; i++){
+		int k;
+		if (i > r)
+			k = 0;
+		else
+			k = min(d2[l + r - i + 1], r - i + 1);
+		while (i + k < n && i - k - 1 >= 0 && s[i+k] == s[i - k - 1])
+			k++;
+		d2[i] = k;
+		if (i + k - 1 > r)
+			l = i - k, r = i + k - 1;
 	}
 }
 
