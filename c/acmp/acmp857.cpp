@@ -2,24 +2,32 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <map>
 #include <unordered_map>
 
 using namespace std;
 
-// prefix function
-// compute prefix for string s of size sz
-// pp random access iterator should have the same size
-template <typename RIC, typename RIN> void prefix_function(const RIC s, size_t sz, RIN pp) {
-    size_t k = 0;
-    pp[0] = 0;
-    for (size_t i=1; i<sz; i++) {
-        for (; k>0 && s[i] != s[k]; k=pp[k-1]);
-        if (s[i] == s[k]) {
-            k++;
-            pp[i] = k;
+// suffix function (z function)
+// compute suffix sizes for string s of size sz
+// zz random access iterator should have the same size
+// implementation from wikipedia
+template <typename RIC, typename RIN> void suffix_function(const RIC s, size_t len, RIN z) {
+	using T = typename std::iterator_traits<RIN>::value_type;
+    z[0] = 0;
+    for (T j,i=1,l=0,r=0; i < len; i++) {
+        if (i > r) {
+            for (j = 0; ((j + i) < len) && (s[i + j] == s[j]); j++);
+            z[i] = j;
+            l = i;
+            r = (i + j - 1);
         } else {
-            pp[i] = 0;
+            if (z[i - l] < (r - i + 1)) {
+                z[i] = z[i - l];
+            } else {
+                for (j = 1; ((j + r) < len) && (s[r + j] == s[r - i + j]); j++);
+                z[i] = (r - i + j);
+                l = i;
+                r = (r + j - 1);
+            }
         }
     }
 }
@@ -31,30 +39,32 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) {
 		string t;
 		cin >> t;
-		int p[t.length()];
-		prefix_function(t, t.length(), p);
-		int len = p[t.length()-1];
-		for (int j=1; j<=len; j++)
-			udict[t.substr(0, j)]++;
+		int sz = t.length();
+		int zz[sz];
+		suffix_function(t, sz, zz);
+#if 0
+		for (auto &z:zz)
+			cerr << z << " ";
+		cerr << endl;
+#endif
+		for (int j=1; j<sz; j++)
+			if (j+zz[j] == sz)
+				udict[t.substr(j, zz[j])]++;
 		udict[t]++;
 	}
-	map<string, uint64_t> dict(udict.begin(), udict.end());
-	uint64_t cum = 0;
-	for (auto &sc:dict) {
-		int c = sc.second;
-		sc.second = cum;
-		cum += c;
-		//cerr << sc.first << " " << sc.second << endl;
-	}
-	dict[string(1, 'z'+1)] = cum; 
+#if 0
+	for (auto &sc:udict)
+		cerr << sc.first << " " << sc.second << endl;
+#endif
 	int m;
 	cin >> m;
 	for (int i=0; i<m; i++) {
 		string s;
 		cin >> s;
-		auto lb = dict.lower_bound(s);
-		auto ub = dict.upper_bound(s);
-		uint64_t ans = ub->second - lb->second;
+		auto f = udict.find(s);
+		uint64_t ans = 0;
+		if (f != udict.end())
+			ans = f->second;
 		cout << ans << endl;
 	}
 	return 0;
