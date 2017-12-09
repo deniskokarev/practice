@@ -24,6 +24,9 @@ string conv(const vector<int> &v) {
 	return o;
 }
 
+// we gotta be extremely unlucky to miss the solution in 10^5 steps
+constexpr int MXTRIES = 1e5;
+
 int main(int argc, char **argv) {
 	int x, m, l, v;
 	cin >> x >> m >> l >> v;
@@ -31,7 +34,8 @@ int main(int argc, char **argv) {
 	int mask = m-1;
 	vector<int> s(l, 0);
 	int k;
-	for (k=0; k<v*x && polyhash(s, mask, x) != v; k++) {
+	for (k=0; k<MXTRIES && polyhash(s, mask, x) != v; k++) {
+		// lets just increment string monotoneously
 		for (int i=0; i<s.size(); i++) {
 			if (s[i] < 9) {
 				s[i]++;
