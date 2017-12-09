@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	int mask = m-1;
 	vector<int> s(l, 0);
 	int k;
-	for (k=0; k<v && polyhash(s, mask, x) != v; k++) {
+	for (k=0; k<v*x && polyhash(s, mask, x) != v; k++) {
 		for (int i=0; i<s.size(); i++) {
 			if (s[i] < 9) {
 				s[i]++;
