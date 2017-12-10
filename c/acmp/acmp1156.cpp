@@ -10,7 +10,7 @@ using namespace std;
 // may not be used to compare the substrings beteen two separate PolyHash
 // object. The s.length() is used as highest power
 struct PolyHash {
-	static constexpr unsigned base = 3; // polynomial base
+	static constexpr unsigned base = 17; // polynomial base
 	vector<uint64_t> hh; // 64 bit space gives 50% cache collision on ~5*10^9 strings
 	vector<uint64_t> pp; // memorize the powers of base too
 	PolyHash(const string &s):hh(s.length()+1),pp(hh.size()) {
