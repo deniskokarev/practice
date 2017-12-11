@@ -66,7 +66,8 @@ int main(int argc, char **argv) {
 		int i=1;
 		for (int j=s2.length()+1; j<ps.length(); j++,i++) {
 			//cerr << "pfx1: " << ps.substr(j-pp[j]+1, pp[j]) << " pfx2: " << ps.substr(0, pp[j]) << endl;
-			if (hash1(pp[j], len-pp[j]) == hash2(pp[j], len-pp[j]) && rs1.substr(pp[j], len-pp[j]) == s2.substr(pp[j], len-pp[j])) {
+			//cerr << "sfx1: " << rs1.substr(pp[j], len-pp[j]) << " sfx2: " << s2.substr(pp[j], len-pp[j]) << endl;
+			if (pp[j] > 0 && hash1(pp[j], len-pp[j]) == hash2(pp[j], len-pp[j]) && rs1.substr(pp[j], len-pp[j]) == s2.substr(pp[j], len-pp[j])) {
 				cout << "Yes" << endl;
 				cout << i-pp[j] << endl;
 				return 0;
