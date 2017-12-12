@@ -65,7 +65,7 @@ template<typename IT, int W> MultiHash<IT, W> create_multihash(const IT begin, c
 }
  
 int main(int argc, char **argv) {
-	const int bases[] = {3}; // composition of 2 polynomial hashes is enough
+	const int bases[] = {3,5}; // composition of 2 polynomial hashes is enough
 	string a, b;
 	cin >> a >> b;
 	size_t blen = b.length();
