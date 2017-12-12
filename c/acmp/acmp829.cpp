@@ -71,21 +71,21 @@ template<typename T, size_t W> string to_string(const array<T, W> &aa) {
 }
 
 int main(int argc, char **argv) {
-	const int bases[] = {3, 5}; // composition of 2 polynomial hashes is enough
+	const int bases[] = {3}; // composition of 2 polynomial hashes is enough
 	string a, b;
 	cin >> a >> b;
 	size_t blen = b.length();
 	// must pad both strings to equal length be able to compare hashes
-	int mxsz = std::max(a.length(), blen*2);
+	int mxsz = 1e5+1;
 	set<string> known_hashes; // need to keep all known hashes for quick lookup
 	{
 		string bb = b+b;
-		bb += string(mxsz - bb.length(), 0);
+		bb += string(mxsz - bb.length(), '\x0');
 		auto hb = create_multihash(bb.begin(), bb.end(), bases);
-		for (int i=0; i<bb.length(); i++)
+		for (int i=0; i<blen; i++)
 			known_hashes.insert(to_string(hb(i, blen)));
 	}
-	a += string(mxsz - a.length(), 0);
+	a += string(mxsz - a.length(), '\x0');
 	auto ha = create_multihash(a.begin(), a.end(), bases);
 	int cnt = 0;
 	for (int i=0; i<=a.length()-blen; i++) {
