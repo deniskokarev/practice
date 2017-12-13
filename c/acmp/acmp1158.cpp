@@ -79,9 +79,7 @@ template<typename HASH> unsigned h_commonlen(const HASH &fhash, unsigned fp, con
 		else
 			f = m+1;
 	}
-	// correct the result
-	if (fhash(fp, f) != rhash(rp, f))
-		f--;
+	f--;
 	return f;
 }
 
