@@ -1,5 +1,7 @@
 /* ACMP 1158 */
-#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
 #include <array>
 #include <vector>
 #include <algorithm>
@@ -14,7 +16,7 @@ using namespace std;
 // object, as s.length() is used as highest power
 // NB!!! if you need to have better probability use MultiHash composition
 template<typename IT> struct PolyHash {
-	using value_type = uint64_t;
+	using value_type = uint32_t;
 	unsigned base; // polynomial base
 	int sz;
 	std::vector<value_type> hash;
@@ -83,30 +85,35 @@ template<typename HASH> unsigned h_commonlen(const HASH &fhash, unsigned fp, con
 	return f;
 }
 
+char ss[200001];
+unsigned pos[100000];
+char out[100000];
+
 // O(n*log(n)*log(n)) solution using hashes
 int main(int argc, char **argv) {
-	string s;
-	cin >> s;
-	int bases[] = {3, 5, 7}; // use 3*64-bit hashes with bases 3, 5 and 7
-	string ss = s+s;
-	auto hash = create_multihash(ss.begin(), ss.end(), bases);
-	int len = s.length();
-	unsigned pos[len];
+	int rc = scanf("%200000s", ss);
+	int len = strlen(ss);
+	assert(rc == 1 && len <= 100000 && "problem constraints");
+	int bases[] = {3,5}; // use 2*32-bit hashes with bases 3, 5
+	copy(ss, ss+len, ss+len);
 	for (int i=0; i<len; i++)
 		pos[i] = i;
-	sort(pos, pos+len, [ss,len,hash](const int a, const int b) {
+	// release hash mem space immediately after we're done
+	auto hash = create_multihash(ss, ss+len+len, bases);
+	sort(pos, pos+len, [len,hash](const int a, const int b) {
 			unsigned clen = h_commonlen(hash, a, hash, b, len);
 			return ss[a+clen] < ss[b+clen];
 	});
 	//cerr << ss.substr(pos[0], len) << endl;
 	int fp = len+1;
-	string out;
 	for (int i=0; i<len; i++) {
 		if (pos[i] == 0)
 			fp = min(fp, i);
-		out += ss[pos[i]+len-1];
+		out[i] = ss[pos[i]+len-1];
 	}
-	cout << fp+1 << endl;
-	cout << out << endl;
+	out[len] = 0;
+	fprintf(stdout, "%d\n", fp+1);
+	fwrite(out, 1, len, stdout);
+	fputc('\n', stdout);
 	return 0;
 }
