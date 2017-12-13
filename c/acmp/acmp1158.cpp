@@ -69,12 +69,13 @@ template<typename IT, int W> MultiHash<IT, W> create_multihash(const IT begin, c
 }
 
 // hash-assisted common string length search
-template<typename IT, int W> inline unsigned h_commonlen(const MultiHash<IT,W> &hash, unsigned fp, unsigned rp, unsigned mxlen) {
+template<typename IT, int W> inline unsigned h_commonlen(const MultiHash<IT,W> &hash, const unsigned fp, const unsigned rp, const unsigned mxlen) {
 	// upper bound search
 	unsigned f=0, t=mxlen;
 	while (f<t) {
 		unsigned m = f+(t-f)/2;
 		bool match = true;
+		// we're going over all this troulbe with pad to shave off one unnecessary multiplication
 		int pad = rp-fp;
 		if (pad > 0) {
 			for (int i=0; i<W; i++) {
@@ -102,22 +103,22 @@ template<typename IT, int W> inline unsigned h_commonlen(const MultiHash<IT,W> &
 	return f;
 }
 
-char ss[200001];
-unsigned pos[100000];
-char out[100000];
-int len;
-int bases[] = {3,5,7}; // use 3*32-bit hashes
-MultiHash<char*,3> mhash;
+// had to declare all vars as global for better performance
+static char ss[200001];
+static unsigned pos[100000];
+static char out[100000];
+static int len;
+static int bases[] = {3,5,7}; // use 3*32-bit hashes
+static MultiHash<char*,3> mhash;
 
 // O(n*log(n)*log(n)) solution using hashes
 int main(int argc, char **argv) {
 	int rc = scanf("%200000s", ss);
 	len = strlen(ss);
-	assert(rc == 1 && len <= 100000 && "problem with constraints");
+	assert(rc == 1 && len <= 100000 && "problem with input data constraints");
 	copy(ss, ss+len, ss+len);
 	for (int i=0; i<len; i++)
 		pos[i] = i;
-	// release hash mem space immediately after we're done
 	mhash = create_multihash(ss, ss+len+len, bases);
 	sort(pos, pos+len, [](const int a, const int b) {
 			unsigned clen = h_commonlen(mhash, a, b, len);
