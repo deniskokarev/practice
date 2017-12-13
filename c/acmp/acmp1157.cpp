@@ -87,7 +87,7 @@ template<typename HASH> unsigned h_commonlen(const HASH &fhash, unsigned fp, con
 int main(int argc, char **argv) {
 	string s;
 	cin >> s;
-	int bases[] = {3, 5}; // 2*64-bit hashes with bases 3 and 5 should be enough
+	int bases[] = {3, 5, 7}; // had to use 3*64-bit hashes with bases 3, 5 and 7
 	auto fhash = create_multihash(s.begin(), s.end(), bases);
 	reverse(s.begin(), s.end());
 	auto rhash = create_multihash(s.begin(), s.end(), bases);
