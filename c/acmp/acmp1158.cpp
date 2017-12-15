@@ -1,137 +1,92 @@
 /* ACMP 1158 */
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <cassert>
-#include <array>
-#include <vector>
-#include <algorithm>
-  
-using namespace std;
 
-// polynomial hash for all substrings of s string
-// 64 bit space gives 50% cache collision on ~5*10^9 strings
-// needs O(n) space and O(n) time to precompute, then O(1)
-// suitable to compare the substrings of s
-// NB! may not be used to compare the substrings beteen two separate PolyHash
-// object, as s.length() is used as highest power
-// NB!!! if you need to have better probability use MultiHash composition
-template<typename IT> struct PolyHash {
-	using value_type = uint32_t;
-	unsigned base; // polynomial base
-	int sz;
-	std::vector<value_type> hash;
-	std::vector<value_type> powers;
-	PolyHash():base(0),sz(0) {
-	}
-	PolyHash(const IT begin, const IT end, unsigned b=3):base(b),sz(std::distance(begin, end)+1),hash(sz),powers(sz) {
-		value_type p=1,h=0;
-		hash[0] = h;
-		powers[0] = p;
-		int i=1;
-		for (auto it=begin; it != end; ++it, ++i) {
-			p *= base;
-			h += (*it)*p;
-			hash[i] = h;
-			powers[i] = p;
-		}
-	}
-	value_type operator()(int b, int len) const {
-		value_type h;
-		h = hash[b+len] - hash[b];
-		return h * powers[sz-b-len];
-	}
-};
-  
-// helper fn
-template<typename IT> PolyHash<IT> create_polyhash(const IT begin, const IT end, unsigned base=3) {
-	return PolyHash<IT>(begin, end, base);
-}
-  
-// composition of hashes
-template<typename IT, int W> struct MultiHash {
-	using hash_type = typename PolyHash<IT>::value_type;
-	using value_type = std::array<hash_type, W>;
-	PolyHash<IT> hash[W];
-	std::array<hash_type, W> operator()(int b, int len) const {
-		std::array<hash_type, W> res;
-		for (int i=0; i<W; i++)
-			res[i] = hash[i](b, len);
-		return res;
-	}
+struct SA_SP {
+	unsigned pos;
+	unsigned score[2]; // score for two halfs and remainder
 };
 
-// hepler function to create multihash
-template<typename IT, int W> MultiHash<IT, W> create_multihash(const IT begin, const IT end, const int (&bases)[W]) {
-	MultiHash<IT,W> mh;
-	for (int i=0; i<W; i++)
-		mh.hash[i] = create_polyhash(begin, end, bases[i]);
-	return mh;
+#define dim(X)	(sizeof(X)/sizeof(X[0]))
+				 
+static int cmp_score(const void *a, const void *b) {
+	SA_SP *pa = (SA_SP*)a;
+	SA_SP *pb = (SA_SP*)b;
+	int d;
+	int i = 0;
+	do {
+		d = (int)pa->score[i] - (int)pb->score[i];
+		i++;
+	} while(d==0 && i<dim(pa->score));
+	return d;
 }
 
-// hash-assisted common string length search
-template<typename IT, int W> inline unsigned h_commonlen(const MultiHash<IT,W> &hash, const unsigned fp, const unsigned rp, const unsigned mxlen) {
-	// upper bound search
-	unsigned f=0, t=mxlen;
-	while (f<t) {
-		unsigned m = f+(t-f)/2;
-		bool match = true;
-		// we're going over all this troulbe with pad to shave off one unnecessary multiplication
-		int pad = rp-fp;
-		if (pad > 0) {
-			for (int i=0; i<W; i++) {
-				auto &h = hash.hash[i];
-				if ((h.hash[fp+m]-h.hash[fp])*h.powers[pad] != h.hash[rp+m]-h.hash[rp]) {
-					match = false;
-					break;
-				}
-			}
-		} else {
-			for (int i=0; i<W; i++) {
-				auto &h = hash.hash[i];
-				if (h.hash[fp+m]-h.hash[fp] != (h.hash[rp+m]-h.hash[rp])*h.powers[-pad]) {
-					match = false;
-					break;
-				}
-			}
-		}
-		if (!match)
-			t = m;
-		else
-			f = m+1;
+static void one_sort_stage(SA_SP *sp, SA_SP *tmp, const char *s, unsigned sz, unsigned len) {
+	unsigned hlen = len>>1;
+	for (unsigned i=0; i<sz; i++) {
+		tmp[i].score[0] = sp[i].score[0];
+		tmp[i].score[1] = sp[i+hlen].score[0]*256 + s[i+len-1];
+		tmp[i].pos = i;
 	}
-	f--;
-	return f;
+	qsort(tmp, sz, sizeof(tmp[0]), cmp_score);
+	unsigned ns = 0;
+	unsigned *os = tmp[0].score;
+	for (unsigned i=0; i<sz; i++) {
+		if (memcmp(os, tmp[i].score, sizeof(tmp[i].score)) != 0) {
+			os = tmp[i].score;
+			ns++;
+		}
+		int p = tmp[i].pos;
+		sp[p].score[0] = ns;
+	}
+	memcpy(sp+sz, sp, sz*(sizeof(sp[0])));
 }
 
-// had to declare all vars as global for better performance
-static char ss[200001];
-static unsigned pos[100000];
-static char out[100000];
-static int len;
-static int bases[] = {3,5,7}; // use 3*32-bit hashes
-static MultiHash<char*,3> mhash;
-
-// O(n*log(n)*log(n)) solution using hashes
+// build suffix array for the string s
+// simple O(N*log(N)*log(N)) solution
+// s content must be duplicated (sz is still the size of the original str)
+// sa temporary buffer must have 4*sz free space
+// dst result must have sz free space
+void suffix_array(unsigned *dst, const char *s, unsigned sz, SA_SP *sa) {
+	unsigned len_stages[32];
+	unsigned n, p2 = 0;
+	for (p2=0,n=sz; n>0; n>>=1,p2++)
+		len_stages[p2] = n;
+	SA_SP *sp = sa;
+	SA_SP *tmp = sa+sz*2;
+	memset(sp, 0, sizeof(sp[0])*sz*2);
+	for (int i=0; i<sz; i++)
+		sp[i].pos = sp[i+sz].pos = i;
+	for (int i=p2-1; i>=0; i--)
+		one_sort_stage(sp, tmp, s, sz, len_stages[i]);
+	for (int i=0; i<sz; i++)
+		dst[i] = tmp[i].pos;
+}
+  
 int main(int argc, char **argv) {
-	int rc = scanf("%200000s", ss);
-	len = strlen(ss);
+	char ss[200001];
+	int rc = scanf("%100000s", ss);
+	unsigned len = (unsigned)strlen(ss);
 	assert(rc == 1 && len <= 100000 && "problem with input data constraints");
-	copy(ss, ss+len, ss+len);
-	for (int i=0; i<len; i++)
-		pos[i] = i;
-	mhash = create_multihash(ss, ss+len+len, bases);
-	sort(pos, pos+len, [](const int a, const int b) {
-			unsigned clen = h_commonlen(mhash, a, b, len);
-			return ss[a+clen] < ss[b+clen];
-	});
-	//cerr << ss.substr(pos[0], len) << endl;
-	int fp = len+1;
+	memcpy(ss+len, ss, sizeof(ss[0])*len);
+	SA_SP sp[len*4];
+	unsigned pos[len];
+	suffix_array(pos, ss, len, sp);
+	int fp = -1;
+	char out[len];
 	for (int i=0; i<len; i++) {
 		if (pos[i] == 0)
-			fp = min(fp, i);
+			fp = i;
+#if 0
+		// debug print sorted suffixes
+		for (int j=0; j<len; j++)
+			fputc(ss[pos[i]+j], stderr);
+		fputc('\n', stderr);
+#endif
 		out[i] = ss[pos[i]+len-1];
 	}
-	out[len] = 0;
 	fprintf(stdout, "%d\n", fp+1);
 	fwrite(out, 1, len, stdout);
 	fputc('\n', stdout);
