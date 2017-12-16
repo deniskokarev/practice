@@ -1,24 +1,25 @@
 /* ACMP 1081 */
-#include <iostream>
+#include <cstdio>
 
 using namespace std;
 
 int main(int argc, char **argv) {
 	int n;
-	cin >> n;
-	int64_t aa[n+1];
+	scanf("%d", &n);
+	unsigned long long aa[n+1];
 	aa[0] = 0;
 	for (int i=1; i<=n; i++) {
 		int d;
-		cin >> d;
+		scanf("%d", &d);
 		aa[i] = aa[i-1]+d;
 	}
 	int m;
-	cin >> m;
+	scanf("%d", &m);
 	while (m-- > 0) {
 		int l, r;
-		cin >> l >> r;
-		cout << (aa[r] - aa[l-1]) << endl;
+		scanf("%d%d", &l, &r);
+		printf("%llu ", (aa[r] - aa[l-1]));
 	}
+	printf("\n");
 	return 0;
 }
