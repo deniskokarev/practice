@@ -74,13 +74,24 @@ int main(int argc, char **argv) {
 	unsigned ainv[n+1];
 	aa[0] = r15;
 	ainv[0] = inv[r15];
+	unsigned zeros[n+1];
+	zeros[0] = 0;
 	for (int i=1; i<=n; i++) {
 		r = next_r(r);
 		r15 = r >> 16;
-		aa[i] = (uint64_t(aa[i-1]) * r15) % pmod;
-		ainv[i] = (uint64_t(ainv[i-1]) * inv[r15]) % pmod;
+		if (r15 == 0) {
+			aa[i] = 1;
+			ainv[i] = inv[1];
+			zeros[i] = 1;
+		} else {
+			aa[i] = (uint64_t(aa[i-1]) * r15) % pmod;
+			ainv[i] = (uint64_t(ainv[i-1]) * inv[r15]) % pmod;
+			zeros[i] = 0;
+		}
 	}
-	unsigned sum = 0;
+	for (int i=1; i<=n; i++)
+		zeros[i] += zeros[i-1];
+	uint64_t sum = 0;
 	for (int i=1; i<2*q; i++,i++) {
 		r = next_r(r);
 		r15 = r >> 16;
@@ -91,11 +102,12 @@ int main(int argc, char **argv) {
 		unsigned l = min(b1, b2);
 		unsigned r = max(b1, b2);
 		//cerr << "l: " << l << " r: " << r << endl;
-		unsigned s = (uint64_t(aa[r]) * ainv[l-1]) % pmod;
-		//cerr << s << endl;
-		sum += s;
-		sum %= pmod;
+		if (zeros[r] == zeros[l-1]) {
+			unsigned s = (uint64_t(aa[r]) * ainv[l-1]) % pmod;
+			//cerr << s << endl;
+			sum += s;
+		}
 	}
-	cout << sum << endl;
+	cout << sum % pmod << endl;
 	return 0;
 }
