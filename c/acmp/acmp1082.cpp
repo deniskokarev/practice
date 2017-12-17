@@ -1,11 +1,10 @@
 /* ACMP 1082 */
-#include <cstdio>
-#include <cstdint>
+#include <stdio.h>
 
 int main(int argc, char **argv) {
 	int n, m, k;
 	scanf("%d%d%d", &n, &m, &k);
-	uint64_t aa[n+1][m+1];
+	unsigned long long aa[n+1][m+1];
 	for (int j=0; j<=m; j++)
 		aa[0][j] = 0;
 	for (int i=1; i<=n; i++) {
@@ -24,9 +23,9 @@ int main(int argc, char **argv) {
 	}
 #endif
 	while (k-- > 0) {
-		unsigned x1, y1, x2, y2;
+		int x1, y1, x2, y2;
 		scanf("%d%d%d%d", &y1, &x1, &y2, &x2);
-		uint64_t sum = aa[y2][x2] - aa[y1-1][x2] - aa[y2][x1-1] + aa[y1-1][x1-1];
+		unsigned long long sum = aa[y2][x2] - aa[y1-1][x2] - aa[y2][x1-1] + aa[y1-1][x1-1];
 		printf("%llu\n", sum);
 	}
 	return 0;
