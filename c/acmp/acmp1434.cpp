@@ -52,8 +52,8 @@ unsigned inline next_r(unsigned r) {
 #define dim(X)	(sizeof(X)/sizeof(X[0]))
 
 int main(int argc, char **argv) {
-	unsigned inv[1U<<16]; // inverses for each element A[] in pmod ring
-	// build inverses ahead of time
+	// start with precomputing inverses for each A[] in pmod ring
+	unsigned inv[1U<<16]; 
 	inv[0] = 0; // undefined
 	for (int i=1; i<dim(inv); i++) {
 		int64_t k, n;
@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
 		inv[i] = k;
 		assert((uint64_t(i)*inv[i])%pmod == 1 && "inverses must work");
 	}
+	// building aggregated product and inverse product sequences
 	unsigned n, q;
 	unsigned r;
 	cin >> n >> q >> r;
@@ -74,7 +75,7 @@ int main(int argc, char **argv) {
 	unsigned ainv[n+1];
 	aa[0] = r15;
 	ainv[0] = inv[r15];
-	unsigned zeros[n+1];
+	unsigned short zeros[n+1];	// must handle zeros in between separately
 	zeros[0] = 0;
 	for (int i=1; i<=n; i++) {
 		r = next_r(r);
@@ -91,7 +92,10 @@ int main(int argc, char **argv) {
 	}
 	for (int i=1; i<=n; i++)
 		zeros[i] += zeros[i-1];
-	uint64_t sum = 0;
+	// poor man's 96 bit arithmetic (enough to add up 64bit * 10^8 requests)
+	// long arithmetic solution is 20% faster than doing modulo
+	// each time. Without this trick getting timeout on test 11
+	unsigned sum[3] = {0, 0, 0};
 	for (int i=1; i<2*q; i++,i++) {
 		r = next_r(r);
 		r15 = r >> 16;
@@ -102,12 +106,26 @@ int main(int argc, char **argv) {
 		unsigned l = min(b1, b2);
 		unsigned r = max(b1, b2);
 		//cerr << "l: " << l << " r: " << r << endl;
-		if (zeros[r] == zeros[l-1]) {
-			unsigned s = (uint64_t(aa[r]) * ainv[l-1]) % pmod;
-			//cerr << s << endl;
-			sum += s;
-		}
+		uint64_t s = (zeros[r] == zeros[l-1]) * uint64_t(aa[r]) * ainv[l-1];
+		//cerr << s << endl;
+		// going with 96 bit arithmetic in order to avoid slow % operator
+		unsigned carry;
+		uint64_t dig;
+		dig = sum[0] + (s & ((1ULL<<32)-1));
+		sum[0] = dig & ((1ULL<<32)-1);
+		carry = dig >> 32;
+		dig = carry + sum[1] + (s >> 32);
+		sum[1] = dig & ((1ULL<<32)-1);
+		carry = dig >> 32;
+		sum[2] += carry;
 	}
-	cout << sum % pmod << endl;
+	// ans = sum % pmod
+	uint64_t ans = 0;
+	uint64_t p2mod[dim(sum)] = {1, 2, 4}; // 2^0 % pmod, 2^32 % pmod, 2^64 % pmod
+	for (int i=0; i<dim(sum); i++) {
+		ans += p2mod[i] * sum[i];
+		ans %= pmod;
+	}
+	cout << ans << endl;
 	return 0;
 }
