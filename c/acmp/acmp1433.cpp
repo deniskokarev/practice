@@ -21,16 +21,6 @@ void fill_floor_log2(int mx, unsigned char *ll) {
 		ll[i++] = l2;
 }
 
-// precompute ceil(log2) values [1..mx] inclusive
-// ll buf must have mx+1 free space
-void fill_ceil_log2(int mx, unsigned char *ll) {
-	fill_floor_log2(mx, ll);
-	for (int i=1; i<=mx; i++)
-		ll[i]++;
-	for (int p2=1; p2<=mx; p2<<=1)
-		ll[p2]--;
-}
-
 constexpr unsigned mod31_mask = (1ULL<<31)-1;
 
 unsigned inline next_r(unsigned r) {
@@ -42,26 +32,26 @@ int main(int argc, char **argv) {
 	unsigned r;
 	cin >> n >> q >> r;
 	assert((n&(n-1))==0 && "n must be power of 2");
-	unsigned char floor_log2[n+2];
-	unsigned char ceil_log2[n+2];
-	fill_floor_log2(n+1, floor_log2);
-	fill_ceil_log2(n+1, ceil_log2);
-	int l2 = ceil_log2[n+1]+1;
+	unsigned char log2[n+1];
+	fill_floor_log2(n, log2);
+	int l2 = log2[n]+1; // we know it's ceil_log2
 	unsigned modn = n-1;
-	unsigned aa[l2][n+1];
-	unsigned r15 = r >> 16;
-	aa[0][0] = r15;
-	for (int i=1; i<=n; i++) {
+	unsigned aa[l2][n]; // multilevel minimums
+	unsigned r15;
+	// fill 0-level with R15 sequence
+	for (int i=0; i<n; i++) {
 		r = next_r(r);
 		r15 = r >> 16;
 		aa[0][i] = r15;
 	}
+	// populate min for each 2^i segment
 	for (int i=1,p2=1; i<l2; i++,p2<<=1)
 		for (int j=0; j<n; j++)
 			if (j+p2<n)
 				aa[i][j] = min(aa[i-1][j], aa[i-1][j+p2]);
 			else
 				aa[i][j] = aa[i-1][j];
+	// continue R15 sequence and each time find min on [l,r] in O(1)
 	unsigned sum = 0;
 	for (int i=1; i<2*q; i++,i++) {
 		r = next_r(r);
@@ -72,8 +62,9 @@ int main(int argc, char **argv) {
 		unsigned b2 = (r15&modn)+1;
 		unsigned l = min(b1, b2);
 		unsigned r = max(b1, b2);
+		l--, r--;
 		int len = r-l+1;
-		int fl2 = floor_log2[len];
+		int fl2 = log2[len];
 		int p2 = 1<<fl2;
 		unsigned mnl = aa[fl2][l];
 		unsigned mnr = aa[fl2][r-p2+1];
