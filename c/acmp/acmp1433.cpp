@@ -32,7 +32,6 @@ void fill_ceil_log2(int mx, unsigned char *ll) {
 }
 
 constexpr unsigned mod31_mask = (1ULL<<31)-1;
-constexpr unsigned pmod = (1ULL<<31)-1; // prime modulo
 
 unsigned inline next_r(unsigned r) {
 	return (r*1103515245+12345) & mod31_mask;
@@ -63,7 +62,7 @@ int main(int argc, char **argv) {
 				aa[i][j] = min(aa[i-1][j], aa[i-1][j+p2]);
 			else
 				aa[i][j] = aa[i-1][j];
-	uint64_t sum = 0;
+	unsigned sum = 0;
 	for (int i=1; i<2*q; i++,i++) {
 		r = next_r(r);
 		r15 = r >> 16;
@@ -76,11 +75,11 @@ int main(int argc, char **argv) {
 		int len = r-l+1;
 		int fl2 = floor_log2[len];
 		int p2 = 1<<fl2;
-		int mnl = aa[fl2][l];
-		int mnr = aa[fl2][r-p2+1];
-		int mn = min(mnl, mnr);
+		unsigned mnl = aa[fl2][l];
+		unsigned mnr = aa[fl2][r-p2+1];
+		unsigned mn = min(mnl, mnr);
 		sum += mn;
 	}
-	cout << sum % pmod << endl;
+	cout << (sum & mod31_mask) << endl;
 	return 0;
 }
