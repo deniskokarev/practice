@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 			else
 				printf("Wrong Answer\n");
 		} else {
-			printf("Accepted\n");
+			printf("Wrong Answer\n");
 		}
 	}
 	return 0;
