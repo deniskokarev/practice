@@ -1,10 +1,8 @@
-/* ACMP 630 */
+/* ACMP 1176 */
 #include <stdio.h>
-#include <memory.h>
 
 constexpr int MXSZ = 300;
 
-#define MAX(A,B)	((A>B)?A:B)
 #define MIN(A,B)	((A<B)?A:B)
 
 // precompute floor(log2) values [1..mx] inclusive
@@ -43,8 +41,8 @@ int main(int argc, char **argv) {
 	// read input
 	int n, m, k;
 	scanf("%d%d%d", &n, &m, &k);
-	int l2n = ceil_log2[n];
-	int l2m = ceil_log2[m];
+	int l2n = ceil_log2[n]+1;
+	int l2m = ceil_log2[m]+1;
 	int aa[l2n][l2m][n][m];
 	for (int i=0; i<n; i++)
 		for (int j=0; j<m; j++)
@@ -82,10 +80,17 @@ int main(int argc, char **argv) {
 		int h = y2-y1+1;
 		int l2w = floor_log2[w];
 		int l2h = floor_log2[h];
-		int mn = aa[l2h][l2w][y1][x1];
-		mn = MIN(mn, aa[l2h][l2w][y2-l2h][x1]);
-		mn = MIN(mn, aa[l2h][l2w][y1][x2-l2w]);
-		mn = MIN(mn, aa[l2h][l2w][y2-l2h][x2-l2w]);
+		int p2w = 1<<l2w;
+		int p2h = 1<<l2h;
+		int mn_ul = aa[l2h][l2w][y1][x1];
+		int mn_bl = aa[l2h][l2w][y2-p2h+1][x1];
+		int mn_ur = aa[l2h][l2w][y1][x2-p2w+1];
+		int mn_br = aa[l2h][l2w][y2-p2h+1][x2-p2w+1];
+		//fprintf(stderr, "min ul: %d bl: %d ur: %d br: %d\n", mn_ul, mn_bl, mn_ur, mn_br);
+		int mn = mn_ul;
+		mn = MIN(mn, mn_bl);
+		mn = MIN(mn, mn_ur);
+		mn = MIN(mn, mn_br);
 		printf("%d\n", mn);
 	}
 	return 0;
