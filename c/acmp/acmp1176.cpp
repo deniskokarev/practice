@@ -1,5 +1,8 @@
 /* ACMP 1176 */
 #include <stdio.h>
+#include <vector>
+
+using namespace std;
 
 constexpr int MXSZ = 300;
 
@@ -43,38 +46,37 @@ int main(int argc, char **argv) {
 	scanf("%d%d%d", &n, &m, &k);
 	int l2n = ceil_log2[n]+1;
 	int l2m = ceil_log2[m]+1;
-	int aa[l2n][l2m][n][m];
+	vector<vector<vector<vector<int>>>> aa = \
+		vector<vector<vector<vector<int>>>>(l2n, vector<vector<vector<int>>>(l2m));
+	aa[0][0] = vector<vector<int>>(n, vector<int>(m));
+	//int aa[l2n][l2m][n][m];
 	for (int i=0; i<n; i++)
 		for (int j=0; j<m; j++)
 			scanf("%d", &aa[0][0][i][j]);
 	// fill 0-level for each row
-	for (int l2j=1,p2j=1; l2j<l2m; l2j++,p2j<<=1)
+	for (int l2j=1,p2j=1; l2j<l2m; l2j++,p2j<<=1) {
+		aa[0][l2j] = vector<vector<int>>(n, vector<int>(m));
 		for (int i=0; i<n; i++)
-			for (int j=0; j<m; j++)
-				if (j+p2j<m)
-					aa[0][l2j][i][j] = MIN(aa[0][l2j-1][i][j], aa[0][l2j-1][i][j+p2j]);
-				else
-					aa[0][l2j][i][j] = aa[0][l2j-1][i][j];
+			for (int j=0; j<m-p2j; j++)
+				aa[0][l2j][i][j] = MIN(aa[0][l2j-1][i][j], aa[0][l2j-1][i][j+p2j]);
+	}
 	// fill 0-level for each col
-	for (int l2i=1,p2i=1; l2i<l2n; l2i++,p2i<<=1)
-		for (int i=0; i<n; i++)
+	for (int l2i=1,p2i=1; l2i<l2n; l2i++,p2i<<=1) {
+		aa[l2i][0] = vector<vector<int>>(n, vector<int>(m));
+		for (int i=0; i<n-p2i; i++)
 			for (int j=0; j<m; j++)
-				if (i+p2i<n)
-					aa[l2i][0][i][j] = MIN(aa[l2i-1][0][i][j], aa[l2i-1][0][i+p2i][j]);
-				else
-					aa[l2i][0][i][j] = aa[l2i-1][0][i][j];
+				aa[l2i][0][i][j] = MIN(aa[l2i-1][0][i][j], aa[l2i-1][0][i+p2i][j]);
+	}
 	// fill all levels for all rows
 	for (int l2i=1,p2i=1; l2i<l2n; l2i++,p2i<<=1) {
 		for (int l2j=1,p2j=1; l2j<l2m; l2j++,p2j<<=1) {
-			for (int i=0; i<n; i++) {
-				for (int j=0; j<m; j++) {
+			aa[l2i][l2j] = vector<vector<int>>(n, vector<int>(m));
+			for (int i=0; i<n-p2i; i++) {
+				for (int j=0; j<m-p2j; j++) {
 					int a = aa[l2i-1][l2j-1][i][j];
-					if (i+p2i<n)
-						a = MIN(a, aa[l2i-1][l2j-1][i+p2i][j]);
-					if (j+p2j<m)
-						a = MIN(a, aa[l2i-1][l2j-1][i][j+p2j]);
-					if (i+p2i<n && j+p2j<m)
-						a = MIN(a, aa[l2i-1][l2j-1][i+p2i][j+p2j]);
+					a = MIN(a, aa[l2i-1][l2j-1][i+p2i][j]);
+					a = MIN(a, aa[l2i-1][l2j-1][i][j+p2j]);
+					a = MIN(a, aa[l2i-1][l2j-1][i+p2i][j+p2j]);
 					aa[l2i][l2j][i][j] = a;
 				}
 			}
