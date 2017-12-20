@@ -55,6 +55,14 @@ int main(int argc, char **argv) {
 					aa[0][l2j][i][j] = MIN(aa[0][l2j-1][i][j], aa[0][l2j-1][i][j+p2j]);
 				else
 					aa[0][l2j][i][j] = aa[0][l2j-1][i][j];
+	// fill 0-level for each col
+	for (int l2i=1,p2i=1; l2i<l2n; l2i++,p2i<<=1)
+		for (int i=0; i<n; i++)
+			for (int j=0; j<m; j++)
+				if (i+p2i<n)
+					aa[l2i][0][i][j] = MIN(aa[l2i-1][0][i][j], aa[l2i-1][0][i+p2i][j]);
+				else
+					aa[l2i][0][i][j] = aa[l2i-1][0][i][j];
 	// fill all levels for all rows
 	for (int l2i=1,p2i=1; l2i<l2n; l2i++,p2i<<=1) {
 		for (int l2j=1,p2j=1; l2j<l2m; l2j++,p2j<<=1) {
