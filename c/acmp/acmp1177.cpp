@@ -63,33 +63,31 @@ int main(int argc, char **argv) {
 	int l2h = floor_log2[h];
 	vector<vector<int>> aa(n, vector<int>(vector<int>(m)));
 	{
-		vector<vector<vector<int>>> aar(l2w+1, vector<vector<int>>(n, vector<int>(m)));
+		vector<vector<vector<int>>> aar(2, vector<vector<int>>(n, vector<int>(m)));
 		for (int i=0; i<=n-d; i++)
 			for (int j=0; j<=m-c; j++)
 				aar[0][i][j] = ssum[i+d][j+c] - ssum[i+d][j] - ssum[i][j+c] + ssum[i][j];
 		for (int l2j=1,p2j=1; l2j<=l2w; l2j++,p2j<<=1) {
-			aar[l2j] = vector<vector<int>>(n, vector<int>(m));
+			int prev = (l2j+1)&1;
+			int cur = l2j&1;
 			for (int i=0; i<n; i++)
 				for (int j=0; j<=m-2*p2j; j++)
-					aar[l2j][i][j] = min(aar[l2j-1][i][j], aar[l2j-1][i][j+p2j]);
-			aar[l2j-1].clear();
-			aar[l2j-1].shrink_to_fit();
+					aar[cur][i][j] = min(aar[prev][i][j], aar[prev][i][j+p2j]);
 		}
-		vector<vector<vector<int>>> aac(l2h+1, vector<vector<int>>(n, vector<int>(m)));
+		vector<vector<vector<int>>> aac(2, vector<vector<int>>(n, vector<int>(m)));
 		for (int i=0; i<=n-d; i++)
 			for (int j=0; j<=m-c; j++)
-				aac[0][i][j] = aar[l2w][i][j];
+				aac[0][i][j] = aar[l2w&1][i][j];
 		for (int l2i=1,p2i=1; l2i<=l2h; l2i++,p2i<<=1) {
-			aac[l2i] = vector<vector<int>>(n, vector<int>(m));
+			int prev = (l2i+1)&1;
+			int cur = l2i&1;
 			for (int i=0; i<=n-2*p2i; i++)
 				for (int j=0; j<m; j++)
-					aac[l2i][i][j] = min(aac[l2i-1][i][j], aac[l2i-1][i+p2i][j]);
-			aac[l2i-1].clear();
-			aac[l2i-1].shrink_to_fit();
+					aac[cur][i][j] = min(aac[prev][i][j], aac[prev][i+p2i][j]);
 		}
 		for (int i=0; i<=n-d; i++)
 			for (int j=0; j<=m-c; j++)
-				aa[i][j] = aac[l2h][i][j];
+				aa[i][j] = aac[l2h&1][i][j];
 	}
 	int p2w = 1<<l2w;
 	int p2h = 1<<l2h;
