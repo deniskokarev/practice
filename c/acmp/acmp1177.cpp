@@ -4,31 +4,10 @@
 #define max(A,B) ((A>B)?A:B)
 #define min(A,B) ((A<B)?A:B)
 
-// precompute floor(log2) values [1..mx] inclusive
-// ll buf must have mx+1 free space
-void fill_floor_log2(int mx, unsigned char *ll) {
-	ll[0] = 255; // undefined value
-	ll[1] = 0;
-	int i = 2;
-	int l2, p2;
-	for (l2=1,p2=2; i+p2<=mx; l2++,p2<<=1) {
-		int j;
-		for (j=0; j<p2; j++)
-			ll[i+j] = l2;
-		i += j;
-	}
-	while (i<=mx)
-		ll[i++] = l2;
-}
-
-// precompute ceil(log2) values [1..mx] inclusive
-// ll buf must have mx+1 free space
-void fill_ceil_log2(int mx, unsigned char *ll) {
-	fill_floor_log2(mx, ll);
-	for (int i=1; i<=mx; i++)
-		ll[i]++;
-	for (int p2=1; p2<=mx; p2<<=1)
-		ll[p2]--;
+int floor_log2(unsigned n) {
+	int cnt;
+	for (cnt=-1; n; n>>=1,cnt++);
+	return cnt;
 }
 
 constexpr int MXSZ = 1000;
@@ -42,12 +21,6 @@ int main(int argc, char **argv) {
 	// read input
 	int m, n, a, b, c, d;
 	scanf("%d%d%d%d%d%d", &m, &n, &a, &b, &c, &d);
-	// precompute log2s
-	int mxsz = max(n, m);
-	unsigned char floor_log2[mxsz+1];
-	unsigned char ceil_log2[mxsz+1];
-	fill_floor_log2(mxsz, floor_log2);
-	fill_ceil_log2(mxsz, ceil_log2);
 	// read and fill aggregate matrix
 	for (int i=1; i<=n; i++)
 		for (int j=1; j<=m; j++)
@@ -58,8 +31,8 @@ int main(int argc, char **argv) {
 	// compute min matrix aa[][] where each aa[i][j] has min for rectangle aa[i][j]..aa[i+p2h][j+p2w]
 	int w = a-c-2+1;
 	int h = b-d-2+1;
-	int l2w = floor_log2[w];
-	int l2h = floor_log2[h];
+	int l2w = floor_log2(w);
+	int l2h = floor_log2(h);
 	int p2w = 1<<l2w;
 	int p2h = 1<<l2h;
 	{
