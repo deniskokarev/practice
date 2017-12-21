@@ -60,11 +60,9 @@ int main(int argc, char **argv) {
 	int h = b-d-2+1;
 	int l2w = floor_log2[w];
 	int l2h = floor_log2[h];
-	int l2n = ceil_log2[h]+1;
-	int l2m = ceil_log2[w]+1;
 	vector<vector<vector<vector<int>>>> aa = \
-		vector<vector<vector<vector<int>>>>(l2n, vector<vector<vector<int>>>(l2m));
-	aa[0][0] = vector<vector<int>>(n-d+1, vector<int>(m-c+1, INT_MIN));
+		vector<vector<vector<vector<int>>>>(l2h+1, vector<vector<vector<int>>>(l2w+1));
+	aa[0][0] = vector<vector<int>>(n, vector<int>(m, INT_MIN));
 	for (int i=0; i<=n-d; i++) {
 		for (int j=0; j<=m-c; j++) {
 			aa[0][0][i][j] = ssum[i+d][j+c] - ssum[i+d][j] - ssum[i][j+c] + ssum[i][j];
@@ -74,14 +72,14 @@ int main(int argc, char **argv) {
 	}
 	// fill 0-level for each row
 	for (int l2j=1,p2j=1; l2j<=l2w; l2j++,p2j<<=1) {
-		aa[0][l2j] = vector<vector<int>>(n, vector<int>(max(m-2*p2j+1, 1)));
+		aa[0][l2j] = vector<vector<int>>(n, vector<int>(m));
 		for (int i=0; i<n; i++)
 			for (int j=0; j<=m-2*p2j; j++)
 				aa[0][l2j][i][j] = min(aa[0][l2j-1][i][j], aa[0][l2j-1][i][j+p2j]);
 	}
 	// fill 0-level for each col
 	for (int l2i=1,p2i=1; l2i<=l2h; l2i++,p2i<<=1) {
-		aa[l2i][0] = vector<vector<int>>(max(n-2*p2i+1, 1), vector<int>(m));
+		aa[l2i][0] = vector<vector<int>>(n, vector<int>(m));
 		for (int i=0; i<=n-2*p2i; i++)
 			for (int j=0; j<m; j++)
 				aa[l2i][0][i][j] = min(aa[l2i-1][0][i][j], aa[l2i-1][0][i+p2i][j]);
@@ -89,7 +87,7 @@ int main(int argc, char **argv) {
 	// fill all levels for upto l2 hight and l2 width
 	for (int l2i=1,p2i=1; l2i<=l2h; l2i++,p2i<<=1) {
 		for (int l2j=1,p2j=1; l2j<=l2w; l2j++,p2j<<=1) {
-			aa[l2i][l2j] = vector<vector<int>>(max(n-2*p2i+1, 1), vector<int>(max(m-2*p2j+1, 1)));
+			aa[l2i][l2j] = vector<vector<int>>(n, vector<int>(m));
 			for (int i=0; i<=n-2*p2i; i++) {
 				for (int j=0; j<=m-2*p2j; j++) {
 					int a = aa[l2i-1][l2j-1][i][j];
