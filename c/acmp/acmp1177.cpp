@@ -1,10 +1,8 @@
 /* ACMP 1177 */
 #include <stdio.h>
-#include <limits.h>
-#include <vector>
-#include <algorithm>
 
-using namespace std;
+#define max(A,B) ((A>B)?A:B)
+#define min(A,B) ((A<B)?A:B)
 
 // precompute floor(log2) values [1..mx] inclusive
 // ll buf must have mx+1 free space
@@ -33,6 +31,13 @@ void fill_ceil_log2(int mx, unsigned char *ll) {
 		ll[p2]--;
 }
 
+constexpr int MXSZ = 1000;
+
+// aggregate matrix
+int ssum[MXSZ+1][MXSZ+1];
+// multilevel min matrix
+int aa[MXSZ][MXSZ];
+
 int main(int argc, char **argv) {
 	// read input
 	int m, n, a, b, c, d;
@@ -44,55 +49,47 @@ int main(int argc, char **argv) {
 	fill_floor_log2(mxsz, floor_log2);
 	fill_ceil_log2(mxsz, ceil_log2);
 	// read and fill aggregate matrix
-	vector<vector<int>> ssum(n+1, vector<int>(m+1));
 	for (int i=1; i<=n; i++)
 		for (int j=1; j<=m; j++)
 			scanf("%d", &ssum[i][j]);
-	for (int i=1; i<=n; i++) {
-		for (int j=1; j<=m; j++) {
+	for (int i=1; i<=n; i++)
+		for (int j=1; j<=m; j++)
 			ssum[i][j] += ssum[i-1][j] + ssum[i][j-1] - ssum[i-1][j-1];
-			//fprintf(stderr, "%d ", ssum[i][j]);
-		}
-		//fprintf(stderr, "\n");
-	}
-	// multilevel min matrix
-	//int aa[l2n][l2m][n][m];
+	// compute min matrix aa[][] where each aa[i][j] has min for rectangle aa[i][j]..aa[i+p2h][j+p2w]
 	int w = a-c-2+1;
 	int h = b-d-2+1;
 	int l2w = floor_log2[w];
 	int l2h = floor_log2[h];
-	vector<vector<int>> aa(n, vector<int>(vector<int>(m)));
+	int p2w = 1<<l2w;
+	int p2h = 1<<l2h;
 	{
-		vector<vector<vector<int>>> aar(2, vector<vector<int>>(n, vector<int>(m)));
+		int aa_loc[2][MXSZ][MXSZ];
 		for (int i=0; i<=n-d; i++)
 			for (int j=0; j<=m-c; j++)
-				aar[0][i][j] = ssum[i+d][j+c] - ssum[i+d][j] - ssum[i][j+c] + ssum[i][j];
+				aa_loc[0][i][j] = ssum[i+d][j+c] - ssum[i+d][j] - ssum[i][j+c] + ssum[i][j];
 		for (int l2j=1,p2j=1; l2j<=l2w; l2j++,p2j<<=1) {
 			int prev = (l2j+1)&1;
 			int cur = l2j&1;
 			for (int i=0; i<n; i++)
 				for (int j=0; j<=m-2*p2j; j++)
-					aar[cur][i][j] = min(aar[prev][i][j], aar[prev][i][j+p2j]);
+					aa_loc[cur][i][j] = min(aa_loc[prev][i][j], aa_loc[prev][i][j+p2j]);
 		}
-		vector<vector<vector<int>>> aac(2, vector<vector<int>>(n, vector<int>(m)));
 		for (int i=0; i<=n-d; i++)
 			for (int j=0; j<=m-c; j++)
-				aac[0][i][j] = aar[l2w&1][i][j];
+				aa_loc[0][i][j] = aa_loc[l2w&1][i][j];
 		for (int l2i=1,p2i=1; l2i<=l2h; l2i++,p2i<<=1) {
 			int prev = (l2i+1)&1;
 			int cur = l2i&1;
 			for (int i=0; i<=n-2*p2i; i++)
 				for (int j=0; j<m; j++)
-					aac[cur][i][j] = min(aac[prev][i][j], aac[prev][i+p2i][j]);
+					aa_loc[cur][i][j] = min(aa_loc[prev][i][j], aa_loc[prev][i+p2i][j]);
 		}
 		for (int i=0; i<=n-d; i++)
 			for (int j=0; j<=m-c; j++)
-				aa[i][j] = aac[l2h&1][i][j];
+				aa[i][j] = aa_loc[l2h&1][i][j];
 	}
-	int p2w = 1<<l2w;
-	int p2h = 1<<l2h;
 	// find best answer
-	int mx = INT_MIN;
+	int mx = -1;
 	for (int i=0; i<=n-b; i++) {
 		for (int j=0; j<=m-a; j++) {
 			int s = ssum[i+b][j+a] - ssum[i+b][j] - ssum[i][j+a] + ssum[i][j];
