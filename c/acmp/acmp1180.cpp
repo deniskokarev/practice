@@ -30,10 +30,10 @@ int main(int argc, char **argv) {
 		if (rb-lb > 1) {
 			for (int bi=lb+1; bi<rb; bi++)
 				mx = max(mx, bucket[bi]);
-			int l_hi = ((l+b-1)/b)*b;
+			int l_hi = (lb+1)*b;
 			for (int i=l; i<l_hi; i++)
 				mx = max(mx, aa[i]);
-			int r_lo = (r/b)*b;
+			int r_lo = rb*b;
 			for (int i=r_lo; i<=r; i++)
 				mx = max(mx, aa[i]);
 		} else {
