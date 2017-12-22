@@ -8,17 +8,15 @@
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
-	int sq = max(sqrt(n), 1);
-	int b = (n+sq-1)/sq;
-	int bucket[sq];
-	int el[sq][b];
+	int b = max(sqrt(n), 1);
+	int bucket[(n+b-1)/b];
+	int aa[n];
 	memset(bucket, -1, sizeof(bucket));
-	memset(el, 0, sizeof(el));
-	for (int i=0,bi=0; bi<sq; bi++) {
-		for (int j=0; j<b && i<n; j++,i++) {
-			scanf("%d", &el[bi][j]);
-			bucket[bi] = max(bucket[bi], el[bi][j]);
-		}
+	memset(aa, 0, sizeof(aa));
+	for (int i=0; i<n; i++) {
+		scanf("%d", &aa[i]);
+		int bi=i/b;
+		bucket[bi] = max(bucket[bi], aa[i]);
 	}
 	int m;
 	scanf("%d", &m);
@@ -26,15 +24,22 @@ int main(int argc, char **argv) {
 		int l, r;
 		scanf("%d%d", &l, &r);
 		l--, r--;
-		int mnb = l/b+1;
-		int mxb = r/b-1;
+		int lb = l/b;
+		int rb = r/b;
 		int mx = -1;
-		for (int i=mnb; i<mxb; i++)
-			mx = max(mx, bucket[i]);
-		for (int j=l%b; j<b; j++)
-			mx = max(mx, el[l/b][j]);
-		for (int j=0; j<=r%b; j++)
-			mx = max(mx, el[r/b][j]);
+		if (rb-lb > 1) {
+			for (int bi=lb+1; bi<rb; bi++)
+				mx = max(mx, bucket[bi]);
+			int l_hi = ((l+b-1)/b)*b;
+			for (int i=l; i<l_hi; i++)
+				mx = max(mx, aa[i]);
+			int r_lo = (r/b)*b;
+			for (int i=r_lo; i<=r; i++)
+				mx = max(mx, aa[i]);
+		} else {
+			for (int i=l; i<=r; i++)
+				mx = max(mx, aa[i]);
+		}
 		printf("%d ", mx);
 	}
 	printf("\n");
