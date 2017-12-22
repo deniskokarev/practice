@@ -1,6 +1,7 @@
 /* ACMP 1182 */
 #include <stdio.h>
 #include <math.h>
+#include <memory.h>
 #include <limits.h>
 
 #define max(A,B) ((A>B)?A:B)
@@ -11,12 +12,10 @@ int main(int argc, char **argv) {
 	scanf("%d%d%d", &n, &k, &m);
 	const int len = max(sqrt(n), 1);
 	const int nb = (n+len-1)/len;
-	int bucket[nb];
+	int bucket[nb]; // partial segment stats
 	int aa[n];
-	for (auto &b:bucket)
-		b = 0;
-	for (auto &a:aa)
-		a = 0;
+	memset(bucket, 0, sizeof(bucket));
+	memset(aa, 0, sizeof(aa));
 	while (m-- > 0) {
 		int l, r;
 		scanf("%d%d", &l, &r);
@@ -38,18 +37,30 @@ int main(int argc, char **argv) {
 		}
 		if (mx < k) {
 			printf("Yes\n");
-			for (int bi=lb; bi<=rb; bi++)
+			for (int bi=lb+1; bi<rb; bi++)
 				bucket[bi]++;
-			if (rb-lb > 1) {
+			if (rb > lb) {
+				mx = 0;
 				int l_hi = (lb+1)*len;
-				for (int i=l; i<l_hi; i++)
+				for (int i=l; i<l_hi; i++) {
 					aa[i]++;
+					mx = max(mx, aa[i]);
+				}
+				bucket[lb] = max(bucket[lb], mx);
+				mx = 0;
 				int r_lo = rb*len;
-				for (int i=r_lo; i<=r; i++)
+				for (int i=r_lo; i<=r; i++) {
 					aa[i]++;
+					mx = max(mx, aa[i]);
+				}
+				bucket[rb] = max(bucket[rb], mx);
 			} else {
-				for (int i=l; i<=r; i++)
+				mx = 0;
+				for (int i=l; i<=r; i++) {
 					aa[i]++;
+					mx = max(mx, aa[i]);
+				}
+				bucket[lb] = max(bucket[lb], mx);
 			}
 		} else {
 			printf("No\n");
