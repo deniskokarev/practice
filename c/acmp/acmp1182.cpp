@@ -15,6 +15,8 @@ int main(int argc, char **argv) {
 	int aa[n];
 	for (auto &b:bucket)
 		b = 0;
+	for (auto &a:aa)
+		a = 0;
 	while (m-- > 0) {
 		int l, r;
 		scanf("%d%d", &l, &r);
