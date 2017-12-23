@@ -18,9 +18,9 @@ int main(int argc, char **argv) {
 		int b = s/len;
 		int i;
 		if (bucket[b] == 0)
-			memset(bb+b*len, 0, sizeof(bb[0]*len));
+			memset(bb+b*len, 0, sizeof(bb[0])*len);
 		else if (bucket[b] == len)
-			memset(bb+b*len, 1, sizeof(bb[0]*len));	
+			memset(bb+b*len, 1, sizeof(bb[0])*len);	
 		switch(op[0]) {
 		case 'a':
 			for (i=s; bb[i] == 1 && i<(b+1)*len; i++) {
