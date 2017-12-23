@@ -21,23 +21,22 @@ int main(int argc, char **argv) {
 	while (m-- > 0) {
 		int l, r;
 		scanf("%d%d", &l, &r);
+		r--;
 		const int lb = l/len;
 		const int rb = r/len;
 		int mx = 0;
 		for (int bi=lb+1; bi<rb; bi++)
 			mx = max(mx, mxmxbt[bi]);
-		mx = max(mx, mxmnbt[lb]);
-		mx = max(mx, mxmnbt[rb]);
 		if (rb>lb) {
 			int l_hi = (lb+1)*len;
 			for (int i=l; i<l_hi; i++)
-				mx = max(mx, aa[i]);
+				mx = max(mx, aa[i]+mxmnbt[lb]);
 			int r_lo = rb*len;
 			for (int i=r_lo; i<=r; i++)
-				mx = max(mx, aa[i]);
+				mx = max(mx, aa[i]+mxmnbt[rb]);
 		} else {
 			for (int i=l; i<=r; i++)
-				mx = max(mx, aa[i]);
+				mx = max(mx, aa[i]+mxmnbt[lb]);
 		}
 		if (mx < k) {
 			printf("Yes\n");
@@ -68,6 +67,11 @@ int main(int argc, char **argv) {
 				}
 				mxmxbt[lb] = max(mxmxbt[lb], mx+mxmnbt[lb]);
 			}
+#if 0
+			for (int i=0; i<n; i++)
+				fprintf(stderr, "%d ", aa[i]+mxmnbt[i/len]);
+			fprintf(stderr, "\n");
+#endif
 		} else {
 			printf("No\n");
 		}
