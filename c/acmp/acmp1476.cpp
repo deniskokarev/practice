@@ -5,16 +5,16 @@
 constexpr int MXSZ = 1e5 + 18; // + ~log2(1e5)
 constexpr int len = 316; // ~ sqrt(MXSZ);
 
+unsigned char bb[MXSZ];
+int bucket[(MXSZ+len-1)/len];	// has number of 1s
+
 int main(int argc, char **argv) {
-	unsigned char bb[MXSZ];
-	int bucket[(MXSZ+len-1)/len];	// has number of 1s
-	memset(bucket, 0, sizeof(bucket));
 	int n;
 	scanf("%d", &n);
 	while (n-- > 0) {
 		char op[32];
 		int s;
-		scanf("%31s %d", op, &s);
+		scanf("%s%d", op, &s);
 		int b = s/len;
 		int i;
 		if (bucket[b] == 0)
