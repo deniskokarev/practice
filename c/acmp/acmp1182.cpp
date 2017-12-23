@@ -12,9 +12,11 @@ int main(int argc, char **argv) {
 	scanf("%d%d%d", &n, &k, &m);
 	const int len = max(sqrt(n), 1);
 	const int nb = (n+len-1)/len;
-	int bucket[nb]; // partial segment stats
+	int pbucket[nb]; // partial segment stats
+	int wbucket[nb]; // whole segment stats
 	int aa[n];
-	memset(bucket, 0, sizeof(bucket));
+	memset(pbucket, 0, sizeof(pbucket));
+	memset(wbucket, 0, sizeof(wbucket));
 	memset(aa, 0, sizeof(aa));
 	while (m-- > 0) {
 		int l, r;
@@ -22,9 +24,11 @@ int main(int argc, char **argv) {
 		const int lb = l/len;
 		const int rb = r/len;
 		int mx = 0;
-		if (rb-lb > 1) {
-			for (int bi=lb+1; bi<rb; bi++)
-				mx = max(mx, bucket[bi]);
+		for (int bi=lb+1; bi<rb; bi++)
+			mx = max(mx, pbucket[bi]);
+		mx = max(mx, wbucket[lb]);
+		mx = max(mx, wbucket[rb]);
+		if (rb>lb) {
 			int l_hi = (lb+1)*len;
 			for (int i=l; i<l_hi; i++)
 				mx = max(mx, aa[i]);
@@ -37,8 +41,10 @@ int main(int argc, char **argv) {
 		}
 		if (mx < k) {
 			printf("Yes\n");
-			for (int bi=lb+1; bi<rb; bi++)
-				bucket[bi]++;
+			for (int bi=lb+1; bi<rb; bi++) {
+				wbucket[bi]++;
+				pbucket[bi]++;
+			}
 			if (rb > lb) {
 				mx = 0;
 				int l_hi = (lb+1)*len;
@@ -46,21 +52,21 @@ int main(int argc, char **argv) {
 					aa[i]++;
 					mx = max(mx, aa[i]);
 				}
-				bucket[lb] = max(bucket[lb], mx);
+				pbucket[lb] = max(pbucket[lb], mx);
 				mx = 0;
 				int r_lo = rb*len;
 				for (int i=r_lo; i<=r; i++) {
 					aa[i]++;
 					mx = max(mx, aa[i]);
 				}
-				bucket[rb] = max(bucket[rb], mx);
+				pbucket[rb] = max(pbucket[rb], mx);
 			} else {
 				mx = 0;
 				for (int i=l; i<=r; i++) {
 					aa[i]++;
 					mx = max(mx, aa[i]);
 				}
-				bucket[lb] = max(bucket[lb], mx);
+				pbucket[lb] = max(pbucket[lb], mx);
 			}
 		} else {
 			printf("No\n");
