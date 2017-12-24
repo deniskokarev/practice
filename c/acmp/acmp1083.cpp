@@ -1,6 +1,5 @@
 /* ACMP 1083 */
 #include <cstdio>
-#include <cmath>
 #include <cstring>
 #include <climits>
 
@@ -24,12 +23,13 @@ static void scatter_bucket(int *aa, int len, BUCKET *bucket, int b) {
 	bucket[b].inc = 0;
 }
 
+BUCKET bucket[256];
+constexpr int len = 256;
+int aa[256*256];
+
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
-	int aa[n];
-	int len = sqrt(n);
-	BUCKET bucket[(n+len-1)/len];
 	for (auto &b:bucket) {
 		b.sum = 0;
 		b.set = -1;
