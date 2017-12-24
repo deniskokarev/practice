@@ -2,8 +2,10 @@
 #include <cstdio>
 #include <cstring>
 #include <climits>
+#include <cassert>
 
 #define min(A,B) ((A<B)?A:B)
+#define dim(X)	((int)(sizeof(X)/sizeof(X[0])))
 
 typedef struct {
 	long long sum;
@@ -23,13 +25,16 @@ static void scatter_bucket(int *aa, int len, BUCKET *bucket, int b) {
 	bucket[b].inc = 0;
 }
 
-BUCKET bucket[256];
-constexpr int len = 256;
-int aa[256*256];
+BUCKET bucket[15];
+constexpr int len = 3001;
+int aa[len*dim(bucket)];
 
 int main(int argc, char **argv) {
+	int rc;
 	int n;
-	scanf("%d", &n);
+	rc = scanf("%d", &n);
+	assert(rc == 1 && "expected input format");
+	assert(n<dim(aa) && "must not exceed buffer size");
 	for (auto &b:bucket) {
 		b.sum = 0;
 		b.set = -1;
@@ -37,24 +42,29 @@ int main(int argc, char **argv) {
 		b.min = INT_MAX;
 	}
 	for (int i=0; i<n; i++) {
-		scanf("%d", &aa[i]);
+		rc = scanf("%d", &aa[i]);
+		assert(rc == 1 && "expected input format");
 		int b = i/len;
 		bucket[b].min = min(bucket[b].min, aa[i]);
 		bucket[b].sum += aa[i];
 	}
 	int m;
-	scanf("%d", &m);
+	rc = scanf("%d", &m);
+	assert(rc == 1 && "expected input format");
 	while (m-- > 0) {
 		char op[32];
 		int b, i, l, r, x;
-		scanf("%s", op);
+		rc = scanf("%s", op);
+		assert(rc == 1 && "expected input format");
 		if (strcmp(op, "get") == 0) {
-			scanf("%d", &i);
+			rc = scanf("%d", &i);
+			assert(rc == 1 && "expected input format");
 			i--;
 			b = i/len;
 			printf("%d\n", ((bucket[b].set>=0)?bucket[b].set:aa[i])+bucket[b].inc);
 		} else if (strcmp(op, "update") == 0) {
-			scanf("%d%d%d", &l, &r, &x);
+			rc = scanf("%d%d%d", &l, &r, &x);
+			assert(rc == 3 && "expected input format");
 			l--, r--;
 			for (b=l/len+1; b<r/len; b++) {
 				bucket[b].sum = x*len;
@@ -90,7 +100,8 @@ int main(int argc, char **argv) {
 				}
 			}
 		} else if (strcmp(op, "add") == 0) {
-			scanf("%d%d%d", &l, &r, &x);
+			rc = scanf("%d%d%d", &l, &r, &x);
+			assert(rc == 3 && "expected input format");
 			l--, r--;
 			for (b=l/len+1; b<r/len; b++) {
 				bucket[b].sum += x*len;
@@ -122,7 +133,8 @@ int main(int argc, char **argv) {
 				}
 			}
 		} else if (strcmp(op, "rsq") == 0) {
-			scanf("%d%d", &l, &r);
+			rc = scanf("%d%d", &l, &r);
+			assert(rc == 2 && "expected input format");
 			l--, r--;
 			long long sum = 0;
 			for (b=l/len+1; b<r/len; b++)
@@ -141,7 +153,8 @@ int main(int argc, char **argv) {
 			}
 			printf("%lld\n", sum);
 		} else if (strcmp(op, "rmq") == 0) {
-			scanf("%d%d", &l, &r);
+			rc = scanf("%d%d", &l, &r);
+			assert(rc == 2 && "expected input format");
 			l--, r--;
 			int mn = INT_MAX;
 			for (b=l/len+1; b<r/len; b++)
