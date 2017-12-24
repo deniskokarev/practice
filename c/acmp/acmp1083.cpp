@@ -6,17 +6,30 @@
 
 #define min(A,B) ((A<B)?A:B)
 
+typedef struct {
+	long long sum;
+	int set;
+	int inc;
+	int min;
+} BUCKET;
+		
+static void scatter_bucket(int *aa, int len, BUCKET *bucket, int b) {
+	if (bucket[b].set >= 0) {
+		for (int i=b*len; i<(b+1)*len; i++)
+			aa[i] = bucket[b].set;
+		bucket[b].set = -1;
+	}
+	for (int i=b*len; i<(b+1)*len; i++)
+		aa[i] += bucket[b].inc;
+	bucket[b].inc = 0;
+}
+
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
 	int aa[n];
 	int len = sqrt(n);
-	struct {
-		long long sum;
-		int set;
-		int inc;
-		int min;
-	} bucket[(n+len-1)/len];
+	BUCKET bucket[(n+len-1)/len];
 	for (auto &b:bucket) {
 		b.sum = 0;
 		b.set = -1;
@@ -28,7 +41,6 @@ int main(int argc, char **argv) {
 		int b = i/len;
 		bucket[b].min = min(bucket[b].min, aa[i]);
 		bucket[b].sum += aa[i];
-		bucket[b].set = -1;
 	}
 	int m;
 	scanf("%d", &m);
@@ -52,50 +64,29 @@ int main(int argc, char **argv) {
 			}
 			if (l/len < r/len) {
 				b = l/len;
-				if (bucket[b].set >= 0) {
-					for (int i=b*len; i<(b+1)*len; i++)
-						aa[i] = bucket[b].set;
-					bucket[b].set = -1;
-				}
-				for (int i=b*len; i<(b+1)*len; i++)
-					aa[i] += bucket[b].inc;
-				bucket[b].inc = 0;
+				scatter_bucket(aa, len, bucket, b);
+				bucket[b].min = min(bucket[b].min, x);
 				for (int i=l; i<(b+1)*len; i++) {
 					bucket[b].sum -= aa[i];
 					aa[i] = x;
 					bucket[b].sum += aa[i];
-					bucket[b].min = min(bucket[b].min, x);
 				}
 				b = r/len;
-				if (bucket[b].set >= 0) {
-					for (int i=b*len; i<(b+1)*len; i++)
-						aa[i] = bucket[b].set;
-					bucket[b].set = -1;
-				}
-				for (int i=b*len; i<(b+1)*len; i++)
-					aa[i] += bucket[b].inc;
-				bucket[b].inc = 0;
+				scatter_bucket(aa, len, bucket, b);
+				bucket[b].min = min(bucket[b].min, x);
 				for (int i=b*len; i<=r; i++) {
 					bucket[b].sum -= aa[i];
 					aa[i] = x;
 					bucket[b].sum += aa[i];
-					bucket[b].min = min(bucket[b].min, x);
 				}				
 			} else {
 				b = l/len;
-				if (bucket[b].set >= 0) {
-					for (int i=b*len; i<(b+1)*len; i++)
-						aa[i] = bucket[b].set;
-					bucket[b].set = -1;
-				}
-				for (int i=b*len; i<(b+1)*len; i++)
-					aa[i] += bucket[b].inc;
-				bucket[b].inc = 0;
+				scatter_bucket(aa, len, bucket, b);
+				bucket[b].min = min(bucket[b].min, x);
 				for (int i=l; i<=r; i++) {
 					bucket[b].sum -= aa[i];
 					aa[i] = x;
 					bucket[b].sum += aa[i];
-					bucket[b].min = min(bucket[b].min, x);
 				}
 			}
 		} else if (strcmp(op, "add") == 0) {
@@ -108,28 +99,14 @@ int main(int argc, char **argv) {
 			}
 			if (l/len < r/len) {
 				b = l/len;
-				if (bucket[b].set >= 0) {
-					for (int i=b*len; i<(b+1)*len; i++)
-						aa[i] = bucket[b].set;
-					bucket[b].set = -1;
-				}
-				for (int i=b*len; i<(b+1)*len; i++)
-					aa[i] += bucket[b].inc;
-				bucket[b].inc = 0;
+				scatter_bucket(aa, len, bucket, b);
 				for (int i=l; i<(b+1)*len; i++) {
 					aa[i] += x;
 					bucket[b].sum += x;
 					bucket[b].min = min(bucket[b].min, aa[i]);
 				}
 				b = r/len;
-				if (bucket[b].set >= 0) {
-					for (int i=b*len; i<(b+1)*len; i++)
-						aa[i] = bucket[b].set;
-					bucket[b].set = -1;
-				}
-				for (int i=b*len; i<(b+1)*len; i++)
-					aa[i] += bucket[b].inc;
-				bucket[b].inc = 0;
+				scatter_bucket(aa, len, bucket, b);
 				for (int i=b*len; i<=r; i++) {
 					aa[i] += x;
 					bucket[b].sum += x;
@@ -137,14 +114,7 @@ int main(int argc, char **argv) {
 				}
 			} else {
 				b = l/len;
-				if (bucket[b].set >= 0) {
-					for (int i=b*len; i<(b+1)*len; i++)
-						aa[i] = bucket[b].set;
-					bucket[b].set = -1;
-				}
-				for (int i=b*len; i<(b+1)*len; i++)
-					aa[i] += bucket[b].inc;
-				bucket[b].inc = 0;
+				scatter_bucket(aa, len, bucket, b);
 				for (int i=l; i<=r; i++) {
 					aa[i] += x;
 					bucket[b].sum += x;
