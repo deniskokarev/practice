@@ -1,8 +1,8 @@
 /* ACMP 1083 */
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <limits.h>
+#include <cstdio>
+#include <cmath>
+#include <cstring>
+#include <climits>
 
 #define min(A,B) ((A<B)?A:B)
 
@@ -57,9 +57,12 @@ int main(int argc, char **argv) {
 						aa[i] = bucket[b].set;
 					bucket[b].set = -1;
 				}
+				for (int i=b*len; i<(b+1)*len; i++)
+					aa[i] += bucket[b].inc;
+				bucket[b].inc = 0;
 				for (int i=l; i<(b+1)*len; i++) {
 					bucket[b].sum -= aa[i];
-					aa[i] = x-bucket[b].inc;
+					aa[i] = x;
 					bucket[b].sum += aa[i];
 					bucket[b].min = min(bucket[b].min, x);
 				}
@@ -69,9 +72,12 @@ int main(int argc, char **argv) {
 						aa[i] = bucket[b].set;
 					bucket[b].set = -1;
 				}
+				for (int i=b*len; i<(b+1)*len; i++)
+					aa[i] += bucket[b].inc;
+				bucket[b].inc = 0;
 				for (int i=b*len; i<=r; i++) {
 					bucket[b].sum -= aa[i];
-					aa[i] = x-bucket[b].inc;
+					aa[i] = x;
 					bucket[b].sum += aa[i];
 					bucket[b].min = min(bucket[b].min, x);
 				}				
@@ -82,9 +88,12 @@ int main(int argc, char **argv) {
 						aa[i] = bucket[b].set;
 					bucket[b].set = -1;
 				}
+				for (int i=b*len; i<(b+1)*len; i++)
+					aa[i] += bucket[b].inc;
+				bucket[b].inc = 0;
 				for (int i=l; i<=r; i++) {
 					bucket[b].sum -= aa[i];
-					aa[i] = x-bucket[b].inc;
+					aa[i] = x;
 					bucket[b].sum += aa[i];
 					bucket[b].min = min(bucket[b].min, x);
 				}
