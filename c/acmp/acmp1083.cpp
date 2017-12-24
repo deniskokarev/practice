@@ -118,7 +118,7 @@ struct Data {
 		} else {
 			scatter_bucket(lb);
 			for (int i=l; i<=r; i++)
-				data[i] += data[i];
+				sum += data[i];
 		}
 		return sum;
 	}
