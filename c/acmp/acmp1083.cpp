@@ -91,6 +91,7 @@ struct Data {
 			for (int i=l; i<(lb+1)*len; i++)
 				data[i] += x;
 			recalc_bucket(lb);
+			scatter_bucket(rb);
 			for (int i=rb*len; i<=r; i++)
 				data[i] += x;
 			recalc_bucket(rb);
@@ -118,7 +119,6 @@ struct Data {
 			scatter_bucket(lb);
 			for (int i=l; i<=r; i++)
 				data[i] += data[i];
-			recalc_bucket(lb);
 		}
 		return sum;
 	}
