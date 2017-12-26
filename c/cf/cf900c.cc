@@ -25,15 +25,17 @@ int main(int argc, char **argv) {
 			mx[i][0] = aa[i];
 		}
 	}
-#if 0
-	for (int i=0; i<n; i++)
-		cerr << "mx0: " << mx[i][0] << " mx1: " << mx[i][1] << endl;
-#endif
 	int recmx[n+1];
 	fill(recmx, recmx+n+1, 0);
 	for (int i=1; i<n; i++)
-		if (mx[i-1][0]>aa[i] && mx[i-1][1]<aa[i])
+		if (mx[i-1][0]>aa[i] && mx[i-1][1]<aa[i] && mx[i-1][1] > 0)
 			recmx[mx[i-1][0]]++;
+#if 0
+	for (int i=0; i<n; i++)
+		cerr << "mx0: " << mx[i][0] << " mx1: " << mx[i][1] << endl;
+	for (int i=0; i<=n; i++)
+		cerr << "recmx[" << i << "]: " << recmx[i] << endl;
+#endif
 	auto me = max_element(recmx+1, recmx+n+1);
 	cout << (me - recmx) << endl;
 	return 0;
