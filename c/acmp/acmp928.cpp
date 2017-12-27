@@ -5,34 +5,20 @@
 
 using namespace std;
 
-constexpr int MXLEN = 1e5;
-
-short xc[MXLEN+1]; // number of points left or equal to length
-short yc[MXLEN+1];
-
+// straightforward cubic solution
 int main(int argc, char **argv) {
 	int l, w;
 	cin >> l >> w;
 	short n;
 	cin >> n;
 	int xx[n];
-	for (auto &x:xx) {
+	for (auto &x:xx)
 		cin >> x;
-		assert(x<=MXLEN);
-		xc[x]++;
-	}
-	for (int i=1; i<=MXLEN; i++)
-		xc[i] += xc[i-1];
 	short m;
 	cin >> m;
 	int yy[m];
-	for (auto &y:yy) {
+	for (auto &y:yy)
 		cin >> y;
-		assert(y<=MXLEN);
-		yc[y]++;
-	}
-	for (int i=1; i<=MXLEN; i++)
-		yc[i] += yc[i-1];
 	double sq[n][m];
 	for (int i=0; i<n; i++) {
 		for (int j=0; j<m; j++) {
@@ -53,9 +39,13 @@ int main(int argc, char **argv) {
 				else
 					f = m+1;
 			}
-			if (dl < 0)
-				continue;
-			int i1 = f; // rightmost second point on x
+			if (dl < 0) {
+				if (f > i)
+					f--;
+				else
+					continue;
+			}
+			int i1 = f; // rightmost second point on x obtained by binary search
 			mx = max(mx, i1-i+2);
 			while (i1>=i) {
 				i1--;
