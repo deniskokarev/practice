@@ -28,8 +28,10 @@ int main(int argc, char **argv) {
 	int recmx[n+1];
 	fill(recmx, recmx+n+1, 0);
 	for (int i=1; i<n; i++)
-		if (mx[i-1][0]>aa[i] && mx[i-1][1]<aa[i] && mx[i-1][1] > 0)
+		if (mx[i-1][0] > aa[i] && mx[i-1][1] < aa[i] && mx[i-1][1] > 0)
 			recmx[mx[i-1][0]]++;
+		else if (aa[i] > mx[i-1][0])
+			recmx[mx[i-1][0]]--;
 #if 0
 	for (int i=0; i<n; i++)
 		cerr << "mx0: " << mx[i][0] << " mx1: " << mx[i][1] << endl;
