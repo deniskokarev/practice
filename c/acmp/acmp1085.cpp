@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 		if (strcmp(cmd, "add") == 0) {
 			int x, y;
 			scanf("%d%d", &x, &y);
-			for (int i=x-1; i<n; i|=i+1)
-				for (int j=y-1; j<n; j|=j+1)
+			for (int i=y-1; i<n; i|=i+1)
+				for (int j=x-1; j<n; j|=j+1)
 					ff[i][j]++;
 		} else if (strcmp(cmd, "rsq") == 0) {
 			int x1, y1, x2, y2;
