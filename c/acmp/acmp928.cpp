@@ -7,22 +7,22 @@ using namespace std;
 
 // straightforward cubic solution
 int main(int argc, char **argv) {
-	int l, w;
+	double l, w;
 	cin >> l >> w;
-	short n;
+	int n;
 	cin >> n;
-	int xx[n];
+	double xx[n];
 	for (auto &x:xx)
 		cin >> x;
-	short m;
+	int m;
 	cin >> m;
-	int yy[m];
+	double yy[m];
 	for (auto &y:yy)
 		cin >> y;
 	double sq[n][m];
 	for (int i=0; i<n; i++) {
 		for (int j=0; j<m; j++) {
-			int d = xx[i]-yy[j];
+			auto d = xx[i]-yy[j];
 			sq[i][j] = sqrt(w*w + d*d);
 		}
 	}
