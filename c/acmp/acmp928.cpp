@@ -1,11 +1,10 @@
 /* ACMP 928 */
 #include <iostream>
 #include <cmath>
-#include <cassert>
 
 using namespace std;
 
-// straightforward cubic solution
+// improved cubic solution
 int main(int argc, char **argv) {
 	double l, w;
 	cin >> l >> w;
@@ -30,12 +29,18 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) { // for each x
 		for (int j=0; j<m; j++) { // for each y
 			double dl = l-sq[i][j];
-			int i1; // rightmost second point on x
-			for (i1=i; i1 < n && dl >= (xx[i1]-xx[i]) + sq[i1][j]; i1++);
-			if (i1 > i)
-				i1--;
-			else
+			if (dl < sq[i][j]) // even 2 points won't fit (l<2*sq[i][j])
 				continue;
+			int i1; // find rightmost second point on x using upper_bound binary search
+			int f=i, t=n;
+			while (f<t) {
+				int m = f+(t-f)/2;
+				if (dl >= (xx[m]-xx[i]) + sq[m][j])
+					f = m+1;
+				else
+					t = m;
+			}
+			i1 = f-1;
 			while (i1>=i) {
 				dl = l-sq[i][j]-(xx[i1]-xx[i]);
 				for (int j1=j; j1<m; j1++) { // rightmost second point on y
