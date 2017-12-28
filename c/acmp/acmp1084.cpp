@@ -1,6 +1,6 @@
 /* ACMP 1084 */
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 
 int main(int argc, char **argv) {
 	int n, m;
@@ -21,7 +21,11 @@ int main(int argc, char **argv) {
 				s += ff[i];
 			for (int i=a1-2; i>=0; i=(i&(i+1))-1)
 				s -= ff[i];
-			printf("%lld\n", s);
+			// screwie ACMP printf doesn't work well with %lld
+			if (s>1000000000)
+				printf("%d%09d\n", (int)(s/1000000000LL), (int)(s%1000000000LL));
+			else
+				printf("%d\n", (int)s);
 		}
 	}
 	return 0;
