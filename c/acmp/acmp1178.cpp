@@ -22,17 +22,31 @@ int main(int argc, char **argv) {
 		scanf("%d%d", &cmd, &arg);
 		assert(arg >= 0 && arg <= MXHT);
 		int rp = MXHT-arg;	// rev pos
-		int npeople = 0;
+		int npeople;
 		switch (cmd) {
 		case CMD_INS:
-			for (int i=rp; i>=0; i=(i&(i+1))-1)
+			npeople = 0;
+			for (int i=rp-1; i>=0; i=(i&(i+1))-1)
 				npeople += fw[i];
 			printf("%d\n", npeople);
 			for (int i=rp; i<dim(fw); i|=i+1)
 				fw[i]++;
 			break;
 		case CMD_REM:
-			for (int i=rp; i<dim(fw); i|=i+1)
+			// lower_bound binary search
+			int f=0, t=dim(fw);
+			arg++;
+			while (f<t) {
+				int m = f+(t-f)/2;
+				npeople = 0;
+				for (int i=m; i>=0; i=(i&(i+1))-1)
+					npeople += fw[i];
+				if (npeople < arg)
+					f = m+1;
+				else
+					t = m;
+  			}
+			for (int i=f; i<dim(fw); i|=i+1)
 				fw[i]--;
 			break;
 		}
