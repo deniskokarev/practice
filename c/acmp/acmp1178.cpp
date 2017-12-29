@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	while (n-- > 0) {
 		int cmd, arg;
 		scanf("%d%d", &cmd, &arg);
-		assert(arg > 0 && arg <= MXHT);
+		assert(arg >= 0 && arg <= MXHT);
 		int rp = MXHT-arg;	// rev pos
 		int npeople = 0;
 		switch (cmd) {
