@@ -3,15 +3,9 @@
 #include <memory.h>
 #include <assert.h>
 
-#define dim(X)	(sizeof(X)/sizeof(X[0]))
-
-#define MXHT  100000
-
-enum {
-	CMD_INS = 1,
-	CMD_REM = 2
-};
-
+/**
+ * Plain C-style Fenwick implementation
+ */
 static void fw_init(int *fw, int sz) {
 	memset(fw, 0, sizeof(fw[0])*sz);
 }
@@ -27,6 +21,15 @@ static int fw_sum(int *fw, int p, int sz) {
 		sum += fw[i];
 	return sum;
 }
+
+#define dim(X)	(sizeof(X)/sizeof(X[0]))
+
+#define MXHT  100000
+
+enum {
+	CMD_INS = 1,
+	CMD_REM = 2
+};
 
 int main(int argc, char **argv) {
 	int fw[MXHT+1];		 // rev order (solder height 100000 stands at 0)
