@@ -9,15 +9,10 @@ TODO:
 
 ## Решенные разделы
 
-* [Целочисленная арифметика](https://acmp.ru/asp/do/index.asp?main=section&id_course=2&id_section=11)
+* Целочисленная арифметика
 
-  * [НОД и НОК](https://acmp.ru/asp/do/index.asp?main=topic&id_course=2&id_section=11&id_topic=5)
+  * НОД и НОК
  
-    + 148 [НОД](https://acmp.ru/index.asp?main=task&id_task=148) -> [C++](./acmp148.cpp)
-    + 14 [НОК](https://acmp.ru/index.asp?main=task&id_task=14) -> [C++](./acmp14.cpp)
-    + 85 [Единичный НОД](https://acmp.ru/index.asp?main=task&id_task=85) -> [C++](./acmp85.cpp)
-    + 394 [Апельсины](https://acmp.ru/index.asp?main=task&id_task=394) -> [C++](./acmp394.cpp)
-  
   * Простые числа
  
   * Целые числа
@@ -77,3 +72,13 @@ TODO:
   * Алгоритмы на строках
 
   * Полиномиальный хеш
+
+* Структуры данных
+
+  * Статические RSQ и RMQ
+
+  * Sqrt-декомпозиция
+
+  * Дерево Фенвика
+
+  * Дерево отрезков
