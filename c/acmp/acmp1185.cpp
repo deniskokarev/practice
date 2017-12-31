@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <climits>
 
 #define dim(X) (sizeof(X)/sizeof(X[0]))
 #define max(A,B) ((A>B)?A:B)
@@ -15,7 +16,9 @@ int main(int argc, char **argv) {
 	memset(aa, 0, sizeof(aa));
 	for (int i=0; i<n; i++)
 		scanf("%d", &aa[pad+i]);
-	for (int i=dim(aa)-1; i>=0; i-=2)
+	for (int i=pad+n; i<dim(aa); i++)
+		aa[i] = INT_MIN;
+	for (int i=dim(aa)-1; i>0; i-=2)
 		aa[(i-1)/2] = max(aa[i], aa[i-1]);
 	int m;
 	scanf("%d", &m);
@@ -26,7 +29,7 @@ int main(int argc, char **argv) {
 		if (cmd[0] == 'm') {
 			int l = pad + arg1 - 1;
 			int r = pad + arg2 - 1;
-			int mxl = 0, mxr = 0;
+			int mxl = INT_MIN, mxr = INT_MIN;
 			while (l<r) {
 				if ((l&1) == 0)
 					mxl = max(mxl, aa[l]);
