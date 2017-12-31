@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
 			int p = pad + arg1 - 1;
 			int mx = arg2;
 			aa[p] = mx;
-			for (p=(p-1)/2; p>0; p=(p-1)/2)
-				mx = aa[p] = max(mx, aa[p]);
+			for (int r=(p-1)/2; p>0 && aa[r]<mx; p=r,r=(p-1)/2)
+				aa[r] = mx;
 		}
 	}
 	printf("\n");
