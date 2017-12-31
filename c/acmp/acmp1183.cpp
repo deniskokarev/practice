@@ -1,7 +1,7 @@
 /* ACMP 1183 */
 #include <stdio.h>
-#include <math.h>
 #include <memory.h>
+#include <math.h>
 
 /**
  * GCD(a, b) - greatest common divisor
@@ -20,7 +20,7 @@ unsigned gcd(unsigned a, unsigned b) {
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
-	int l2 = int(log2(n*2))-1; // ceiling log2(n)
+	int l2 = ceil(log2(n));
 	int sz = (1 << l2) - 1; // interval tree size
 	unsigned aa[sz+(1<<l2)];
 	memset(aa, 0, sizeof(aa));
@@ -42,10 +42,10 @@ int main(int argc, char **argv) {
 		int ansl = aa[l];
 		int ansr = aa[r];
 		while (l<r) {
-			if ((l&1) == 1)
+			if ((l&1) == 0)
 				ansl = gcd(ansl, aa[l]);
 			l = l/2;
-			if ((r&1) == 0)
+			if ((r&1) == 1)
 				ansr = gcd(ansr, aa[r]);
 			r = (r-2)/2;
 		}
