@@ -12,12 +12,11 @@ int main(int argc, char **argv) {
 	scanf("%d", &n);
 	int l2 = ceil(log2(n));
 	int pad = (1<<l2)-1;
-	int aa[pad+(1<<l2)];
-	memset(aa, 0, sizeof(aa));
+	int aa[pad+((n+1)/2)*2];
+	for (auto &a:aa)
+		a = INT_MIN;
 	for (int i=0; i<n; i++)
 		scanf("%d", &aa[pad+i]);
-	for (int i=pad+n; i<dim(aa); i++)
-		aa[i] = INT_MIN;
 	for (int i=dim(aa)-1; i>0; i-=2)
 		aa[(i-1)/2] = max(aa[i], aa[i-1]);
 	int m;
@@ -45,8 +44,12 @@ int main(int argc, char **argv) {
 			int p = pad + arg1 - 1;
 			int mx = arg2;
 			aa[p] = mx;
-			for (int r=(p-1)/2; p>0 && aa[r]<mx; p=r,r=(p-1)/2)
-				aa[r] = mx;
+			for (int r=(p-1)/2; p>0; p=r,r=(p-1)/2) {
+				if ((p&1) == 0)
+					aa[r] = max(aa[p-1], aa[p]);
+				else
+					aa[r] = max(aa[p], aa[p+1]);
+			}
 		}
 	}
 	printf("\n");
