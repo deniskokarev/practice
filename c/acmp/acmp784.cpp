@@ -6,13 +6,14 @@ using namespace std;
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	int a, b;
+	int64_t a, b;
 	cin >> a >> b;
 	int la = 0; // from a to root
-	for (int i=a; i>0; i/=2,la++);
+	for (int64_t i=a; i>0; i/=2,la++);
 	int lb = 0; // from b to root
-	for (int i=b; i>0; i/=2,lb++);
-	int hi, lo, diff;
+	for (int64_t i=b; i>0; i/=2,lb++);
+	int64_t hi, lo;
+	int diff;
 	if (la>lb) {
 		lo = a;
 		hi = b;
