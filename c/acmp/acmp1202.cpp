@@ -1,5 +1,6 @@
 /* ACMP 1202 */
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -18,6 +19,7 @@ int main(int argc, char **argv) {
 	cout << n << endl;
 	for (int i=0; i<n; i++) {
 		cout << mm[i][0] << ' ';
+		sort(mm[i]+1, mm[i]+1+mm[i][0]);
 		for (int j=0; j<mm[i][0]; j++)
 		    cout << mm[i][1+j] << ' ';
 		cout << endl;
