@@ -10,10 +10,13 @@ int main(int argc, char **argv) {
 	for (auto &mr:mm)
 		for (auto &m:mr)
 			cin >> m;
-	int sym = true;
+	bool sym = true;
 	for (int i=0; i<n-1; i++)
 		for (int j=i+1; j<n; j++)
 			sym &= (mm[i][j] == mm[j][i]);
-	cout << (!sym?"YES":"NO") << endl;
+	bool loop = false;
+	for (int i=0; i<n; i++)
+		loop |= (mm[i][i]>0);
+	cout << ((!loop && !sym)?"YES":"NO") << endl;
 	return 0;
 }
