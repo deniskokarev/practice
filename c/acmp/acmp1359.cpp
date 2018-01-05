@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 		int i, j;
 		cin >> i >> j;
 		i--, j--;
-		if (mm[i][j] == 0 && mm[j][i] == 0)
+		if (i != j && mm[i][j] == 0 && mm[j][i] == 0)
 			pos++;
 		else
 			neg++;
