@@ -1,6 +1,6 @@
 /* ACMP 1360 */
-#include <iostream>
 #include <vector>
+#include <stdio.h>
 
 using namespace std;
 
@@ -17,12 +17,12 @@ int walk(const vector<vector<int>> &mm, vector<int> &seen, vector<int> &vert, in
 
 int main(int argc, char **argv) {
 	int n, m;
-	cin >> n >> m;
+	scanf("%d%d", &n, &m);
 	vector<int> color(n, 0);
 	vector<vector<int>> mm(n);
 	while (m-- > 0) {
 		int i, j;
-		cin >> i >> j;
+		scanf("%d%d", &i, &j);
 		i--, j--;
 		mm[i].push_back(j);
 		mm[j].push_back(i);
@@ -37,12 +37,12 @@ int main(int argc, char **argv) {
 			c++;
 		}
 	}
-	cout << c << endl;
+	printf("%d\n", c);
 	for (int i=0; i<c; i++) {
-		cout << ncolor[i] << endl;
+		printf("%d\n", ncolor[i]);
 		for (auto &v:colvert[i])
-			cout << v+1 << ' ';
-		cout << endl;
+			printf("%d ", v+1);
+		printf("\n");
 	}
 	return 0;
 }
