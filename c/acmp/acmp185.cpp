@@ -4,11 +4,14 @@
 
 using namespace std;
 
-int walk_tree(const vector<vector<int>> &mm, int r) {
+int walk_tree(const vector<vector<int>> &mm, vector<int> &seen, int r) {
+	if (seen[r])
+		return 0;
+	seen[r] = 1;
 	int cnt = 1;
 	for (int i=0; i<mm.size(); i++)
 		if (mm[r][i])
-			cnt += walk_tree(mm, i);
+			cnt += walk_tree(mm, seen, i);
 	return cnt;
 };
 
@@ -16,6 +19,7 @@ int main(int argc, char **argv) {
 	int n, k;
 	cin >> n >> k;
 	vector<vector<int>> mm(n, vector<int>(n));
+	vector<int> seen(n, 0);
 	while (true) {
 		int i, j;
 		cin >> i;
@@ -25,6 +29,6 @@ int main(int argc, char **argv) {
 		i--, j--;
 		mm[i][j] = 1;
 	}
-	cout << ((walk_tree(mm, k-1) == n)?"Yes":"No") << endl;
+	cout << ((walk_tree(mm, seen, k-1) == n)?"Yes":"No") << endl;
 	return 0;
 }
