@@ -6,7 +6,9 @@ using namespace std;
 
 int walk(const vector<vector<int>> &mm, vector<int> &seen, int r, int p) {
 	if (seen[r])
-		return -13;
+		return -1;
+	if (r == p)
+		return -2;
 	seen[r] = 1;
 	int cnt = 1;
 	for (int i:mm[r])
@@ -30,6 +32,8 @@ int main(int argc, char **argv) {
 		if (mr.size() == 1)
 			ok = true;
 	}
+	if (n == 1 && mm[0].size() == 0)
+		ok = true;
 	for (int i=0; i<n; i++) {
 		if (mm[i].size() == 1) {
 			vector<int> seen(n, 0);
