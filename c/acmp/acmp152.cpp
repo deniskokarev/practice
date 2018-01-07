@@ -4,14 +4,22 @@
 
 using namespace std;
 
+enum {
+	EMPTY = 0,
+	VISITING = 1,
+	DONE = 2
+};
+
 bool has_loops(const vector<vector<int>> &mm, int node, vector<int> &seen) {
-	if (seen[node] != 0)
+	if (seen[node] == VISITING)
 		return true;
-	seen[node] = 1;
+	else if (seen[node] == DONE)
+		return false;
+	seen[node] = VISITING;
 	for (auto i:mm[node])
 		if (has_loops(mm, i, seen))
 			return true;
-	seen[node] = 0;
+	seen[node] = DONE;
 	return false;
 }
 
@@ -25,7 +33,7 @@ int main(int argc, char **argv) {
 		i--, j--;
 		mm[i].push_back(j);
 	}
-	vector<int> seen(n, 0);
+	vector<int> seen(n, EMPTY);
 	bool ans = true;
 	for (int i=0; i<n; i++) {
 		if (has_loops(mm, i, seen)) {
