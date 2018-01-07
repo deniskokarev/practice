@@ -24,7 +24,7 @@ bool walk(vector<vector<int>> &map, int x, int y) {
 		if (ok)
 			map[y][x] = REACHABLE;
 		else
-			map[y][x] = WALL;
+			map[y][x] = EMPTY;
 		return ok;
 	}
 }
@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
 	int len = 0;
 	for (int y=1; y<=n; y++) {
 		for (int x=1; x<=n; x++) {
+			//cerr << map[y][x] << ' ';
 			if (map[y][x] == REACHABLE) {
 				if (map[y-1][x] == WALL)
 					len++;
@@ -57,6 +58,7 @@ int main(int argc, char **argv) {
 					len++;
 			}
 		}
+		//cerr << endl;
 	}
 	len -= 4;
 	cout << len*5*5 << endl;
