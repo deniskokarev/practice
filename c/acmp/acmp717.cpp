@@ -1,6 +1,6 @@
 /* ACMP 717 */
-#include <cstdio>
-#include <cinttypes>
+#include <stdio.h>
+#include <inttypes.h>
 #include <vector>
 
 using namespace std;
@@ -37,7 +37,13 @@ int main(int argc, char **argv) {
 	int seen[n];
 	fill(seen, seen+n, 0);
 	int64_t sum = dfs(mm, tm, 0, seen, log);
-	printf("%lld %d\n", sum, (int)log.size());
+	// f,,ing cstdio.h is too slow on acmp and stdio.h can't handle %lld
+	int shi = sum/1000000000;
+	int slo = sum%1000000000;
+	if (shi)
+		printf("%d%09d %d\n", shi, slo, (int)log.size());
+	else
+		printf("%d %d\n", slo, (int)log.size());
 	for (auto i:log)
 		printf("%d ", i+1);
 	printf("\n");
