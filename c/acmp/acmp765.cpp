@@ -8,7 +8,7 @@ int dfs(vector<vector<int>> &brd, int x, int y, int fill);
 
 int visit(vector<vector<int>> &brd, int x, int y, int fill) {
 	int cnt = 0;
-	if (brd[y][x] == '.') {
+	if (brd[y][x] != 'W' && brd[y][x] != 'B' && brd[y][x] != fill) {
 		cnt++;
 		brd[y][x] = fill;
 	} else if (brd[y][x] == 'B') {
