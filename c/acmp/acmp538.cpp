@@ -1,10 +1,9 @@
 /* ACMP 538 */
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <cmath>
+#include <stdio.h>
+#include <limits.h>
+#include <math.h>
 
-using namespace std;
+#define MIN(A,B)	((A<B)?A:B)
 
 struct P {
 	short x, y;
@@ -28,13 +27,14 @@ inline short alt(short color) {
 
 int main(int argc, char **argv) {
 	short n;
-	cin >> n;
+	scanf("%hd", &n);
 	P pp[n];
 	for (auto &p:pp)
-		cin >> p.x >> p.y;
+		scanf("%hd%hd", &p.x, &p.y);
 	// min spanning tree using Prim
 	DFC aa[n+1];
-	fill(aa, aa+n+1, DFC{INT_MAX, -1, 0}); // min arcs to node
+	for (auto &a:aa)
+		a = {INT_MAX, -1, 0};
 	short v = 0;
 	aa[v] = {0, 0, 1};
 	int nc = 1;
@@ -57,10 +57,10 @@ int main(int argc, char **argv) {
 	for (short i=0; i<n-1; i++)
 		for (short j=i+1; j<n; j++)
 			if (aa[i].color == aa[j].color)
-				md = min(md, pp[i].sd(pp[j]));
-	cout << fixed << setprecision(9) << sqrt(md)/2 << endl;
+				md = MIN(md, pp[i].sd(pp[j]));
+	printf("%.9f\n", sqrt(md)/2);
 	for (int i=0; i<n; i++)
-		cout << aa[i].color << ' ';
-	cout << endl;
+		printf("%hd ", aa[i].color);
+	printf("\n");
 	return 0;
 }
