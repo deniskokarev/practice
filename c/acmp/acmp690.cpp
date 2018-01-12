@@ -1,8 +1,9 @@
 /* ACMP 690 */
-#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cassert>
+
+#include <stdio.h>
+#include <assert.h>
 
 using namespace std;
 
@@ -53,7 +54,7 @@ bool dfs(vector<vector<char>> &brd, const P &p, vector<vector<int>> &log, int sq
 		brd[p.y][p.x] = 'K';
 		for (auto &m:moves) {
 			int c = mvcnt(brd, p+m, 1);
-			if (c > 0)
+			//if (c > 0)
 				ord[sz++] = {c, p+m};
 		}
 		sort(ord, ord+sz);
@@ -72,15 +73,15 @@ bool dfs(vector<vector<char>> &brd, const P &p, vector<vector<int>> &log, int sq
 
 int main(int argc, char **argv) {
 	int n, m;
-	cin >> n >> m;
+	scanf("%d%d", &n, &m);
 	vector<vector<char>> brd(n+4, vector<char>(m+4, 'X'));
 	P kp;
 	int sqcnt = 0;
 	for (int i=0; i<n; i++) {
 		int r = i+2;
-		string s;
-		cin >> s;
-		for (int j=0,c=2; c<m+2 && j<s.length(); c++,j++) {
+		char s[1024];;
+		scanf("%1023s", s);
+		for (int j=0,c=2; c<m+2 && s[j]; c++,j++) {
 			brd[r][c] = s[j];
 			if (s[j] == 'K') {
 				kp = {c, r};
@@ -95,8 +96,8 @@ int main(int argc, char **argv) {
 	if (dfs(brd, kp, log, sqcnt)) {
 		for (auto &r:log) {
 			for (auto &c:r)
-				cout << sqcnt-c+1 << ' ';
-			cout << endl;
+				printf("%3d ", sqcnt-c+1);
+			printf("\n");
 		}
 	} else {
 		assert(false && "Hey, they've told there is a solution");
