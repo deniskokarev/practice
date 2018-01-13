@@ -18,34 +18,37 @@ static const P kmoves[] = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}
 constexpr int BSZ = 8;
 
 int main(int argc, char **argv) {
-	vector<vector<vector<int>>> dist(2, vector<vector<int>>(BSZ+4, vector<int>(BSZ+4, 0)));
-	for (int i=0; i<2; i++)
-		for (int j=2; j<BSZ+2; j++)
-			for (int k=2; k<BSZ+2; k++)
-				dist[i][j][k] = INT_MAX;
+	vector<vector<vector<int>>> dist(2, vector<vector<int>>(BSZ, vector<int>(BSZ, 0)));
 	string sp1, sp2;
 	cin >> sp1 >> sp2;
 	P pp[2] = {P{(short)(sp1[0]-'a'), (short)(sp1[1]-'1')}+P{2,2}, P{(short)(sp2[0]-'a'), (short)(sp2[1]-'1')}+P{2,2}};
+	queue<P> qq[2];
 	for (int i=0; i<2; i++) {
-		queue<P> qq;
-		qq.push(pp[i]);
+		qq[i].push(pp[i]);
 		dist[i][pp[i].y][pp[i].x] = 0;
-		while (qq.size() > 0) {
-			const P &np = qq.front();
-			for (const P &km:kmoves) {
-				const P nnp = np+km;
-				if (dist[i][np.y][np.x]+1<dist[i][nnp.y][nnp.x]) {
-					dist[i][nnp.y][nnp.x] = dist[i][np.y][np.x]+1;
-					qq.push(nnp);
+	}
+	int ans = -1;
+	int epoch = 0;
+	while (qq[0].size() < BSZ*BSZ*BSZ) {
+		epoch++;
+		for (int i=0; i<2; i++) {
+			for (int qsz = qq[i].size(); qsz>0; qsz--) {
+				const P &np = qq[i].front();
+				for (const P &km:kmoves) {
+					const P nnp = np+km;
+					if (nnp.y >= 0 && nnp.y < BSZ && nnp.x >= 0 && nnp.x < BSZ) {
+						dist[i][nnp.y][nnp.x] = epoch;
+						if (i == 1 && dist[1][nnp.y][nnp.x] == dist[0][nnp.y][nnp.x]) {
+							ans = epoch;
+							goto end;
+						}
+					}
 				}
+				qq[i].pop();
 			}
-			qq.pop();
 		}
 	}
-	int mn = INT_MAX;
-	for (int i=2; i<BSZ+2; i++)
-		for (int j=2; j<BSZ+2; j++)
-			mn = min(mn, max(dist[0][i][j], dist[1][i][j]));
-	cout << mn << endl;
+ end:
+	cout << ans << endl;
 	return 0;
 }
