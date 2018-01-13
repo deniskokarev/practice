@@ -38,6 +38,9 @@ int main(int argc, char **argv) {
 	cin >> fr >> to;
 	int i = n2i(fr);
 	int j = n2i(to);
+	int mxsz = max(i+1, j+1);
+	if (mm.size() < mxsz)
+		mm.resize(mxsz);
 	vector<int> dist(mm.size(), INT_MAX);
 	dist[i] = 0;
 	queue<int> qq;
