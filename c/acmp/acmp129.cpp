@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 				ones[onesz++] = P {j, i};
 		}
 	}
-	int qsz = 1 << (int)ceil(log2(n*m));
+	int qsz = 1 << (int)ceil(log2((n+m)*2));
 	int qmask = qsz-1;
 	P qq[qsz];
 	for (int i=0; i<onesz; i++) {
@@ -44,17 +44,17 @@ int main(int argc, char **argv) {
 		auto &op = ones[i];
 		qq[qt++] = op;
 		dst[op.y][op.x] = 0;
-		while (qh < qt) {
+		while (qh != qt) {
 			auto nxt = qq[qh++];
+			qh &= qmask;
 			for (auto m:moves) {
 				P nsq = nxt+m;
 				if (dst[nsq.y][nsq.x] > dst[nxt.y][nxt.x]+1) {
 					qq[qt++] = nsq;
+					qt &= qmask;
 					dst[nsq.y][nsq.x] = dst[nxt.y][nxt.x]+1;
 				}
 			}
-			qh &= qmask;
-			qt &= qmask;
 		}
 	}
 	for (int i=1; i<=n; i++) {
