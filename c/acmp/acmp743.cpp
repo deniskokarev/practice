@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	dist[i] = 0;
 	queue<int> qq;
 	qq.push(i);
-	int ans = -1;
+	int ans = (i!=j)?-1:0;
 	while (qq.size() > 0 && ans < 0) {
 		const auto &n = qq.front();
 		for (auto t:mm[n]) {
