@@ -29,14 +29,14 @@ int main(int argc, char **argv) {
 	int qt = 0;
 	qq[qt++] = {a, 0};
 	seen[a] = 1;
-	int ans = -1;
-	while (qh<qt) {
+	int ans = (a!=b)?-1:0;
+	while (qh < qt && ans < 0) {
 		auto nxt = qq[qh++];
 		for (int i=0; i<aa[nxt.node][n]; i++) {
 			int nnd = aa[nxt.node][i];
 			if (nnd == b) {
 				ans = nxt.len+1;
-				goto end;
+				break;
 			} else if (seen[nnd] == 0) {
 				qq[qt++] = {nnd, nxt.len+1};
 				seen[nnd] = 1;
@@ -45,7 +45,6 @@ int main(int argc, char **argv) {
 		qh %= n;
 		qt %= n;
 	}
- end:
 	printf("%d\n", ans);
 	return 0;
 }
