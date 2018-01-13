@@ -18,6 +18,7 @@ inline P operator+(const P a, const P b) {
 struct SP {
 	int score;
 	P p;
+	int stat;
 };
 
 inline bool operator<(const SP &a, const SP &b) {
@@ -26,7 +27,6 @@ inline bool operator<(const SP &a, const SP &b) {
 
 constexpr int MSZ = 104; // with +2 padding on each side
 
-//static const P kmoves[8] = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}, {2, -1}, {2, 1}};
 static const P kmoves[8] = {{2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2}, {1, -2}, {2, -1}};
 
 // gradient from each x,y
@@ -64,8 +64,6 @@ inline void calc_potential(const char brd[MSZ][MSZ], int potential[MSZ][MSZ], in
 
 // calculate the most favorable move from each square
 inline void calc_gradient(const char brd[MSZ][MSZ], const int potential[MSZ][MSZ], GRAD grad[MSZ][MSZ], int n, int m) {
-	// there must be a deliberate test for our approach, try to jump over it using random shuffle
-	std::mt19937 rnd(1234567);
 	for (int8_t i=2; i<n+2; i++) {
 		for (int8_t j=2; j<m+2; j++) {
 			P p = {j, i};
@@ -76,29 +74,40 @@ inline void calc_gradient(const char brd[MSZ][MSZ], const int potential[MSZ][MSZ
 					P nm = p+km;
 					auto score = potential[nm.y][nm.x];
 					if (score > 0)
-						g.moves[sz++] = {score, nm};
+						g.moves[sz++] = {score, nm, 0};
 				}
 				std::sort(g.moves, g.moves+sz);
-				// introduce random shuffle
-				int shufsz;
-				for (shufsz=1; shufsz<sz && g.moves[shufsz-1].score == g.moves[shufsz].score; shufsz++);
-				std::random_shuffle(g.moves, g.moves+shufsz, [&rnd](int ln){return rnd()%ln;});
 			}
 			g.sz = sz;
 		}
 	}
 }
 
+inline void randomize_gradient(const char brd[MSZ][MSZ], GRAD grad[MSZ][MSZ], int n, int m, std::mt19937 &rnd) {
+	for (int8_t i=2; i<n+2; i++) {
+		for (int8_t j=2; j<m+2; j++) {
+			auto &g = grad[i][j];
+			if (brd[i][j] == '.') {
+                int shufsz;
+                for (shufsz=1; shufsz<g.sz && g.moves[shufsz-1].score == g.moves[shufsz].score; shufsz++);
+                std::random_shuffle(g.moves, g.moves+shufsz, [&rnd](int ln){return rnd()%ln;});
+			}
+		}
+	}
+}
+
 // loop-based DFS for speed
-inline bool dfs(char brd[MSZ][MSZ], const GRAD grad[MSZ][MSZ], const P start, int sqcnt, int solution[MSZ][MSZ], int &missed) {
+inline bool dfs(char brd[MSZ][MSZ], const GRAD grad[MSZ][MSZ], const P start, int sqcnt, int solution[MSZ][MSZ], int &missed, int limit) {
     struct {
         P p;
         int i;
+		int dend;
     } stk[sqcnt+2];
+	stk[sqcnt+1].p = {0, 0};
     int i = sqcnt;
     stk[i].p = start;
     stk[i].i = 0;
-    while (i <= sqcnt) {
+    while (i <= sqcnt && limit--) {
         auto p = stk[i].p;
         if (i>0 && brd[p.y][p.x] == '.') {
             if (i == 1) {
@@ -120,13 +129,18 @@ inline bool dfs(char brd[MSZ][MSZ], const GRAD grad[MSZ][MSZ], const P start, in
                 p = stk[i].p;
                 brd[p.y][p.x] = '.';
             }
-        } else {
+		} else {
             i++;
             p = stk[i].p;
             brd[p.y][p.x] = '.';
         }
     nxt:;
     }
+	while (i<=sqcnt) {
+		i++;
+		auto p = stk[i].p;
+		brd[p.y][p.x] = '.';
+	}
     return false;
 }
 
@@ -167,7 +181,16 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "\n");
 	}
 #endif
-	if (dfs(brd, grad, kp, sqcnt, solution, missed)) {
+	std::mt19937 rnd(123456);
+	bool solved = false;
+	for (int i=0; true; i++) {
+		if (dfs(brd, grad, kp, sqcnt, solution, missed, (1<<i))) {
+			solved = true;
+			break;
+		}
+		randomize_gradient(brd, grad, n, m, rnd);
+	}
+	if (solved) {
 		for (int r=2; r<n+2; r++) {
 			for (int c=2; c<m+2; c++)
 				printf("%3d ", (solution[r][c]>0)?sqcnt-solution[r][c]+1:0);
