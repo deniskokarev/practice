@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
 	}
 	int zone[n+2][m+2];
 	memset(zone, 0, sizeof(zone));
-	int qsz = 1 << (int)ceil(log2(n*m));
+	int qsz = 1 << (int)ceil(log2(n*m+1));
 	int qmask = qsz-1;
 	P qq[qsz];
 	int nzone = 0;
