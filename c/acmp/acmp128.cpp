@@ -25,10 +25,11 @@ int main(int argc, char **argv) {
 	for (int i=2; i<n+2; i++)
 		for (int j=2; j<n+2; j++)
 			seen[i][j] = 0;
+	int qsz = n*n;
 	struct {
 		P sq;
 		int len;
-	} qq[n*n];
+	} qq[qsz];
 	int qh = 0;
 	int qt = 0;
 	qq[qt++] = {fr, 0};
@@ -46,8 +47,8 @@ int main(int argc, char **argv) {
 				seen[nsq.y][nsq.x] = 1;
 			}
 		}
-		qh %= n;
-		qt %= n;
+		qh %= qsz;
+		qt %= qsz;
 	}
 	printf("%d\n", ans);
 	return 0;
