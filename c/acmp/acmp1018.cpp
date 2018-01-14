@@ -24,13 +24,9 @@ static const P hmoves[2][6] = {
 int main(int argc, char **argv) {
 	int n, m;
 	cin >> n >> m;
-	if (n<1 || m<1) {
-		cout << "No solution" << endl;
-		return 0;
-	}
 	P mxp = {m, n};
 	P start;
-	cin >> start.x >> start.y;
+	cin >> start.y >> start.x;
 	start = start + P {-1, -1};
 	vector<string> brd(n);
 	for (int i=0; i<n; i++) {
