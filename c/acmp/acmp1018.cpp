@@ -17,8 +17,8 @@ struct P {
 };
 
 static const P hmoves[2][6] = {
-	{{1,0},{1,1},{0,1},{-1,0},{0,-1},{1,-1}}, // even lines
-	{{1,0},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1}} // odd lines
+	{{1,0},{-1,0},{0,-1},{-1,-1},{-1,1},{0,1}}, // even lines 0,2,...
+	{{1,0},{-1,0},{1,-1},{0,1},{1,1},{0,-1}}
 };
 
 int main(int argc, char **argv) {
@@ -39,8 +39,7 @@ int main(int argc, char **argv) {
 	qq.push(start);
 	int ans = -1;
 	while (qq.size() > 0 && ans < 0) {
-		const P p = qq.front();
-		qq.pop();
+		const P &p = qq.front();
 		for (auto &hm:hmoves[p.y&1]) {
 			const P np = p+hm;
 			if (!np.valid(mxp)) {
@@ -51,6 +50,7 @@ int main(int argc, char **argv) {
 				qq.push(np);
 			}
 		}
+		qq.pop();
 	}
 	if (ans < 0)
 		cout << "No solution" << endl;
