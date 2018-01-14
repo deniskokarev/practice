@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <cassert>
 
 using namespace std;
 
@@ -15,26 +16,36 @@ struct P {
     }
 };
 
-static const P hmoves[] = {{1,0},{1,1},{-1,1},{-1,0},{-1,-1},{1,-1}};
+static const P hmoves[2][6] = {
+	{{1,0},{1,1},{0,1},{-1,0},{0,-1},{1,-1}}, // even lines
+	{{1,0},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1}} // odd lines
+};
 
 int main(int argc, char **argv) {
 	int n, m;
 	cin >> n >> m;
+	if (n<1 || m<1) {
+		cout << "No solution" << endl;
+		return 0;
+	}
 	P mxp = {m, n};
 	P start;
 	cin >> start.x >> start.y;
 	start = start + P {-1, -1};
 	vector<string> brd(n);
-	for (int i=0; i<n; i++)
+	for (int i=0; i<n; i++) {
 		cin >> brd[i];
+		assert(brd[i].size() == m);
+	}
 	vector<vector<int>> dist(n, vector<int>(m, INT_MAX));
 	dist[start.y][start.x] = 0;
 	queue<P> qq;
 	qq.push(start);
 	int ans = -1;
 	while (qq.size() > 0 && ans < 0) {
-		const P &p = qq.front();
-		for (auto &hm:hmoves) {
+		const P p = qq.front();
+		qq.pop();
+		for (auto &hm:hmoves[p.y&1]) {
 			const P np = p+hm;
 			if (!np.valid(mxp)) {
 				ans = dist[p.y][p.x]+1;
@@ -44,7 +55,6 @@ int main(int argc, char **argv) {
 				qq.push(np);
 			}
 		}
-		qq.pop();
 	}
 	if (ans < 0)
 		cout << "No solution" << endl;
