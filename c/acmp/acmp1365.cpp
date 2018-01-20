@@ -20,7 +20,7 @@ const P moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 int main(int argc, char **argv) {
 	char map[MSZ+2][MSZ+2];
 	unsigned dist[MSZ+2][MSZ+2];
-	memset(map, '#', sizeof(map));
+	memset(map, 0, sizeof(map));
 	memset(dist, 0xff, sizeof(dist));
 	short int n, m;
 	P start, end;
