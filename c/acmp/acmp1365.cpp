@@ -13,10 +13,12 @@ struct P {
 
 const P moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
+char map[MSZ+2][MSZ+2];
+unsigned dist[MSZ+2][MSZ+2];
+P qq[(MSZ+2)*(MSZ+2)];
+
 int main(int argc, char **argv) {
-	char map[MSZ+2][MSZ+2];
 	memset(map, '#', sizeof(map));
-	unsigned dist[MSZ+2][MSZ+2];
 	memset(dist, 0xff, sizeof(dist));
 	int n, m;
 	P start, end;
@@ -26,7 +28,6 @@ int main(int argc, char **argv) {
 	for (int i=1; i<=n; i++)
 		scanf("%" str(MSZ) "s", map[i]+1);
 	dist[start.y][start.x] = 0;
-	P qq[(n+1)*(m+1)];
 	int h = 0, t = 0;
 	qq[t++] = start;
 	while (h != t) {
