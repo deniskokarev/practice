@@ -8,11 +8,7 @@
 using namespace std;
 
 enum {
-	P_FREE = 0,	P_WALL,	P_HALL
-};
-
-enum { // directions
-	D_R = 0, D_D, D_L, D_U, D_SZ
+	P_FREE = 0,	P_WALL,	P_POCKET
 };
 
 struct P { // point
@@ -24,9 +20,13 @@ struct B { // rolling ball
 	int dir;
 };
 
+enum { // directions
+	D_R = 0, D_D, D_L, D_U, D_SZ
+};
+
 const array<P, D_SZ> dirs {{ P {1, 0}, P {0, 1}, P {-1, 0}, P {0, -1} }};
 
-using D = array<int, D_SZ>; // disance is direction-dependent
+using D = array<int, D_SZ>; // distance is direction-dependent
 	
 int main(int argc, char **argv) {
 	int n, m;
@@ -74,8 +74,8 @@ int main(int argc, char **argv) {
 	int ans = INT_MAX;
 	for (int i=1; i<=n; i++)
 		for (int j=1; j<=m; j++)
-			if (map[i][j] == P_HALL)
-				ans = *min_element(dist[i][j].begin(), dist[i][j].end());
+			if (map[i][j] == P_POCKET)
+				ans = min(ans, *min_element(dist[i][j].begin(), dist[i][j].end()));
 	cout << ans << endl;
 	return 0;
 }
