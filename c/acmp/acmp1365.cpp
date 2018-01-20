@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #define MSZ 1000
 #define __str(a) #a
@@ -13,11 +14,9 @@ struct P {
 
 const P moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
-char map[MSZ+2][MSZ+2];
-unsigned dist[MSZ+2][MSZ+2];
-P qq[(MSZ+2)*(MSZ+2)];
-
 int main(int argc, char **argv) {
+	char map[MSZ+2][MSZ+2];
+	unsigned dist[MSZ+2][MSZ+2];
 	memset(map, '#', sizeof(map));
 	memset(dist, 0xff, sizeof(dist));
 	int n, m;
@@ -28,6 +27,9 @@ int main(int argc, char **argv) {
 	for (int i=1; i<=n; i++)
 		scanf("%" str(MSZ) "s", map[i]+1);
 	dist[start.y][start.x] = 0;
+	const int qsz = 1<<(int)ceil(log2((n+2)*(m+2)));
+	const int qmask = qsz-1;
+	P qq[qsz];
 	int h = 0, t = 0;
 	qq[t++] = start;
 	while (h != t) {
@@ -37,14 +39,16 @@ int main(int argc, char **argv) {
 				const P np = {p.x+m.x, p.y+m.y};
 				if (map[np.y][np.x] == '.' && dist[np.y][np.x] > dist[p.y][p.x]+1) {
 					dist[np.y][np.x] = dist[p.y][p.x]+1;
-					qq[t++] = np;
+					qq[t] = np;
+					t++; t &= qmask;
 				} else if (map[np.y][np.x] == 'W' && dist[np.y][np.x] > dist[p.y][p.x]+2) {
 					dist[np.y][np.x] = dist[p.y][p.x]+2;
-					qq[t++] = np;
+					qq[t] = np;
+					t++; t &= qmask;
 				}
 			}
 		}
-		h++;
+		h++; h &= qmask;
 	}
 	int ans = (int)dist[end.y][end.x];
 	printf("%d\n", ans);
