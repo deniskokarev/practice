@@ -7,16 +7,16 @@
 
 using namespace std;
 
-struct P {
+struct P { // point
 	int x, y;
 };
 
-struct V {
+struct V { // vector at point
 	int dir;
 	P p;
 };
 
-enum {E=0, S, W, N};
+enum {E=0, S, W, N}; // direction
 
 const P moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
@@ -39,9 +39,8 @@ int main(int argc, char **argv) {
 		}
 		getline(cin, nl);
 	}
-	V ss[] = {V {E, start}, V {W, start}}; // start either towards E or W
 	int ans = INT_MAX;
-	for (auto &s:ss) {
+	for (auto &s:{V {E, start}, V {W, start}}) { // start either towards E or W
 		queue<V> qq;
 		qq.push(s);
 		vector<vector<D>> dist(n, vector<D>(m, {{INT_MAX, INT_MAX, INT_MAX, INT_MAX}}));
