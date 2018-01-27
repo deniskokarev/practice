@@ -30,11 +30,12 @@ int main(int argc, char **argv) {
 	} mm[4];
 	for (int i=0; i<4; i++)
 		cin >> mm[i].p.x >> mm[i].p.y >> mm[i].c;
-	vector<vector<int>> dist(n+2, vector<int>(m+2, INT_MAX));
+	vector<vector<int>> dist(n+2, vector<int>(m+2, INT_MAX-1));
 	queue<P> qq;
-	dist[q.y][q.x] = 0;
-	if (map[q.y][q.x] == '0')
+	if (map[q.y][q.x] == '0') {
 		qq.push(q);
+		dist[q.y][q.x] = 0;
+	}
 	while (!qq.empty()) {
 		const P &p = qq.front();
 		for (const P &m:moves) {
