@@ -1,5 +1,6 @@
 /* ACMP 846 */
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <queue>
 
@@ -18,7 +19,7 @@ int main(int argc, char **argv) {
 	for (auto &r:map)
 		cin >> r;
 	P q;
-	cin >> q.x >> q.y;
+	cin >> q.y >> q.x;
 	q.x--, q.y--;
 	int l;
 	cin >> l;
@@ -27,7 +28,7 @@ int main(int argc, char **argv) {
 		int c;
 	} mm[4];
 	for (int i=0; i<4; i++) {
-		cin >> mm[i].p.x >> mm[i].p.y >> mm[i].c;
+		cin >> mm[i].p.y >> mm[i].p.x >> mm[i].c;
 		mm[i].p.x--; mm[i].p.y--;
 	}
 	vector<vector<int>> dist(n, vector<int>(m, INT_MAX));
@@ -47,6 +48,16 @@ int main(int argc, char **argv) {
 		}
 		qq.pop();
 	}
+#if 0
+	for (auto &r:dist) {
+		for (auto &d:r)
+			if (d < INT_MAX)
+				cerr << setw(2) << d;
+			else
+				cerr << setw(2) << ' ';
+		cerr << endl;
+	}
+#endif
 	int ans = 0;
 	for (int i=0; i<4; i++) {
 		if (dist[mm[i].p.y][mm[i].p.x] <= l)
