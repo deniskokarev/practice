@@ -16,20 +16,6 @@ struct lnum10 {
 			else
 				a.push_back(atoi(s.substr (i-9, 9).c_str()));
 	}
-	void sub(int pa, const lnum10 &b) {
-		assert(a.size()-pa>=b.a.size());
-		int carry = 0;
-		for (size_t i=0; i<b.a.size() || carry; ++i) {
-			a[i+pa] -= carry + (i < b.a.size() ? b.a[i] : 0);
-			carry = a[i+pa] < 0;
-			if (carry)  a[i+pa] += base;
-		}
-		while (a.size() > pa+1 && a.back() == 0)
-			a.pop_back();
-	}
-	void operator-=(const lnum10 &b) {
-		sub(0, b);
-	}
 	// @return *this mod b
 	unsigned operator/=(unsigned b) {
 		assert(b<base);
