@@ -32,7 +32,8 @@ int main(int argc, char **argv) {
 		cin >> mm[i].p.x >> mm[i].p.y >> mm[i].c;
 	vector<vector<int>> dist(n+2, vector<int>(m+2, INT_MAX));
 	queue<P> qq;
-	qq.push(q);
+	if (map[q.y][q.x] == '0')
+		qq.push(q);
 	while (!qq.empty()) {
 		const P &p = qq.front();
 		for (const P &m:moves) {
