@@ -32,13 +32,14 @@ int main(int argc, char **argv) {
 		cin >> mm[i].p.x >> mm[i].p.y >> mm[i].c;
 	vector<vector<int>> dist(n+2, vector<int>(m+2, INT_MAX));
 	queue<P> qq;
+	dist[q.y][q.x] = 0;
 	if (map[q.y][q.x] == '0')
 		qq.push(q);
 	while (!qq.empty()) {
 		const P &p = qq.front();
 		for (const P &m:moves) {
 			const P np = P {p.x+m.x, p.y+m.y};
-			if (map[p.y][p.x] == '0' && dist[np.y][np.x] > dist[p.y][p.x]+1) {
+			if (map[np.y][np.x] == '0' && dist[np.y][np.x] > dist[p.y][p.x]+1) {
 				dist[np.y][np.x] = dist[p.y][p.x]+1;
 				qq.push(np);
 			}
