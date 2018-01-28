@@ -8,139 +8,143 @@
 
 using namespace std;
 
-// rotation matrixes
-const static int rot[3][3][3] = {
-	{ // axis x counter-clockwies
-		{ 1,  0,  0},
-		{ 0,  0, -1},
-		{ 0,  1,  0}
-	},
-	{ // axis y counter-clockwies
-		{ 0,  0,  1},
-		{ 0,  1,  0},
-		{-1,  0,  0}
-	},
-	{ // axis z counter-clockwies
-		{ 0, -1,  0},
-		{ 1,  0,  0},
-		{ 0,  0,  1}
-	}
-};
+// our CUBE state is just an 24 char array
+using Q = array<char, 25>;
 
-struct S {
-	int face[3]; // x, y, z
-	int x[3]; // x, y, z
-	bool operator==(const S &b) const {
-		for (int j=0; j<3; j++)
-			if (x[j] != b.x[j] || face[j] != b.face[j])
-				return false;
-		return true;
-	}
-};
+// we need to construct a move permutation of our cube represented by 24 chars string
+struct Moves {
+	// [axis:0-x,1-y,2-z][0:clock-wise, 1:conuter][front:0, back:1]
+	int moves[3][2][2][6*4];
 
-// coordinates and direction of all qube squares in our storage order, each side as UL, UR, BL, BR
-const static S ss[6][4] = {
-	{	// F
+	const char *smoves[3][2][2] = {
+		{{"F", "B"}, {"F'", "B'"}},
+		{{"R", "L"}, {"R'", "L'"}},
+		{{"U", "D"}, {"U'", "D'"}}
+	};
+	
+	// rotation matrixes
+	const int rot[3][3][3] = {
+		{ // axis x counter-clockwies
+			{ 1,  0,  0},
+			{ 0,  0, -1},
+			{ 0,  1,  0}
+		},
+		{ // axis y counter-clockwies
+			{ 0,  0,  1},
+			{ 0,  1,  0},
+			{-1,  0,  0}
+		},
+		{ // axis z counter-clockwies
+			{ 0, -1,  0},
+			{ 1,  0,  0},
+			{ 0,  0,  1}
+		}
+	};
+
+	// each square on our cube
+	struct S {
+		int face[3]; // x, y, z
+		int x[3]; // x, y, z
+		bool operator==(const S &b) const {
+			for (int j=0; j<3; j++)
+				if (x[j] != b.x[j] || face[j] != b.face[j])
+					return false;
+			return true;
+		}
+	};
+
+	// coordinates and direction of all qube squares in our storage order, each side as UL, UR, BL, BR
+	const S ss[6][4] = {
+		{	// F
 			{{ 1,  0,  0}, { 1, -1,  1}},
 			{{ 1,  0,  0}, { 1,  1,  1}},
 			{{ 1,  0,  0}, { 1, -1, -1}},
 			{{ 1,  0,  0}, { 1,  1, -1}}
-	},
-	{	// L
+		},
+		{	// L
 			{{ 0, -1,  0}, {-1, -1,  1}},
 			{{ 0, -1,  0}, { 1, -1,  1}},
 			{{ 0, -1,  0}, {-1, -1, -1}},
 			{{ 0, -1,  0}, { 1, -1, -1}}
-	},
-	{	// B
+		},
+		{	// B
 			{{-1,  0,  0}, {-1,  1,  1}},
 			{{-1,  0,  0}, {-1, -1,  1}},
 			{{-1,  0,  0}, {-1,  1, -1}},
 			{{-1,  0,  0}, {-1, -1, -1}}
-	},
-	{	// R
+		},
+		{	// R
 			{{ 0,  1,  0}, { 1,  1,  1}},
 			{{ 0,  1,  0}, {-1,  1,  1}},
 			{{ 0,  1,  0}, { 1,  1, -1}},
 			{{ 0,  1,  0}, {-1,  1, -1}}
-	},
-	{	// U
+		},
+		{	// U
 			{{ 0,  0,  1}, {-1, -1,  1}},
 			{{ 0,  0,  1}, {-1,  1,  1}},
 			{{ 0,  0,  1}, { 1, -1,  1}},
 			{{ 0,  0,  1}, { 1,  1,  1}}
-	},
-	{	// D
+		},
+		{	// D
 			{{ 0,  0, -1}, { 1, -1, -1}},
 			{{ 0,  0, -1}, { 1,  1, -1}},
 			{{ 0,  0, -1}, {-1, -1, -1}},
 			{{ 0,  0, -1}, {-1,  1, -1}}
+		}
+	};
+
+	void rot3d(const int src[3], const int rot[3][3], int dst[3]) {
+		int res[3];
+		for (int c=0; c<3; c++) {
+			int s = 0;
+			for (int j=0; j<3; j++)
+				s += src[j]*rot[j][c];
+			res[c] = s;
+		}
+		copy(res, res+3, dst);
 	}
-};
 
-// we need to construct a move permutation of our cube represented by 24 chars string
-// [axis:0-x,1-y,2-z][0:clock-wise, 1:conuter][front:0, back:1]
-static int moves[3][2][2][6*4];
-
-static string smoves[3][2][2] = {
-	{{"F", "B"}, {"F'", "B'"}},
-	{{"R", "L"}, {"R'", "L'"}},
-	{{"U", "D"}, {"U'", "D'"}}
-};
-
-void rot3d(const int src[3], const int rot[3][3], int dst[3]) {
-	int res[3];
-	for (int c=0; c<3; c++) {
-		int s = 0;
-		for (int j=0; j<3; j++)
-			s += src[j]*rot[j][c];
-		res[c] = s;
-	}
-	copy(res, res+3, dst);
-}
-
-// build moves permutation matrix for each legal move
-void bldmoves(int moves[3][2][2][6*4]) {
-	int dir[] = {1, -1};
-	int rot_cnt[2][2] = {{3, 1}, {1, 3}};
-	for (int axis=0; axis<3; axis++) {
-		for (int cw=0; cw<2; cw++) { // clock-wise?
-			for (int fi=0; fi<2; fi++) { // front/back
-				S ss0[6][4];
-				for (int i=0; i<6; i++) {
-					for (int j=0; j<4; j++) {
-						ss0[i][j] = ss[i][j];
-						if (ss[i][j].x[axis] == dir[fi]) {
-							for (int k=0; k<rot_cnt[fi][cw]; k++) {
-								rot3d(ss0[i][j].face, rot[axis], ss0[i][j].face);
-								rot3d(ss0[i][j].x, rot[axis], ss0[i][j].x);
+	// build moves permutation matrix for each legal move ahead of time
+	Moves() {
+		int dir[] = {1, -1};
+		int rot_cnt[2][2] = {{3, 1}, {1, 3}};
+		for (int axis=0; axis<3; axis++) {
+			for (int cw=0; cw<2; cw++) { // clock-wise?
+				for (int fi=0; fi<2; fi++) { // front/back
+					S ss0[6][4];
+					for (int i=0; i<6; i++) {
+						for (int j=0; j<4; j++) {
+							ss0[i][j] = ss[i][j];
+							if (ss[i][j].x[axis] == dir[fi]) {
+								for (int k=0; k<rot_cnt[fi][cw]; k++) {
+									rot3d(ss0[i][j].face, rot[axis], ss0[i][j].face);
+									rot3d(ss0[i][j].x, rot[axis], ss0[i][j].x);
+								}
 							}
 						}
 					}
+					const S *so = (S*)ss;
+					const S *sn = (S*)ss0;
+					for (int i=0; i<6*4; i++)
+						for (int j=0; j<6*4; j++)
+							if (so[i] == sn[j])
+								moves[axis][cw][fi][i] = j;
+					// basic validation of correctness - we must get a permutation
+					int sum=0;
+					for (int i=0; i<6*4; i++)
+						sum += moves[axis][cw][fi][i];
+					assert(sum == 23*12);
 				}
-				const S *so = (S*)ss;
-				const S *sn = (S*)ss0;
-				for (int i=0; i<6*4; i++)
-					for (int j=0; j<6*4; j++)
-						if (so[i] == sn[j])
-							moves[axis][cw][fi][i] = j;
-				// basic validation of correctness - we must get a permutation
-				int sum=0;
-				for (int i=0; i<6*4; i++)
-					sum += moves[axis][cw][fi][i];
-				assert(sum == 23*12);
 			}
 		}
 	}
-}
-
-using Q = array<char, 25>;
-
-void mkmove(const Q &src, int axis, int cw, int fi, Q &dst) {
-	const auto &mv = moves[axis][cw][fi];
-	for (int i=0; i<6*4; i++)
-		dst[mv[i]] = src[i];
-}
+	// execute the move
+	void mkmove(const Q &src, int axis, int cw, int fi, Q &dst) {
+		const auto &mv = moves[axis][cw][fi];
+		for (int i=0; i<6*4; i++)
+			dst[mv[i]] = src[i];
+	}
+};
 
 bool is_solved(const Q &q) {
 	for (int s=0; s<6; s++)
@@ -174,16 +178,15 @@ int main(int argc, char **argv) {
 			start[s*4+r*2+1] = ln[1];
 		}
 	}
-	// construct qube permutation for each move
-	bldmoves(moves);
+	Moves moves;	// construct qube permutation for each move
 #ifdef DEBUG
 	// print permutation for each move
 	for (int axis=0; axis<3; axis++) {
 		for (int cw=0; cw<2; cw++) { // clock-wise?
 			for (int fi=0; fi<2; fi++) {
-				cerr << smoves[axis][cw][fi] << ": ";
+				cerr << moves.smoves[axis][cw][fi] << ": ";
 				for (int i=0; i<6*4; i++)
-					cerr << moves[axis][cw][fi][i] << ' ';
+					cerr << moves.moves[axis][cw][fi][i] << ' ';
 				cerr << endl;
 			}
 		}
@@ -199,9 +202,9 @@ int main(int argc, char **argv) {
 		for (int axis=0; axis<3; axis++) {
 			for (int cw=0; cw<2; cw++) {
 				for (int fi=0; fi<2; fi++) {
-					if (smv == smoves[axis][cw][fi]) {
-						mkmove(m[src], axis, cw, fi, m[dst]);
-						cerr << smoves[axis][cw][fi] << ": " << m[dst].data() << " solved: " << is_solved(m[dst]) << endl;
+					if (smv == moves.smoves[axis][cw][fi]) {
+						moves.mkmove(m[src], axis, cw, fi, m[dst]);
+						cerr << moves.smoves[axis][cw][fi] << ": " << m[dst].data() << " solved: " << is_solved(m[dst]) << endl;
 					}
 				}
 			}
@@ -226,11 +229,12 @@ int main(int argc, char **argv) {
 			for (int cw=0; cw<2; cw++) {
 				for (int fi=0; fi<2; fi++) {
 					Q np; np[24] = 0;
-					mkmove(p, axis, cw, fi, np);
+					moves.mkmove(p, axis, cw, fi, np);
 					size_t hnp = qhash(np);
-					if (seen.find(hnp) == seen.end()) {
+					auto &nsv = seen[hnp];
+					if (nsv.second == nullptr) {
 						qq.push(np);
-						seen[hnp] = make_pair(hp, smoves[axis][cw][fi].c_str());
+						seen[hnp] = make_pair(hp, moves.smoves[axis][cw][fi]);
 					}
 				}
 			}
