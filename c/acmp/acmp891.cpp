@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <queue>
 #include <unordered_map>
+#include <array>
 
 using namespace std;
 
@@ -133,13 +134,15 @@ void bldmoves(int moves[3][2][2][6*4]) {
 	}
 }
 
-void mkmove(const string &src, int axis, int cw, int fi, string &dst) {
+using Q = array<char, 25>;
+
+void mkmove(const Q &src, int axis, int cw, int fi, Q &dst) {
 	const auto &mv = moves[axis][cw][fi];
 	for (int i=0; i<6*4; i++)
 		dst[mv[i]] = src[i];
 }
 
-bool is_solved(const string &q) {
+bool is_solved(const Q &q) {
 	for (int s=0; s<6; s++)
 		for (int e=1; e<4; e++)
 			if (q[s*4+e] != q[s*4])
@@ -147,12 +150,22 @@ bool is_solved(const string &q) {
 	return true;
 }
 
+static size_t qhash(const Q &s) {
+	const size_t base = 3;
+	size_t h = 0;
+	size_t b = 1;
+	for (int i=0; i<24; i++) {
+		h += size_t(s[i])*b;
+		b *= base;
+	}
+	return h;
+}
 
 //#define DEBUG
 
 int main(int argc, char **argv) {
 	// read input
-	string start(24, ' ');
+	Q start;
 	for (int r=0; r<2; r++) {
 		for (int s=0; s<6; s++) {
 			string ln;
@@ -179,7 +192,8 @@ int main(int argc, char **argv) {
 	const string seq[] = {
 		"L", "U", "L", "U'", "L", "B'", "D", "B", "R"
 	};
-	string m[2] = {start, string(24, ' ')};
+	Q m[2] = {start};
+	start[24] = m[0][24] = m[1][24] = 0;
 	int src = 0, dst = 1;
 	for (auto smv:seq) {
 		for (int axis=0; axis<3; axis++) {
@@ -187,7 +201,7 @@ int main(int argc, char **argv) {
 				for (int fi=0; fi<2; fi++) {
 					if (smv == smoves[axis][cw][fi]) {
 						mkmove(m[src], axis, cw, fi, m[dst]);
-						cerr << smoves[axis][cw][fi] << ": " << m[dst] << " solved: " << is_solved(m[dst]) << endl;
+						cerr << smoves[axis][cw][fi] << ": " << m[dst].data() << " solved: " << is_solved(m[dst]) << endl;
 					}
 				}
 			}
@@ -199,22 +213,24 @@ int main(int argc, char **argv) {
 		cout << "Solved" << endl;
 		return 0;
 	}
-	unordered_map<string, pair<string, string>> seen; // position->(prev_position, move)
-	queue<string> qq;
+	unordered_map<size_t, pair<size_t, const char*>> seen; // position->(prev_position, move)
+	queue<Q> qq;
 	qq.push(start);
-	seen[start] = make_pair("", "");
+	seen[qhash(start)] = make_pair(0, "");
 	while (!qq.empty()) {
-		const string &p = qq.front();
+		const auto &p = qq.front();
+		size_t hp = qhash(p);
 		if (is_solved(p))
 			break;
 		for (int axis=0; axis<3; axis++) {
 			for (int cw=0; cw<2; cw++) {
 				for (int fi=0; fi<2; fi++) {
-					string np(24, ' ');
+					Q np; np[24] = 0;
 					mkmove(p, axis, cw, fi, np);
-					if (seen.find(np) == seen.end()) {
+					size_t hnp = qhash(np);
+					if (seen.find(hnp) == seen.end()) {
 						qq.push(np);
-						seen[np] = make_pair(p, smoves[axis][cw][fi]);
+						seen[hnp] = make_pair(hp, smoves[axis][cw][fi].c_str());
 					}
 				}
 			}
@@ -223,8 +239,8 @@ int main(int argc, char **argv) {
 	}
 	assert(qq.empty() == false && "we must find the solution");
 	vector<string> solution;
-	for (string &p = qq.front(); seen.find(p) != seen.end(); p = seen[p].first)
-		solution.push_back(seen[p].second);
+	for (size_t h = qhash(qq.front()); seen.find(h) != seen.end(); h = seen[h].first)
+		solution.push_back(seen[h].second);
 	for (auto it=solution.rbegin(); it!=solution.rend(); ++it)
 		cout << *it;
 	cout << endl;
