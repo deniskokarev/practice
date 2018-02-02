@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 		for (int i=1; i<k; i++) {
 			int x1;
 			cin >> x1;
-			mx = max(mx, (x1-x+1)/2);
+			mx = max(mx, (x1-x)/2+1);
 			x = x1;
 		}
 		mx = max(mx, n-x+1);
