@@ -30,10 +30,11 @@ struct Q {
 	P p;
 	REM rem;
 	bool operator<(const Q &q) const {
-		return dist < q.dist;
+		return dist > q.dist;
 	}
 };
 
+// "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
 inline void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8_t l, int8_t r, int k) {
 	if (r<l)
 		swap(l, r);
@@ -43,17 +44,29 @@ inline void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8
 		if (y >= SZ)
 			break;
 		if (rem.rows[y]) {
-			int8_t mnl = min(l, int8_t(rem.rows[y].l+1));
-			int8_t mxr = max(r, rem.rows[y].r);
-			rows[y] = IR {127, -128};
-			for (int8_t x=0; x<mnl; x++)
-				if (map[y][x])
-					rows[y] = IR {min(rows[y].l, x), max(rows[y].r, x)};
-			for (int8_t x=mxr; x<SZ; x++)
-				if (map[y][x])
-					rows[y] = IR {min(rows[y].l, x), max(rows[y].r, x)};
-			int cnt_now = rows[y] ? 1:0;
-			rem.cnt -= 1-cnt_now;
+			if (r<rem.rows[y].l || l>rem.rows[y].r) {
+				continue;
+			} else if (rem.rows[y].l<l && r<rem.rows[y].r) {
+				continue;
+			} else if (l<=rem.rows[y].l && rem.rows[y].r<=r) {
+				rows[y] = IR {127, -128};
+				rem.cnt--;
+			} else {
+				int8_t o_l = rows[y].l;
+				int8_t o_r = rows[y].r;
+				rows[y] = IR {127, -128};
+				if (rem.rows[y].l<=l) {
+					for (int8_t x=o_l; x<l; x++)
+						if (map[y][x])
+							rows[y] = IR {min(rows[y].l, x), max(rows[y].r, x)};
+				} else {
+					for (int8_t x=r+1; x<=o_r; x++)
+						if (map[y][x])
+							rows[y] = IR {min(rows[y].l, x), max(rows[y].r, x)};
+				}
+				int cnt_now = rows[y] ? 1:0;
+				rem.cnt -= 1-cnt_now;
+			}
 		}
 	}
 }
@@ -84,7 +97,7 @@ int main(int argc, char **argv) {
 		if (rem.rows[y])
 			rem.cnt++;
 	priority_queue<Q> qq;
-	upd_rows_rem(rem, map, 0, 0, k, k);
+	upd_rows_rem(rem, map, 0, 0, k-1, k);
 	qq.push(Q {0, P{0, 0}, rem});
 	while (!qq.empty()) {
 		const Q q = qq.top();
@@ -94,25 +107,26 @@ int main(int argc, char **argv) {
 		if (q.rem.rows[q.p.y]) {
 			if (q.p.x > q.rem.rows[q.p.y].l) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, map, q.p.y, q.rem.rows[q.p.y].l, q.p.x+k, k);
+				upd_rows_rem(nr, map, q.p.y, q.rem.rows[q.p.y].l, q.p.x+k-1, k);
 				qq.push(Q { q.dist+(q.p.x-q.rem.rows[q.p.y].l), P { q.rem.rows[q.p.y].l, q.p.y}, nr});
 			}
 			if (q.p.x+k-1 < q.rem.rows[q.p.y].r) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, map, q.p.y, q.p.x, q.rem.rows[q.p.y].r+1, k);
+				upd_rows_rem(nr, map, q.p.y, q.p.x, q.rem.rows[q.p.y].r, k);
 				qq.push(Q { q.dist+(q.rem.rows[q.p.y].r-q.p.x-k+1), P { q.rem.rows[q.p.y].r-k+1, q.p.y}, nr});
 			}
 		} else {
 			// done with row, just up
 			REM nr(q.rem);
-			upd_rows_rem(nr, map, q.p.y+1, q.p.x, q.p.x+k, k);
+			upd_rows_rem(nr, map, q.p.y+1, q.p.x, q.p.x+k-1, k);
 			qq.push(Q { q.dist+1, P { q.p.x, q.p.y+1}, nr});
 		}
 	}
 	assert(!qq.empty() && "there must be a solution");
-	int over = qq.top().p.y+k-1 - mxy;
-	if (over < 0)
+	const Q &top = qq.top();
+	int over = top.p.y+k-1 - mxy;
+	if (over < 0 || top.p.y == 0)
 		over = 0;
-	cout << qq.top().dist-over << endl;
+	cout << top.dist-over << endl;
 	return 0;
 }
