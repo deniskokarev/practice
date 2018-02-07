@@ -4,6 +4,7 @@
 #include <cassert>
 #include <queue>
 #include <array>
+#include <algorithm>
 
 using namespace std;
 
@@ -16,7 +17,7 @@ struct P {
 struct IR {
 	int8_t l, r;
 	operator bool() const {
-		return l != 127;
+		return l != INT8_MAX;
 	}
 };
 
@@ -35,7 +36,7 @@ struct Q {
 };
 
 // "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
-inline void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8_t l, int8_t r, int k) {
+static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8_t l, int8_t r, int k) {
 	if (r<l)
 		swap(l, r);
 	auto &rows = rem.rows;
@@ -43,29 +44,33 @@ inline void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8
 		int y = row+i;
 		if (y >= SZ)
 			break;
-		if (rem.rows[y]) {
-			if (r<rem.rows[y].l || l>rem.rows[y].r) {
-				continue;
-			} else if (rem.rows[y].l<l && r<rem.rows[y].r) {
-				continue;
-			} else if (l<=rem.rows[y].l && rem.rows[y].r<=r) {
-				rows[y] = IR {127, -128};
-				rem.cnt--;
-			} else {
-				int8_t o_l = rows[y].l;
-				int8_t o_r = rows[y].r;
-				rows[y] = IR {127, -128};
-				if (rem.rows[y].l<=l) {
-					for (int8_t x=o_l; x<l; x++)
-						if (map[y][x])
-							rows[y] = IR {min(rows[y].l, x), max(rows[y].r, x)};
-				} else {
-					for (int8_t x=r+1; x<=o_r; x++)
-						if (map[y][x])
-							rows[y] = IR {min(rows[y].l, x), max(rows[y].r, x)};
+		if (rows[y]) {
+			struct E {
+				int8_t e;
+				int8_t v;
+				bool operator<(const E &b) const {
+					return e<b.e;
 				}
-				int cnt_now = rows[y] ? 1:0;
-				rem.cnt -= 1-cnt_now;
+			} ends[4] = {{rows[y].l, +1}, {int8_t(rows[y].r+1), -1}, {l, -1}, {int8_t(r+1), +1}};
+			sort(ends, ends+4);
+			struct {
+				int8_t l, r;
+				int8_t v;
+			} ir[3] = {{ends[0].e, ends[1].e, ends[0].v}, {ends[1].e, ends[2].e, ends[1].v}, {ends[2].e, ends[3].e, ends[2].v}};
+			ir[1].v += ir[0].v;
+			ir[2].v += ir[1].v;
+			int8_t mne = INT8_MAX, mxe = INT8_MIN;
+			for (int i=0; i<3; i++) {
+				if (ir[i].l < ir[i].r && ir[i].v == 1) {
+					mne = min(mne, ir[i].l);
+					mxe = max(mxe, ir[i].r);
+				}
+			}
+			if (mne < mxe) {
+				rows[y] = IR {mne, int8_t(mxe-1)};
+			} else {
+				rows[y] = IR {INT8_MAX, INT8_MIN};
+				rem.cnt--;
 			}
 		}
 	}
@@ -87,7 +92,7 @@ int main(int argc, char **argv) {
 	}
 	// left/right x for each y
 	REM rem;
-	fill(rem.rows.begin(), rem.rows.end(), IR {127,-128});
+	fill(rem.rows.begin(), rem.rows.end(), IR {INT8_MAX, INT8_MIN});
 	for (int8_t y=0; y<SZ; y++)
 		for (int8_t x=0; x<SZ; x++)
 			if (map[y][x])
