@@ -22,8 +22,14 @@ struct IR {
 };
 
 struct REM { // rows remained
-	int cnt;
-	array<IR, SZ> rows;
+	int8_t cnt;
+	array<IR, 5> rows; // care only upto 5 next rows
+	IR &operator[](int y) {
+		return rows[y%5];
+	}
+	const IR &operator[](int y) const {
+		return rows[y%5];
+	}
 };
 
 struct Q {
@@ -39,19 +45,19 @@ struct Q {
 static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8_t l, int8_t r, int k) {
 	if (r<l)
 		swap(l, r);
-	auto &rows = rem.rows;
 	for (int i=0; i<k; i++) {
 		int y = row+i;
 		if (y >= SZ)
 			break;
-		if (rows[y]) {
+		auto &rows_y = rem[y];
+		if (rows_y) {
 			struct E {
 				int8_t e;
 				int8_t v;
 				bool operator<(const E &b) const {
 					return e<b.e;
 				}
-			} ends[4] = {{rows[y].l, +1}, {int8_t(rows[y].r+1), -1}, {l, -1}, {int8_t(r+1), +1}};
+			} ends[4] = {{rows_y.l, +1}, {int8_t(rows_y.r+1), -1}, {l, -1}, {int8_t(r+1), +1}};
 			sort(ends, ends+4);
 			struct {
 				int8_t l, r;
@@ -67,9 +73,9 @@ static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8
 				}
 			}
 			if (mne < mxe) {
-				rows[y] = IR {mne, int8_t(mxe-1)};
+				rows_y = IR {mne, int8_t(mxe-1)};
 			} else {
-				rows[y] = IR {INT8_MAX, INT8_MIN};
+				rows_y = IR {INT8_MAX, INT8_MIN};
 				rem.cnt--;
 			}
 		}
@@ -79,6 +85,7 @@ static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8
 int main(int argc, char **argv) {
 	int n, k;
 	cin >> n >> k;
+	assert(k<6);
 	P pp[n];
 	int id = 1;
 	vector<vector<int>> map(SZ, vector<int>(SZ, 0)); // let's assume points may not collide
@@ -91,17 +98,20 @@ int main(int argc, char **argv) {
 		mxy = max(mxy, p.y);
 	}
 	// left/right x for each y
-	REM rem;
-	fill(rem.rows.begin(), rem.rows.end(), IR {INT8_MAX, INT8_MIN});
+	IR allrows[SZ];
+	fill(allrows, allrows+SZ, IR {INT8_MAX, INT8_MIN});
 	for (int8_t y=0; y<SZ; y++)
 		for (int8_t x=0; x<SZ; x++)
 			if (map[y][x])
-				rem.rows[y] = IR {min(rem.rows[y].l, x), max(rem.rows[y].r, x)};
+				allrows[y] = IR {min(allrows[y].l, x), max(allrows[y].r, x)};
+	REM rem;
 	rem.cnt = 0;
 	for (int8_t y=0; y<SZ; y++)
-		if (rem.rows[y])
+		if (allrows[y])
 			rem.cnt++;
 	priority_queue<Q> qq;
+	for (int y=0; y<5; y++)
+		rem.rows[y] = allrows[y];
 	upd_rows_rem(rem, map, 0, 0, k-1, k);
 	qq.push(Q {0, P{0, 0}, rem});
 	while (!qq.empty()) {
@@ -109,20 +119,23 @@ int main(int argc, char **argv) {
 		if (q.rem.cnt == 0)
 			break;
 		qq.pop();
-		if (q.rem.rows[q.p.y]) {
-			if (q.p.x > q.rem.rows[q.p.y].l) {
+		const auto &row_y = q.rem[q.p.y];
+		if (row_y) {
+			if (q.p.x > row_y.l) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, map, q.p.y, q.rem.rows[q.p.y].l, q.p.x+k-1, k);
-				qq.push(Q { q.dist+(q.p.x-q.rem.rows[q.p.y].l), P { q.rem.rows[q.p.y].l, q.p.y}, nr});
+				upd_rows_rem(nr, map, q.p.y, row_y.l, q.p.x+k-1, k);
+				qq.push(Q { q.dist+(q.p.x-row_y.l), P { row_y.l, q.p.y}, nr});
 			}
-			if (q.p.x+k-1 < q.rem.rows[q.p.y].r) {
+			if (q.p.x+k-1 < row_y.r) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, map, q.p.y, q.p.x, q.rem.rows[q.p.y].r, k);
-				qq.push(Q { q.dist+(q.rem.rows[q.p.y].r-q.p.x-k+1), P { q.rem.rows[q.p.y].r-k+1, q.p.y}, nr});
+				upd_rows_rem(nr, map, q.p.y, q.p.x, row_y.r, k);
+				qq.push(Q { q.dist+(row_y.r-q.p.x-k+1), P { row_y.r-k+1, q.p.y}, nr});
 			}
 		} else {
 			// done with row, just up
 			REM nr(q.rem);
+			if (q.p.y+5 < SZ)
+				nr[q.p.y] = allrows[q.p.y+5];
 			upd_rows_rem(nr, map, q.p.y+1, q.p.x, q.p.x+k-1, k);
 			qq.push(Q { q.dist+1, P { q.p.x, q.p.y+1}, nr});
 		}
