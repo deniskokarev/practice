@@ -39,19 +39,55 @@ struct Q {
 	}
 };
 
-// "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
-static void upd_rows_rem(REM &rem, const IR allrows[SZ], int row, int8_t l, int8_t r, int8_t k) {
-	for (int8_t i=0; i<k; i++) {
-		int8_t y = row+i;
-		if (y >= SZ)
-			break;
-		if (!rem.covered(y)) {
-			rem.covl |= (uint8_t(l <= allrows[y].l) << (y&7));
-			rem.covr |= (uint8_t(allrows[y].r <= r) << (y&7));
-			if (rem.covered(y))
-				rem.cnt--;
+struct CovCache {
+	int8_t nbits[256];
+	uint8_t cache_cov_l[SZ][SZ];
+	uint8_t cache_cov_r[SZ][SZ];
+	CovCache(const IR allrows[SZ], int k) {
+		fill(nbits, nbits+256, 0);
+		for (int i=0; i<256; i++) {
+			uint8_t n = i;
+			while (n) {
+				if (n&1)
+					nbits[i]++;
+				n >>= 1;
+			}
+		}
+		vector<vector<vector<bool>>> cl(SZ, vector<vector<bool>>(SZ, vector<bool>(8, false)));
+		vector<vector<vector<bool>>> cr(SZ, vector<vector<bool>>(SZ, vector<bool>(8, false)));
+		for (int row=0; row<SZ; row++) {
+			for (int x=0; x<SZ; x++) {
+				for (int i=0; i<8; i++) {
+					int y = row+i;
+					if (y<SZ) {
+						cl[row][x][i] = (x <= allrows[y].l);
+						cr[row][x][i] = (allrows[y].r <= x);
+					}
+				}
+			}
+		}
+		for (int row=0; row<SZ; row++) {
+			for (int x=0; x<SZ; x++) {
+				uint8_t l = 0, r = 0;
+				for (int i=0; i<k; i++) {
+					int b_pos = (row+i) & 7;
+					l |= uint8_t(cl[row][x][i]) << b_pos;
+					r |= uint8_t(cr[row][x][i]) << b_pos;
+				}
+				cache_cov_l[row][x] = l;
+				cache_cov_r[row][x] = r;
+			}
 		}
 	}
+};
+
+// "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
+static void upd_rows_rem(REM &rem, const CovCache &cc, int row, int8_t l, int8_t r) {
+	int was = cc.nbits[rem.covl&rem.covr];
+	rem.covl |= cc.cache_cov_l[row][l];
+	rem.covr |= cc.cache_cov_r[row][r];
+	int now = cc.nbits[rem.covl&rem.covr];
+	rem.cnt -= (now-was);
 }
 
 int main(int argc, char **argv) {
@@ -79,7 +115,8 @@ int main(int argc, char **argv) {
 	for (int y=0; y<8; y++)
 		f_rem.covl |= (uint8_t(!allrows[y]) << (y&7));
 	f_rem.covr = f_rem.covl;
-	upd_rows_rem(f_rem, allrows, 0, 0, k-1, k);
+	CovCache cc(allrows, k);
+	upd_rows_rem(f_rem, cc, 0, 0, k-1);
 	qq.push(Q {0, P{0, 0}, f_rem});
 	while (!qq.empty()) {
 		const Q q = qq.top();
@@ -89,12 +126,12 @@ int main(int argc, char **argv) {
 		if (!q.rem.covered(q.p.y)) {
 			if (q.p.x > allrows[q.p.y].l) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, allrows, q.p.y, allrows[q.p.y].l, q.p.x+k-1, k);
+				upd_rows_rem(nr, cc, q.p.y, allrows[q.p.y].l, q.p.x+k-1);
 				qq.push(Q { int16_t(q.dist+(q.p.x-allrows[q.p.y].l)), P { allrows[q.p.y].l, q.p.y}, nr});
 			}
 			if (q.p.x+k-1 < allrows[q.p.y].r) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, allrows, q.p.y, q.p.x, allrows[q.p.y].r, k);
+				upd_rows_rem(nr, cc, q.p.y, q.p.x, allrows[q.p.y].r);
 				qq.push(Q { int16_t(q.dist+(allrows[q.p.y].r-q.p.x-k+1)), P { int8_t(allrows[q.p.y].r-k+1), q.p.y}, nr});
 			}
 		} else {
@@ -106,7 +143,7 @@ int main(int argc, char **argv) {
 				nr.covl |= (uint8_t(!allrows[q.p.y+8]) << (q.p.y&7));
 				nr.covr |= (uint8_t(!allrows[q.p.y+8]) << (q.p.y&7));
 			}
-			upd_rows_rem(nr, allrows, q.p.y+1, q.p.x, q.p.x+k-1, k);
+			upd_rows_rem(nr, cc, q.p.y+1, q.p.x, q.p.x+k-1);
 			qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
 		}
 	}
