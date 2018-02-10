@@ -1,9 +1,8 @@
 /* ACMP 797 */
-#include <iostream>
+#include <cstdio>
 #include <vector>
 #include <cassert>
 #include <queue>
-#include <array>
 #include <algorithm>
 
 using namespace std;
@@ -11,7 +10,7 @@ using namespace std;
 constexpr int SZ = 50;
 
 struct P {
-	int x, y;
+	int8_t x, y;
 };
 
 struct IR {
@@ -21,19 +20,19 @@ struct IR {
 	}
 };
 
-struct REM { // rows remained
+struct REM { // rows remaining
 	int8_t cnt;
-	array<IR, 5> rows; // care only upto 5 next rows
+	IR r[5]; // care only upto 5 next rows
 	IR &operator[](int y) {
-		return rows[y%5];
+		return r[y%5];
 	}
 	const IR &operator[](int y) const {
-		return rows[y%5];
+		return r[y%5];
 	}
 };
 
 struct Q {
-	int dist;
+	int16_t dist;
 	P p;
 	REM rem;
 	bool operator<(const Q &q) const {
@@ -95,7 +94,7 @@ static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8
 		int y = row+i;
 		if (y >= SZ)
 			break;
-		auto &rows_y = rem[y];
+		IR &rows_y = rem[y];
 		if (rows_y) {
 			rows_y = sseg.sub(rows_y, IR {l, r});
 			if (!rows_y)
@@ -106,18 +105,17 @@ static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8
 
 int main(int argc, char **argv) {
 	int n, k;
-	cin >> n >> k;
+	scanf("%d%d", &n, &k);
 	assert(k<6);
-	P pp[n];
 	int id = 1;
 	vector<vector<int>> map(SZ, vector<int>(SZ, 0)); // let's assume points may not collide
-	int mxy = 0;
+	int8_t mxy = 0;
 	for (int i=0; i<n; i++) {
-		auto &p = pp[i];
-		cin >> p.x >> p.y;
-		p.x--, p.y--;
-		map[p.y][p.x] = id++;
-		mxy = max(mxy, p.y);
+		int x, y;
+		scanf("%d%d", &x, &y);
+		x--, y--;
+		map[y][x] = id++;
+		mxy = max(mxy, int8_t(y));
 	}
 	// left/right x for each y
 	IR allrows[SZ];
@@ -131,13 +129,13 @@ int main(int argc, char **argv) {
 	for (int8_t y=0; y<SZ; y++)
 		if (allrows[y])
 			rem.cnt++;
-	priority_queue<Q> qq;
+	queue<Q> qq;
 	for (int y=0; y<5; y++)
-		rem.rows[y] = allrows[y];
+		rem[y] = allrows[y];
 	upd_rows_rem(rem, map, 0, 0, k-1, k);
 	qq.push(Q {0, P{0, 0}, rem});
 	while (!qq.empty()) {
-		const Q q = qq.top();
+		const Q q = qq.front();
 		if (q.rem.cnt == 0)
 			break;
 		qq.pop();
@@ -146,12 +144,12 @@ int main(int argc, char **argv) {
 			if (q.p.x > row_y.l) {
 				REM nr(q.rem);
 				upd_rows_rem(nr, map, q.p.y, row_y.l, q.p.x+k-1, k);
-				qq.push(Q { q.dist+(q.p.x-row_y.l), P { row_y.l, q.p.y}, nr});
+				qq.push(Q { int16_t(q.dist+(q.p.x-row_y.l)), P { row_y.l, q.p.y}, nr});
 			}
 			if (q.p.x+k-1 < row_y.r) {
 				REM nr(q.rem);
 				upd_rows_rem(nr, map, q.p.y, q.p.x, row_y.r, k);
-				qq.push(Q { q.dist+(row_y.r-q.p.x-k+1), P { row_y.r-k+1, q.p.y}, nr});
+				qq.push(Q { int16_t(q.dist+(row_y.r-q.p.x-k+1)), P { int8_t(row_y.r-k+1), q.p.y}, nr});
 			}
 		} else {
 			// done with row, just up
@@ -159,14 +157,14 @@ int main(int argc, char **argv) {
 			if (q.p.y+5 < SZ)
 				nr[q.p.y] = allrows[q.p.y+5];
 			upd_rows_rem(nr, map, q.p.y+1, q.p.x, q.p.x+k-1, k);
-			qq.push(Q { q.dist+1, P { q.p.x, q.p.y+1}, nr});
+			qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
 		}
 	}
 	assert(!qq.empty() && "there must be a solution");
-	const Q &top = qq.top();
+	const Q &top = qq.front();
 	int over = top.p.y+k-1 - mxy;
 	if (over < 0 || top.p.y == 0)
 		over = 0;
-	cout << top.dist-over << endl;
+	printf("%d\n", top.dist-over);
 	return 0;
 }
