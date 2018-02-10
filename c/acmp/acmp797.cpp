@@ -22,7 +22,6 @@ struct IR {
 };
 
 struct REM { // rows remaining
-	int8_t cnt;
 	uint8_t covl, covr; // care only if next 8 rows are fully covered from the left and right
 	inline bool covered(int8_t y) const {
 		uint8_t i = uint8_t(1)<<(y&7);
@@ -40,19 +39,9 @@ struct Q {
 };
 
 struct CovCache {
-	int8_t nbits[256];
 	uint8_t cache_cov_l[SZ][SZ];
 	uint8_t cache_cov_r[SZ][SZ];
 	CovCache(const IR allrows[SZ], int k) {
-		fill(nbits, nbits+256, 0);
-		for (int i=0; i<256; i++) {
-			uint8_t n = i;
-			while (n) {
-				if (n&1)
-					nbits[i]++;
-				n >>= 1;
-			}
-		}
 		vector<vector<vector<bool>>> cl(SZ, vector<vector<bool>>(SZ, vector<bool>(8, false)));
 		vector<vector<vector<bool>>> cr(SZ, vector<vector<bool>>(SZ, vector<bool>(8, false)));
 		for (int row=0; row<SZ; row++) {
@@ -82,12 +71,9 @@ struct CovCache {
 };
 
 // "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
-static void upd_rows_rem(REM &rem, const CovCache &cc, int row, int8_t l, int8_t r) {
-	int was = cc.nbits[rem.covl&rem.covr];
+inline void upd_rows_rem(REM &rem, const CovCache &cc, int row, int8_t l, int8_t r) {
 	rem.covl |= cc.cache_cov_l[row][l];
 	rem.covr |= cc.cache_cov_r[row][r];
-	int now = cc.nbits[rem.covl&rem.covr];
-	rem.cnt -= (now-was);
 }
 
 int main(int argc, char **argv) {
@@ -105,22 +91,14 @@ int main(int argc, char **argv) {
 		mxy = max(mxy, int8_t(y));
 		allrows[y] = IR {min(allrows[y].l, int8_t(x)), max(allrows[y].r, int8_t(x))};
 	}
-	REM f_rem;
-	f_rem.cnt = 0;
-	for (int8_t y=0; y<SZ; y++)
-		if (allrows[y])
-			f_rem.cnt++;
-	priority_queue<Q> qq;
-	f_rem.covl = 0;
-	for (int y=0; y<8; y++)
-		f_rem.covl |= (uint8_t(!allrows[y]) << (y&7));
-	f_rem.covr = f_rem.covl;
 	CovCache cc(allrows, k);
+	REM f_rem {0, 0};
+	priority_queue<Q> qq;
 	upd_rows_rem(f_rem, cc, 0, 0, k-1);
 	qq.push(Q {0, P{0, 0}, f_rem});
 	while (!qq.empty()) {
 		const Q q = qq.top();
-		if (q.rem.cnt == 0)
+		if (q.p.y >= SZ)
 			break;
 		qq.pop();
 		if (!q.rem.covered(q.p.y)) {
@@ -140,8 +118,6 @@ int main(int argc, char **argv) {
 			if (q.p.y+8 < SZ) {
 				nr.covl &= ~((uint8_t(1) << (q.p.y&7)));
 				nr.covr &= ~((uint8_t(1) << (q.p.y&7)));
-				nr.covl |= (uint8_t(!allrows[q.p.y+8]) << (q.p.y&7));
-				nr.covr |= (uint8_t(!allrows[q.p.y+8]) << (q.p.y&7));
 			}
 			upd_rows_rem(nr, cc, q.p.y+1, q.p.x, q.p.x+k-1);
 			qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
