@@ -46,13 +46,13 @@ struct SubtractSeg {
 	vector<vector<vector<vector<IR>>>> cached_res;
 	SubtractSeg() {
 		cached_res.resize(SZ);
-		for (int8_t rl=0; rl<SZ; rl++) {
-			cached_res[rl].resize(SZ-rl);
-			for (int8_t r_len=0; r_len<SZ-rl; r_len++) {
-				cached_res[rl][r_len].resize(SZ);
-				for (int8_t l=0; l<SZ; l++) {
-					cached_res[rl][r_len][l].resize(SZ-l);
-					for (int8_t len=0; len<SZ-l; len++) {
+		for (int8_t l=0; l<SZ; l++) {
+			cached_res[l].resize(SZ-l);
+			for (int8_t len=0; len<SZ-l; len++) {
+				cached_res[l][len].resize(SZ);
+				for (int8_t rl=0; rl<SZ; rl++) {
+					cached_res[l][len][rl].resize(SZ-rl);
+					for (int8_t r_len=0; r_len<SZ-rl; r_len++) {
 						struct E {
 							int8_t e;
 							int8_t v;
@@ -75,19 +75,16 @@ struct SubtractSeg {
 							}
 						}
 						if (mne < mxe)
-							cached_res[rl][r_len][l][len] = IR {mne, int8_t(mxe-1)};
+							cached_res[l][len][rl][r_len] = IR {mne, int8_t(mxe-1)};
 						else
-							cached_res[rl][r_len][l][len] = IR {INT8_MAX, INT8_MIN};
+							cached_res[l][len][rl][r_len] = IR {INT8_MAX, INT8_MIN};
 					}
 				}
 			}
 		}
 	}
-	IR sub(IR a, IR b) const {
-		if (a)
-			return cached_res[a.l][a.r-a.l][b.l][b.r-b.l];
-		else
-			return a;
+	inline IR sub(IR a, IR b) const {
+		return cached_res[b.l][b.r-b.l][a.l][a.r-a.l];
 	}
 };
 
