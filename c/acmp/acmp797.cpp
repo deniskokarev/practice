@@ -4,6 +4,7 @@
 #include <cassert>
 #include <queue>
 #include <algorithm>
+#include <bitset>
 
 using namespace std;
 
@@ -22,12 +23,9 @@ struct IR {
 
 struct REM { // rows remaining
 	int8_t cnt;
-	IR r[5]; // care only upto 5 next rows
-	IR &operator[](int y) {
-		return r[y%5];
-	}
-	const IR &operator[](int y) const {
-		return r[y%5];
+	bitset<8> covl, covr; // care only if next 8 rows are fully covered from the left and right
+	inline bool covered(int8_t y) const {
+		return covl[y & 7] & covr[y & 7];
 	}
 };
 
@@ -40,64 +38,16 @@ struct Q {
 	}
 };
 
-// precompute segment subtractions
-struct SubtractSeg {
-	vector<vector<vector<vector<IR>>>> cached_res;
-	SubtractSeg() {
-		cached_res.resize(SZ);
-		for (int8_t l=0; l<SZ; l++) {
-			cached_res[l].resize(SZ-l);
-			for (int8_t len=0; len<SZ-l; len++) {
-				cached_res[l][len].resize(SZ);
-				for (int8_t rl=0; rl<SZ; rl++) {
-					cached_res[l][len][rl].resize(SZ-rl);
-					for (int8_t r_len=0; r_len<SZ-rl; r_len++) {
-						struct E {
-							int8_t e;
-							int8_t v;
-							bool operator<(const E &b) const {
-								return e<b.e;
-							}
-						} ends[4] = {{rl, +1}, {int8_t(rl+r_len+1), -1}, {l, -1}, {int8_t(l+len+1), +1}};
-						sort(ends, ends+4);
-						struct {
-							int8_t l, r;
-							int8_t v;
-						} ir[3] = {{ends[0].e, ends[1].e, ends[0].v}, {ends[1].e, ends[2].e, ends[1].v}, {ends[2].e, ends[3].e, ends[2].v}};
-						ir[1].v += ir[0].v;
-						ir[2].v += ir[1].v;
-						int8_t mne = INT8_MAX, mxe = INT8_MIN;
-						for (int i=0; i<3; i++) {
-							if (ir[i].l < ir[i].r && ir[i].v == 1) {
-								mne = min(mne, ir[i].l);
-								mxe = max(mxe, ir[i].r);
-							}
-						}
-						if (mne < mxe)
-							cached_res[l][len][rl][r_len] = IR {mne, int8_t(mxe-1)};
-						else
-							cached_res[l][len][rl][r_len] = IR {INT8_MAX, INT8_MIN};
-					}
-				}
-			}
-		}
-	}
-	inline IR sub(IR a, IR b) const {
-		return cached_res[b.l][b.r-b.l][a.l][a.r-a.l];
-	}
-};
-
 // "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
-static void upd_rows_rem(REM &rem, const vector<vector<int>> &map, int row, int8_t l, int8_t r, int k) {
-	static const SubtractSeg sseg;
-	for (int i=0; i<k; i++) {
-		int y = row+i;
+static void upd_rows_rem(REM &rem, const IR allrows[SZ], int row, int8_t l, int8_t r, int8_t k) {
+	for (int8_t i=0; i<k; i++) {
+		int8_t y = row+i;
 		if (y >= SZ)
 			break;
-		IR &rows_y = rem[y];
-		if (rows_y) {
-			rows_y = sseg.sub(rows_y, IR {l, r});
-			if (!rows_y)
+		if (!rem.covered(y)) {
+			rem.covl[y & 7] = rem.covl[y & 7] | (l <= allrows[y].l);
+			rem.covr[y & 7] = rem.covr[y & 7] | (allrows[y].r <= r);
+			if (rem.covered(y))
 				rem.cnt--;
 		}
 	}
@@ -107,61 +57,54 @@ int main(int argc, char **argv) {
 	int n, k;
 	scanf("%d%d", &n, &k);
 	assert(k<6);
-	int id = 1;
-	vector<vector<int>> map(SZ, vector<int>(SZ, 0)); // let's assume points may not collide
 	int8_t mxy = 0;
+	// left/right x for each y
+	IR allrows[SZ];
+	fill(allrows, allrows+SZ, IR {INT8_MAX, INT8_MIN});
 	for (int i=0; i<n; i++) {
 		int x, y;
 		scanf("%d%d", &x, &y);
 		x--, y--;
-		map[y][x] = id++;
 		mxy = max(mxy, int8_t(y));
+		allrows[y] = IR {min(allrows[y].l, int8_t(x)), max(allrows[y].r, int8_t(x))};
 	}
-	// left/right x for each y
-	IR allrows[SZ];
-	fill(allrows, allrows+SZ, IR {INT8_MAX, INT8_MIN});
-	for (int8_t y=0; y<SZ; y++)
-		for (int8_t x=0; x<SZ; x++)
-			if (map[y][x])
-				allrows[y] = IR {min(allrows[y].l, x), max(allrows[y].r, x)};
-	REM rem;
-	rem.cnt = 0;
+	REM f_rem;
+	f_rem.cnt = 0;
 	for (int8_t y=0; y<SZ; y++)
 		if (allrows[y])
-			rem.cnt++;
-	queue<Q> qq;
-	for (int y=0; y<5; y++)
-		rem[y] = allrows[y];
-	upd_rows_rem(rem, map, 0, 0, k-1, k);
-	qq.push(Q {0, P{0, 0}, rem});
+			f_rem.cnt++;
+	priority_queue<Q> qq;
+	for (int y=0; y<8; y++)
+		f_rem.covl[y] = f_rem.covr[y] = (!allrows[y]);
+	upd_rows_rem(f_rem, allrows, 0, 0, k-1, k);
+	qq.push(Q {0, P{0, 0}, f_rem});
 	while (!qq.empty()) {
-		const Q q = qq.front();
+		const Q q = qq.top();
 		if (q.rem.cnt == 0)
 			break;
 		qq.pop();
-		const auto &row_y = q.rem[q.p.y];
-		if (row_y) {
-			if (q.p.x > row_y.l) {
+		if (!q.rem.covered(q.p.y)) {
+			if (q.p.x > allrows[q.p.y].l) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, map, q.p.y, row_y.l, q.p.x+k-1, k);
-				qq.push(Q { int16_t(q.dist+(q.p.x-row_y.l)), P { row_y.l, q.p.y}, nr});
+				upd_rows_rem(nr, allrows, q.p.y, allrows[q.p.y].l, q.p.x+k-1, k);
+				qq.push(Q { int16_t(q.dist+(q.p.x-allrows[q.p.y].l)), P { allrows[q.p.y].l, q.p.y}, nr});
 			}
-			if (q.p.x+k-1 < row_y.r) {
+			if (q.p.x+k-1 < allrows[q.p.y].r) {
 				REM nr(q.rem);
-				upd_rows_rem(nr, map, q.p.y, q.p.x, row_y.r, k);
-				qq.push(Q { int16_t(q.dist+(row_y.r-q.p.x-k+1)), P { int8_t(row_y.r-k+1), q.p.y}, nr});
+				upd_rows_rem(nr, allrows, q.p.y, q.p.x, allrows[q.p.y].r, k);
+				qq.push(Q { int16_t(q.dist+(allrows[q.p.y].r-q.p.x-k+1)), P { int8_t(allrows[q.p.y].r-k+1), q.p.y}, nr});
 			}
 		} else {
 			// done with row, just up
 			REM nr(q.rem);
-			if (q.p.y+5 < SZ)
-				nr[q.p.y] = allrows[q.p.y+5];
-			upd_rows_rem(nr, map, q.p.y+1, q.p.x, q.p.x+k-1, k);
+			if (q.p.y+8 < SZ)
+				nr.covl[q.p.y & 7] = nr.covr[q.p.y & 7] = (!allrows[q.p.y+8]);
+			upd_rows_rem(nr, allrows, q.p.y+1, q.p.x, q.p.x+k-1, k);
 			qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
 		}
 	}
 	assert(!qq.empty() && "there must be a solution");
-	const Q &top = qq.front();
+	const Q &top = qq.top();
 	int over = top.p.y+k-1 - mxy;
 	if (over < 0 || top.p.y == 0)
 		over = 0;
