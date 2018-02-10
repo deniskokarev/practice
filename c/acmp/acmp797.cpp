@@ -136,13 +136,13 @@ int main(int argc, char **argv) {
 	for (int8_t y=0; y<SZ; y++)
 		if (allrows[y])
 			rem.cnt++;
-	priority_queue<Q> qq;
+	queue<Q> qq;
 	for (int y=0; y<5; y++)
 		rem.rows[y] = allrows[y];
 	upd_rows_rem(rem, map, 0, 0, k-1, k);
 	qq.push(Q {0, P{0, 0}, rem});
 	while (!qq.empty()) {
-		const Q q = qq.top();
+		const Q q = qq.front();
 		if (q.rem.cnt == 0)
 			break;
 		qq.pop();
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	assert(!qq.empty() && "there must be a solution");
-	const Q &top = qq.top();
+	const Q &top = qq.front();
 	int over = top.p.y+k-1 - mxy;
 	if (over < 0 || top.p.y == 0)
 		over = 0;
