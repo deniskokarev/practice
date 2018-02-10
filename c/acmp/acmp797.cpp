@@ -136,27 +136,24 @@ int main(int argc, char **argv) {
 	for (int8_t y=0; y<SZ; y++)
 		if (allrows[y])
 			rem.cnt++;
-	queue<Q> qq;
 	for (int y=0; y<5; y++)
 		rem.rows[y] = allrows[y];
 	upd_rows_rem(rem, map, 0, 0, k-1, k);
-	qq.push(Q {0, P{0, 0}, rem});
-	while (!qq.empty()) {
-		const Q q = qq.front();
+	Q q {0, P{0, 0}, rem};
+	while (true) {
 		if (q.rem.cnt == 0)
 			break;
-		qq.pop();
 		const auto &row_y = q.rem[q.p.y];
 		if (row_y) {
 			if (q.p.x > row_y.l) {
 				REM nr(q.rem);
 				upd_rows_rem(nr, map, q.p.y, row_y.l, q.p.x+k-1, k);
-				qq.push(Q { q.dist+(q.p.x-row_y.l), P { row_y.l, q.p.y}, nr});
+				q = Q { q.dist+(q.p.x-row_y.l), P { row_y.l, q.p.y}, nr};
 			}
 			if (q.p.x+k-1 < row_y.r) {
 				REM nr(q.rem);
 				upd_rows_rem(nr, map, q.p.y, q.p.x, row_y.r, k);
-				qq.push(Q { q.dist+(row_y.r-q.p.x-k+1), P { row_y.r-k+1, q.p.y}, nr});
+				q = Q { q.dist+(row_y.r-q.p.x-k+1), P { row_y.r-k+1, q.p.y}, nr};
 			}
 		} else {
 			// done with row, just up
@@ -164,11 +161,10 @@ int main(int argc, char **argv) {
 			if (q.p.y+5 < SZ)
 				nr[q.p.y] = allrows[q.p.y+5];
 			upd_rows_rem(nr, map, q.p.y+1, q.p.x, q.p.x+k-1, k);
-			qq.push(Q { q.dist+1, P { q.p.x, q.p.y+1}, nr});
+			q = Q { q.dist+1, P { q.p.x, q.p.y+1}, nr};
 		}
 	}
-	assert(!qq.empty() && "there must be a solution");
-	const Q &top = qq.front();
+	const Q &top = q;
 	int over = top.p.y+k-1 - mxy;
 	if (over < 0 || top.p.y == 0)
 		over = 0;
