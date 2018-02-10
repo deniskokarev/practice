@@ -23,9 +23,10 @@ struct IR {
 
 struct REM { // rows remaining
 	int8_t cnt;
-	bitset<8> covl, covr; // care only if next 8 rows are fully covered from the left and right
+	uint8_t covl, covr; // care only if next 8 rows are fully covered from the left and right
 	inline bool covered(int8_t y) const {
-		return covl[y & 7] & covr[y & 7];
+		uint8_t i = uint8_t(1)<<(y&7);
+		return covl & covr & i;
 	}
 };
 
@@ -45,8 +46,8 @@ static void upd_rows_rem(REM &rem, const IR allrows[SZ], int row, int8_t l, int8
 		if (y >= SZ)
 			break;
 		if (!rem.covered(y)) {
-			rem.covl[y & 7] = rem.covl[y & 7] | (l <= allrows[y].l);
-			rem.covr[y & 7] = rem.covr[y & 7] | (allrows[y].r <= r);
+			rem.covl |= (uint8_t(l <= allrows[y].l) << (y&7));
+			rem.covr |= (uint8_t(allrows[y].r <= r) << (y&7));
 			if (rem.covered(y))
 				rem.cnt--;
 		}
@@ -74,8 +75,10 @@ int main(int argc, char **argv) {
 		if (allrows[y])
 			f_rem.cnt++;
 	priority_queue<Q> qq;
+	f_rem.covl = 0;
 	for (int y=0; y<8; y++)
-		f_rem.covl[y] = f_rem.covr[y] = (!allrows[y]);
+		f_rem.covl |= (uint8_t(!allrows[y]) << (y&7));
+	f_rem.covr = f_rem.covl;
 	upd_rows_rem(f_rem, allrows, 0, 0, k-1, k);
 	qq.push(Q {0, P{0, 0}, f_rem});
 	while (!qq.empty()) {
@@ -97,8 +100,12 @@ int main(int argc, char **argv) {
 		} else {
 			// done with row, just up
 			REM nr(q.rem);
-			if (q.p.y+8 < SZ)
-				nr.covl[q.p.y & 7] = nr.covr[q.p.y & 7] = (!allrows[q.p.y+8]);
+			if (q.p.y+8 < SZ) {
+				nr.covl &= ~((uint8_t(1) << (q.p.y&7)));
+				nr.covr &= ~((uint8_t(1) << (q.p.y&7)));
+				nr.covl |= (uint8_t(!allrows[q.p.y+8]) << (q.p.y&7));
+				nr.covr |= (uint8_t(!allrows[q.p.y+8]) << (q.p.y&7));
+			}
 			upd_rows_rem(nr, allrows, q.p.y+1, q.p.x, q.p.x+k-1, k);
 			qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
 		}
