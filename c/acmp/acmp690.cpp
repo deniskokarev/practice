@@ -1,206 +1,101 @@
 /* ACMP 690 */
+#include <cstdio>
+#include <cstring>
+#include <cassert>
 #include <algorithm>
-#include <random>
 
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <inttypes.h>
+using namespace std;
+
+constexpr int SZ = 100;
+
+#define dim(X)	(int(sizeof(X)/sizeof(X[0])))
 
 struct P {
-	int8_t x, y;
+	int x, y;
 };
 
-inline P operator+(const P a, const P b) {
-	return P {(int8_t)(a.x+b.x), (int8_t)(a.y+b.y)};
-}
+const static P moves[8] = {{2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2}, {1, -2}, {2, -1}};
 
-struct SP {
-	int score;
-	P p;
-	int stat;
-};
-
-inline bool operator<(const SP &a, const SP &b) {
-	return a.score < b.score;
-}
-
-constexpr int MSZ = 104; // with +2 padding on each side
-
-static const P kmoves[8] = {{2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2}, {1, -2}, {2, -1}};
-
-// gradient from each x,y
-struct GRAD {
-	int sz;
-	SP moves[8];
-};
-
-// caclulate Warnsdorf's score for each square
-inline void calc_potential(const char brd[MSZ][MSZ], int potential[MSZ][MSZ], int n, int m, int depth) {
-	int pptn[2][MSZ][MSZ];
-	memset(pptn, 0, sizeof(pptn));
-	for (int r=2; r<n+2; r++)
-		for (int c=2; c<m+2; c++)
-			if (brd[r][c] == '.')
-				pptn[0][r][c] = 1;
-	for (int i=1; i<depth; i++) {
-		auto &ptn = pptn[i&1];
-		auto &optn = pptn[(i+1)&1];
-		for (int8_t r=2; r<n+2; r++) {
-			for (int8_t c=2; c<m+2; c++) {
-				if (brd[r][c] == '.') {
-					P p = {c, r};
-					for (auto &km:kmoves) {
-						P nm = p+km;
-						if (brd[nm.y][nm.x] == '.')
-							ptn[nm.y][nm.x] += optn[p.y][p.x];
-					}
-				}
-			}
+inline int varsendorf(int map[SZ+4][SZ+4], const P &p) {
+	int cnt = 0;
+	if (map[p.y][p.x] == 0) {
+		for (const auto &m:moves) {
+			P np {p.x+m.x, p.y+m.y};
+			if (map[np.y][np.x] == 0)
+				cnt++;
 		}
 	}
-	memcpy(potential, pptn[(depth+1)&1], sizeof(pptn[0]));
+	return cnt;
 }
 
-// calculate the most favorable move from each square
-inline void calc_gradient(const char brd[MSZ][MSZ], const int potential[MSZ][MSZ], GRAD grad[MSZ][MSZ], int n, int m) {
-	for (int8_t i=2; i<n+2; i++) {
-		for (int8_t j=2; j<m+2; j++) {
-			P p = {j, i};
-			int sz = 0;
-			auto &g = grad[i][j];
-			if (brd[i][j] == '.') {
-				for (auto &km:kmoves) {
-					P nm = p+km;
-					auto score = potential[nm.y][nm.x];
-					if (score > 0)
-						g.moves[sz++] = {score, nm, 0};
-				}
-				std::sort(g.moves, g.moves+sz);
-			}
-			g.sz = sz;
+bool dfs(int map[SZ+4][SZ+4], const P &p, int cnt, int idx) {
+	if (!cnt)
+		return true;
+	if (map[p.y][p.x] != 0)
+		return false;
+	map[p.y][p.x] = idx;
+	struct VSC {
+		int vsc;
+		P m;
+		bool operator<(const VSC &b) const {
+			return vsc < b.vsc;
 		}
+	} mv[dim(moves)];
+	for (int i=0; i<dim(moves); i++) {
+		int mi = (cnt+i)&7; // each step we start from next move to go in circles
+		const P &m = moves[mi];
+		const P nm = P {p.x+m.x, p.y+m.y};
+		mv[i] = {varsendorf(map, nm), nm};
 	}
-}
-
-inline void randomize_gradient(const char brd[MSZ][MSZ], GRAD grad[MSZ][MSZ], int n, int m, std::mt19937 &rnd) {
-	for (int8_t i=2; i<n+2; i++) {
-		for (int8_t j=2; j<m+2; j++) {
-			auto &g = grad[i][j];
-			if (brd[i][j] == '.') {
-                int shufsz;
-                for (shufsz=1; shufsz<g.sz && g.moves[shufsz-1].score == g.moves[shufsz].score; shufsz++);
-                std::random_shuffle(g.moves, g.moves+shufsz, [&rnd](int ln){return rnd()%ln;});
-			}
-		}
+	sort(mv, mv+dim(mv));
+	for (auto &m:mv) {
+		if (dfs(map, m.m, cnt-1, idx+1))
+			return true;
 	}
-}
-
-// loop-based DFS for speed
-inline bool dfs(char brd[MSZ][MSZ], const GRAD grad[MSZ][MSZ], const P start, int sqcnt, int solution[MSZ][MSZ], int &missed, int limit) {
-    struct {
-        P p;
-        int i;
-		int dend;
-    } stk[sqcnt+2];
-	stk[sqcnt+1].p = {0, 0};
-    int i = sqcnt;
-    stk[i].p = start;
-    stk[i].i = 0;
-    while (i <= sqcnt && limit--) {
-        auto p = stk[i].p;
-        if (i>0 && brd[p.y][p.x] == '.') {
-            if (i == 1) {
-                for (int j=1; j<=sqcnt; j++)
-                    solution[stk[j].p.y][stk[j].p.x] = j;
-                return true;
-            } else {
-                while (stk[i].i < grad[p.y][p.x].sz) {
-                    brd[p.y][p.x] = 'K';
-                    auto np = grad[p.y][p.x].moves[stk[i].i].p;
-                    stk[i].i++;
-                    i--;
-                    stk[i].p = np;
-                    stk[i].i = 0;
-                    goto nxt;
-                }
-                missed++;
-                i++;
-                p = stk[i].p;
-                brd[p.y][p.x] = '.';
-            }
-		} else {
-            i++;
-            p = stk[i].p;
-            brd[p.y][p.x] = '.';
-        }
-    nxt:;
-    }
-	while (i<=sqcnt) {
-		i++;
-		auto p = stk[i].p;
-		brd[p.y][p.x] = '.';
-	}
-    return false;
+	map[p.y][p.x] = 0;
+	return false;
 }
 
 int main(int argc, char **argv) {
-	int missed = 0;
-	char brd[MSZ][MSZ];
-	int potential[MSZ][MSZ];
-	int solution[MSZ][MSZ];
-	GRAD grad[MSZ][MSZ];
+	int map[SZ+4][SZ+4];
 	int n, m;
-	scanf("%d%d", &n, &m);
-	assert(n <= MSZ-4 && m <= MSZ-4);
-	memset(brd, 'X', sizeof(brd));
-	memset(solution, 0, sizeof(solution));
-	P kp;
-	int sqcnt = 0;
-	for (int8_t i=0; i<n; i++) {
-		int8_t r = i+2;
-		char s[1024];;
-		scanf("%1023s", s);
-		for (int8_t j=0,c=2; c<m+2 && s[j]; c++,j++) {
-			brd[r][c] = s[j];
-			if (s[j] == 'K') {
-				kp = {c, r};
-				brd[r][c] = '.';
-				sqcnt++;
-			} else if (s[j] == '.') {
-				sqcnt++;
+	fscanf(stdin, "%d%d\n", &n, &m);
+	assert(n <= SZ && m <= SZ);
+	P start {2, 2};
+	for (int i=0; i<dim(map); i++)
+		for (int j=0; j<dim(map[0]); j++)
+			map[i][j] = -1;
+	int cnt = 0;
+	for (int y=2; y<n+2; y++) {
+		for (int x=2; x<m+2 && !feof(stdin); x++) {
+			int c = fgetc(stdin);
+			switch(c) {
+			case 'K':
+				start = P {x, y};
+			case '.':
+				map[y][x] = 0;
+				cnt++;
+				break;
 			}
 		}
+		fgetc(stdin); // \n
 	}
-	calc_potential(brd, potential, n, m, 3);
-	calc_gradient(brd, potential, grad, n, m);
 #if 0
-	for (int i=0; i<n+4; i++) {
-		for (int j=0; j<m+4; j++)
-			fprintf(stderr, "%6d ", potential[i][j]);
+	fprintf(stderr, "start x: %d y: %d\n", start.x, start.y);
+	for (int y=0; y<n+4; y++) {
+		for (int x=0; x<m+4; x++)
+			fprintf(stderr, "%2d ", map[y][x]);
 		fprintf(stderr, "\n");
 	}
 #endif
-	std::mt19937 rnd(123456);
-	bool solved = false;
-	for (int i=0; true; i++) {
-		if (dfs(brd, grad, kp, sqcnt, solution, missed, (1<<i))) {
-			solved = true;
-			break;
-		}
-		randomize_gradient(brd, grad, n, m, rnd);
-	}
-	if (solved) {
-		for (int r=2; r<n+2; r++) {
-			for (int c=2; c<m+2; c++)
-				printf("%3d ", (solution[r][c]>0)?sqcnt-solution[r][c]+1:0);
+	if (dfs(map, start, cnt, 1)) {
+		for (int y=2; y<n+2; y++) {
+			for (int x=2; x<m+2; x++)
+				printf("%2d ", (map[y][x] > 0)?map[y][x]:0);
 			printf("\n");
 		}
 	} else {
-		assert(false && "Hey, they've told there is a solution");
+		assert(false && "hmm, suppose to have a solution");
 	}
-#if 1
-	fprintf(stderr, "missed: %d\n", missed);
-#endif
 	return 0;
 }
