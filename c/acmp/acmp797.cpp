@@ -4,31 +4,30 @@
 #include <cassert>
 #include <queue>
 #include <algorithm>
-#include <bitset>
-
+#include <cstring>
+ 
 using namespace std;
-
+ 
 constexpr int SZ = 50;
-
+ 
 struct P {
 	int8_t x, y;
 };
-
+ 
 struct IR {
 	int8_t l, r;
 	operator bool() const {
 		return l != INT8_MAX;
 	}
 };
-
+ 
 struct REM { // rows remaining
 	uint8_t covl, covr; // care only if next 8 rows are fully covered from the left and right
-	inline bool covered(int8_t y) const {
-		uint8_t i = uint8_t(1)<<(y&7);
-		return covl & covr & i;
+	inline bool covered() const {
+		return covl & covr & 1;
 	}
 };
-
+ 
 struct Q {
 	int16_t dist;
 	P p;
@@ -37,7 +36,7 @@ struct Q {
 		return dist > q.dist;
 	}
 };
-
+ 
 struct CovCache {
 	uint8_t cache_cov_l[SZ][SZ];
 	uint8_t cache_cov_r[SZ][SZ];
@@ -51,6 +50,8 @@ struct CovCache {
 					if (y<SZ) {
 						cl[row][x][i] = (x <= allrows[y].l);
 						cr[row][x][i] = (allrows[y].r <= x);
+					} else {
+						cl[row][x][i] = cr[row][x][i] = true;
 					}
 				}
 			}
@@ -59,9 +60,8 @@ struct CovCache {
 			for (int x=0; x<SZ; x++) {
 				uint8_t l = 0, r = 0;
 				for (int i=0; i<k; i++) {
-					int b_pos = (row+i) & 7;
-					l |= uint8_t(cl[row][x][i]) << b_pos;
-					r |= uint8_t(cr[row][x][i]) << b_pos;
+					l |= uint8_t(cl[row][x][i]) << i;
+					r |= uint8_t(cr[row][x][i]) << i;
 				}
 				cache_cov_l[row][x] = l;
 				cache_cov_r[row][x] = r;
@@ -69,12 +69,26 @@ struct CovCache {
 		}
 	}
 };
-
+ 
 // "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
-inline void upd_rows_rem(REM &rem, const CovCache &cc, int row, int8_t l, int8_t r) {
+inline void upd_rows_rem(REM &rem, const CovCache &cc, int8_t row, int8_t l, int8_t r) {
 	rem.covl |= cc.cache_cov_l[row][l];
 	rem.covr |= cc.cache_cov_r[row][r];
 }
+
+struct Seen {
+	int k;
+	char seen[SZ][SZ][1<<10];
+	Seen(int k):k(k) {
+		assert(k<6);
+		memset(seen, 0, sizeof(seen));
+	}
+	char &at(const P &p, const REM &rem) {
+		assert(rem.covl < (1<<k) && rem.covr < (1<<k));
+		int covidx = int(rem.covl)+(int(rem.covr)<<k);
+		return seen[p.y][p.x][covidx];
+	}
+};
 
 int main(int argc, char **argv) {
 	int n, k;
@@ -93,41 +107,53 @@ int main(int argc, char **argv) {
 	}
 	CovCache cc(allrows, k);
 	REM f_rem {0, 0};
-	priority_queue<Q> qq;
+	Seen seen(k);
+	queue<Q> qq;
 	upd_rows_rem(f_rem, cc, 0, 0, k-1);
 	qq.push(Q {0, P{0, 0}, f_rem});
+	int ans = -1;
 	while (!qq.empty()) {
-		const Q q = qq.top();
-		if (q.p.y >= SZ)
-			break;
+		const Q q = qq.front();
 		qq.pop();
-		if (!q.rem.covered(q.p.y)) {
-			if (q.p.x > allrows[q.p.y].l) {
-				REM nr(q.rem);
-				upd_rows_rem(nr, cc, q.p.y, allrows[q.p.y].l, q.p.x+k-1);
-				qq.push(Q { int16_t(q.dist+(q.p.x-allrows[q.p.y].l)), P { allrows[q.p.y].l, q.p.y}, nr});
-			}
-			if (q.p.x+k-1 < allrows[q.p.y].r) {
-				REM nr(q.rem);
-				upd_rows_rem(nr, cc, q.p.y, q.p.x, allrows[q.p.y].r);
-				qq.push(Q { int16_t(q.dist+(allrows[q.p.y].r-q.p.x-k+1)), P { int8_t(allrows[q.p.y].r-k+1), q.p.y}, nr});
+		if (!q.rem.covered()) {
+			REM nrl(q.rem), nrr(q.rem);
+			for (int8_t dx=1; dx<SZ; dx++) {
+				if (q.p.x-dx >= 0) {
+					upd_rows_rem(nrl, cc, q.p.y, q.p.x-dx, q.p.x+k-1);
+					auto &s = seen.at(P {int8_t(q.p.x-dx), q.p.y}, nrl);
+					if (!s) {
+						s = true;
+						qq.push(Q { int16_t(q.dist+dx), P { int8_t(q.p.x-dx), q.p.y}, nrl});
+					}
+				} else if (q.p.x+dx+k <= SZ) {
+					upd_rows_rem(nrr, cc, q.p.y, q.p.x, q.p.x+dx+k-1);
+					auto &s = seen.at(P {int8_t(q.p.x+dx), q.p.y}, nrr);
+					if (!s) {
+						s = true;
+						qq.push(Q { int16_t(q.dist+dx), P { int8_t(q.p.x+dx), q.p.y}, nrr});
+					}
+				}
 			}
 		} else {
 			// done with row, just up
 			REM nr(q.rem);
-			if (q.p.y+8 < SZ) {
-				nr.covl &= ~((uint8_t(1) << (q.p.y&7)));
-				nr.covr &= ~((uint8_t(1) << (q.p.y&7)));
+			if (q.p.y+1 < SZ) {
+				nr.covl >>= 1;
+				nr.covr >>= 1;
+				upd_rows_rem(nr, cc, q.p.y+1, q.p.x, q.p.x+k-1);
+				auto &s = seen.at(P {q.p.x, int8_t(q.p.y+1)}, nr);
+				if (!s) {
+					s = true;
+					qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
+				}
+			} else {
+				int over = q.p.y+k-1 - mxy;
+				ans = q.dist-over;
+				break;
 			}
-			upd_rows_rem(nr, cc, q.p.y+1, q.p.x, q.p.x+k-1);
-			qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
 		}
 	}
-	assert(!qq.empty() && "there must be a solution");
-	const Q &top = qq.top();
-	int over = top.p.y+k-1 - mxy;
-	if (over < 0 || top.p.y == 0)
-		over = 0;
-	printf("%d\n", top.dist-over);
+	assert(ans >= 0 && "there must be a solution");
+	printf("%d\n", ans);
 	return 0;
 }
