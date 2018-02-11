@@ -21,8 +21,8 @@ struct IR {
 	}
 };
  
-struct REM { // rows remaining
-	uint8_t covl, covr; // care only if next 8 rows are fully covered from the left and right
+struct REM { // coverage of k rows ahead
+	uint8_t covl, covr; // left and right ends coverage
 	inline bool covered() const {
 		return covl & covr & 1;
 	}
@@ -36,16 +36,19 @@ struct Q {
 		return dist > q.dist;
 	}
 };
- 
+
+// left and right ends coverage for next k rows
 struct CovCache {
 	uint8_t cache_cov_l[SZ][SZ];
 	uint8_t cache_cov_r[SZ][SZ];
+	uint8_t all_cov;
 	CovCache(const IR allrows[SZ], int k) {
-		vector<vector<vector<bool>>> cl(SZ, vector<vector<bool>>(SZ, vector<bool>(8, false)));
-		vector<vector<vector<bool>>> cr(SZ, vector<vector<bool>>(SZ, vector<bool>(8, false)));
+		all_cov = (uint8_t(1) << k)-1;
+		vector<vector<vector<bool>>> cl(SZ, vector<vector<bool>>(SZ, vector<bool>(k, false)));
+		vector<vector<vector<bool>>> cr(SZ, vector<vector<bool>>(SZ, vector<bool>(k, false)));
 		for (int row=0; row<SZ; row++) {
 			for (int x=0; x<SZ; x++) {
-				for (int i=0; i<8; i++) {
+				for (int i=0; i<k; i++) {
 					int y = row+i;
 					if (y<SZ) {
 						cl[row][x][i] = (x <= allrows[y].l);
@@ -70,10 +73,13 @@ struct CovCache {
 	}
 };
  
-// "subtract" the segment [l,r] from remaining rows row, row+1,..,row+k-1
-inline void upd_rows_rem(REM &rem, const CovCache &cc, int8_t row, int8_t l, int8_t r) {
+// cover next k rows if our cursor stretch from [l..r] inclusive
+// @return true if something was taken
+inline bool upd_rows_rem(REM &rem, const CovCache &cc, int8_t row, int8_t l, int8_t r) {
+	auto w = rem;
 	rem.covl |= cc.cache_cov_l[row][l];
 	rem.covr |= cc.cache_cov_r[row][r];
+	return !(w.covl == rem.covl && w.covr == rem.covr);
 }
 
 struct Seen {
@@ -84,8 +90,8 @@ struct Seen {
 		memset(seen, 0, sizeof(seen));
 	}
 	char &at(const P &p, const REM &rem) {
-		assert(rem.covl < (1<<k) && rem.covr < (1<<k));
-		int covidx = int(rem.covl)+(int(rem.covr)<<k);
+		assert(p.x < SZ && p.y < SZ && rem.covl < (1<<k) && rem.covr < (1<<k));
+		int covidx = int(rem.covl) + (int(rem.covr) << k);
 		return seen[p.y][p.x][covidx];
 	}
 };
@@ -115,41 +121,43 @@ int main(int argc, char **argv) {
 	while (!qq.empty()) {
 		const Q q = qq.front();
 		qq.pop();
-		if (!q.rem.covered()) {
+		int16_t ndist = int16_t(q.dist+1);
+		if (q.p.y+k-1 >= mxy && (q.rem.covl & q.rem.covr) == cc.all_cov) {
+			ans = q.dist;
+			break;
+		}
+		if ((q.rem.covl & q.rem.covr) != cc.all_cov) {
 			REM nrl(q.rem), nrr(q.rem);
-			for (int8_t dx=1; dx<SZ; dx++) {
-				if (q.p.x-dx >= 0) {
-					upd_rows_rem(nrl, cc, q.p.y, q.p.x-dx, q.p.x+k-1);
-					auto &s = seen.at(P {int8_t(q.p.x-dx), q.p.y}, nrl);
-					if (!s) {
-						s = true;
-						qq.push(Q { int16_t(q.dist+dx), P { int8_t(q.p.x-dx), q.p.y}, nrl});
-					}
-				} else if (q.p.x+dx+k <= SZ) {
-					upd_rows_rem(nrr, cc, q.p.y, q.p.x, q.p.x+dx+k-1);
-					auto &s = seen.at(P {int8_t(q.p.x+dx), q.p.y}, nrr);
-					if (!s) {
-						s = true;
-						qq.push(Q { int16_t(q.dist+dx), P { int8_t(q.p.x+dx), q.p.y}, nrr});
-					}
-				}
-			}
-		} else {
-			// done with row, just up
-			REM nr(q.rem);
-			if (q.p.y+1 < SZ) {
-				nr.covl >>= 1;
-				nr.covr >>= 1;
-				upd_rows_rem(nr, cc, q.p.y+1, q.p.x, q.p.x+k-1);
-				auto &s = seen.at(P {q.p.x, int8_t(q.p.y+1)}, nr);
+			P lp { int8_t(q.p.x-1), q.p.y};
+			P rp { int8_t(q.p.x+1), q.p.y};
+			if (lp.x >= 0) {
+				upd_rows_rem(nrl, cc, lp.y, lp.x, lp.x+k-1);
+				auto &s = seen.at(lp, nrl);
 				if (!s) {
 					s = true;
-					qq.push(Q { int16_t(q.dist+1), P { q.p.x, int8_t(q.p.y+1)}, nr});
+					qq.push(Q { ndist, lp, nrl});
 				}
-			} else {
-				int over = q.p.y+k-1 - mxy;
-				ans = q.dist-over;
-				break;
+			}
+			if (rp.x+k <= SZ) {
+				upd_rows_rem(nrr, cc, rp.y, rp.x, rp.x+k-1);
+				auto &s = seen.at(rp, nrr);
+				if (!s) {
+					s = true;
+					qq.push(Q { ndist, rp, nrr});
+				}
+			}
+		}
+		if (q.rem.covl & q.rem.covr & 1 == 1 && q.p.y+k <= mxy) {
+			// done with row, can go up
+			P up { q.p.x, int8_t(q.p.y+1)};
+			REM nr(q.rem);
+			nr.covl >>= 1;
+			nr.covr >>= 1;
+			upd_rows_rem(nr, cc, up.y, up.x, up.x+k-1);
+			auto &s = seen.at(up, nr);
+			if (!s) {
+				s = true;
+				qq.push(Q { ndist, up, nr});
 			}
 		}
 	}
