@@ -1,49 +1,46 @@
 /* ACMP 797 */
-#include <cstdio>
+#include <iostream>
 #include <vector>
-#include <cassert>
 #include <queue>
 #include <algorithm>
-#include <cstring>
+#include <cassert>
  
 using namespace std;
  
 constexpr int SZ = 50;
  
 struct P {
-	int8_t x, y;
+	int x, y;
 };
  
-struct IR {
-	int8_t l, r;
+struct IR { // interval
+	int l, r;
 	operator bool() const {
-		return l != INT8_MAX;
+		return l != INT_MAX;
 	}
+	static const IR empty;
+};
+
+const IR IR::empty {INT_MAX, INT_MIN};
+ 
+struct COV { // coverage of [current,current+k-1] rows
+	uint8_t l, r; // left and right ends coverage in bitmask fashion
 };
  
-struct REM { // coverage of k rows ahead
-	uint8_t covl, covr; // left and right ends coverage
-	inline bool covered() const {
-		return covl & covr & 1;
-	}
-};
- 
-struct Q {
-	int16_t dist;
+struct Q { // next move in queue
+	int dist;
 	P p;
-	REM rem;
-	bool operator<(const Q &q) const {
-		return dist > q.dist;
-	}
+	COV cov;
 };
 
 // left and right ends coverage for next k rows
 struct CovCache {
-	uint8_t cache_cov_l[SZ][SZ];
-	uint8_t cache_cov_r[SZ][SZ];
-	uint8_t all_cov;
+	uint8_t cache_cov_l[SZ][SZ]; // row,x -> next_k_left_mask
+	uint8_t cache_cov_r[SZ][SZ]; // row,x -> next_k_right_mask
+	uint8_t all_k_mask;
+	// take the [l,r] intervals for each row and build a k-next rows coverage cache
 	CovCache(const IR allrows[SZ], int k) {
-		all_cov = (uint8_t(1) << k)-1;
+		all_k_mask = (uint8_t(1) << k)-1;
 		vector<vector<vector<bool>>> cl(SZ, vector<vector<bool>>(SZ, vector<bool>(k, false)));
 		vector<vector<vector<bool>>> cr(SZ, vector<vector<bool>>(SZ, vector<bool>(k, false)));
 		for (int row=0; row<SZ; row++) {
@@ -71,97 +68,101 @@ struct CovCache {
 			}
 		}
 	}
+	inline bool all_covered(const COV &cov) const {
+		return (cov.l & cov.r & all_k_mask) == all_k_mask;
+	}
+	inline bool covered_last_row(const COV &cov) const {
+		return cov.l & cov.r & 1;
+	}
+	// cover next k rows if our cursor spans [l..r] inclusive
+	inline void upd_rows_cov(COV &cov, int row, int l, int r) {
+		cov.l |= cache_cov_l[row][l];
+		cov.r |= cache_cov_r[row][r];
+	}
+	inline void mv_up(COV &cov) {
+		cov.l >>= 1;
+		cov.r >>= 1;
+	}
 };
  
-// cover next k rows if our cursor stretch from [l..r] inclusive
-// @return true if something was taken
-inline bool upd_rows_rem(REM &rem, const CovCache &cc, int8_t row, int8_t l, int8_t r) {
-	auto w = rem;
-	rem.covl |= cc.cache_cov_l[row][l];
-	rem.covr |= cc.cache_cov_r[row][r];
-	return !(w.covl == rem.covl && w.covr == rem.covr);
-}
-
 struct Seen {
 	int k;
-	char seen[SZ][SZ][1<<10];
-	Seen(int k):k(k) {
+	char seen[SZ][SZ][1<<10]; // you don't want to come to the same point after covering same rows
+	Seen(int k):k(k),seen{{{0}}} {
 		assert(k<6);
-		memset(seen, 0, sizeof(seen));
 	}
-	char &at(const P &p, const REM &rem) {
-		assert(p.x < SZ && p.y < SZ && rem.covl < (1<<k) && rem.covr < (1<<k));
-		int covidx = int(rem.covl) + (int(rem.covr) << k);
+	char &at(const P &p, const COV &cov) {
+		assert(p.x < SZ && p.y < SZ && cov.l < (1<<k) && cov.r < (1<<k));
+		int covidx = int(cov.l)+(int(cov.r)<<k);
 		return seen[p.y][p.x][covidx];
 	}
 };
 
 int main(int argc, char **argv) {
 	int n, k;
-	scanf("%d%d", &n, &k);
+	cin >> n >> k;
 	assert(k<6);
-	int8_t mxy = 0;
+	int mxy = 0;
 	// left/right x for each y
 	IR allrows[SZ];
-	fill(allrows, allrows+SZ, IR {INT8_MAX, INT8_MIN});
+	fill(allrows, allrows+SZ, IR::empty);
 	for (int i=0; i<n; i++) {
 		int x, y;
-		scanf("%d%d", &x, &y);
+		cin >> x >> y;
 		x--, y--;
-		mxy = max(mxy, int8_t(y));
-		allrows[y] = IR {min(allrows[y].l, int8_t(x)), max(allrows[y].r, int8_t(x))};
+		mxy = max(mxy, y);
+		allrows[y] = IR {min(allrows[y].l, x), max(allrows[y].r, x)};
 	}
 	CovCache cc(allrows, k);
-	REM f_rem {0, 0};
+	COV f_cov {0, 0};
 	Seen seen(k);
 	queue<Q> qq;
-	upd_rows_rem(f_rem, cc, 0, 0, k-1);
-	qq.push(Q {0, P{0, 0}, f_rem});
+	cc.upd_rows_cov(f_cov, 0, 0, k-1);
+	qq.push(Q {0, P{0, 0}, f_cov});
 	int ans = -1;
 	while (!qq.empty()) {
 		const Q q = qq.front();
 		qq.pop();
-		int16_t ndist = int16_t(q.dist+1);
-		if (q.p.y+k-1 >= mxy && (q.rem.covl & q.rem.covr) == cc.all_cov) {
+		if (q.p.y+k-1 >= mxy && cc.all_covered(q.cov)) {
 			ans = q.dist;
 			break;
 		}
-		if ((q.rem.covl & q.rem.covr) != cc.all_cov) {
-			REM nrl(q.rem), nrr(q.rem);
-			P lp { int8_t(q.p.x-1), q.p.y};
-			P rp { int8_t(q.p.x+1), q.p.y};
+		if (q.p.y+k <= mxy && cc.covered_last_row(q.cov)) {
+			// done with last row, can go up
+			P up { q.p.x, q.p.y+1};
+			COV ncov(q.cov);
+			cc.mv_up(ncov);
+			cc.upd_rows_cov(ncov, up.y, up.x, up.x+k-1);
+			auto &s = seen.at(up, ncov);
+			if (!s) {
+				s = true;
+				qq.push(Q { q.dist+1, up, ncov});
+			}
+		}
+		if (!cc.all_covered(q.cov)) {
+			// need to keep sweeping left/right
+			COV ncovl(q.cov), ncovr(q.cov);
+			P lp { q.p.x-1, q.p.y};
+			P rp { q.p.x+1, q.p.y};
 			if (lp.x >= 0) {
-				upd_rows_rem(nrl, cc, lp.y, lp.x, lp.x+k-1);
-				auto &s = seen.at(lp, nrl);
+				cc.upd_rows_cov(ncovl, lp.y, lp.x, lp.x+k-1);
+				auto &s = seen.at(lp, ncovl);
 				if (!s) {
 					s = true;
-					qq.push(Q { ndist, lp, nrl});
+					qq.push(Q { q.dist+1, lp, ncovl});
 				}
 			}
 			if (rp.x+k <= SZ) {
-				upd_rows_rem(nrr, cc, rp.y, rp.x, rp.x+k-1);
-				auto &s = seen.at(rp, nrr);
+				cc.upd_rows_cov(ncovr, rp.y, rp.x, rp.x+k-1);
+				auto &s = seen.at(rp, ncovr);
 				if (!s) {
 					s = true;
-					qq.push(Q { ndist, rp, nrr});
+					qq.push(Q { q.dist+1, rp, ncovr});
 				}
-			}
-		}
-		if (q.rem.covl & q.rem.covr & 1 == 1 && q.p.y+k <= mxy) {
-			// done with row, can go up
-			P up { q.p.x, int8_t(q.p.y+1)};
-			REM nr(q.rem);
-			nr.covl >>= 1;
-			nr.covr >>= 1;
-			upd_rows_rem(nr, cc, up.y, up.x, up.x+k-1);
-			auto &s = seen.at(up, nr);
-			if (!s) {
-				s = true;
-				qq.push(Q { ndist, up, nr});
 			}
 		}
 	}
 	assert(ans >= 0 && "there must be a solution");
-	printf("%d\n", ans);
+	cout << ans << endl;
 	return 0;
 }
