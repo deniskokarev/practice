@@ -11,15 +11,11 @@ int main(int argc, char **argv) {
 		for (int j=0; j<n; j++) {
 			int v;
 			cin >> v;
-			if (v < 0) {
-				ans = -1;
-				goto done;
-			} else if (i!=j) {
+			if (i != j) {
 				ans = min(ans, v);
 			}
 		}
 	}
- done:
-	cout << ans << endl;
+	cout << ((ans<0)?-1:ans) << endl;
 	return 0;
 }
