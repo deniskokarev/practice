@@ -14,7 +14,7 @@ bool dfs(int dd[SZ], int l, int &k, int sum) {
 	}
 	int ts = sum;
 	for (dd[l]=0; dd[l]<SZ; dd[l]++) {
-		if (ts > SZ)
+		if (ts > 10)
 			return false;
 		if (dfs(dd, l+1, k, ts))
 			return true;
