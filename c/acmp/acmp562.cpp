@@ -1,12 +1,13 @@
 /* ACMP 562 */
-#include <iostream>
+#include <cstdio>
 #include <cstring>
+#include <algorithm>
 
 using namespace std;
 
 int main(int argc, char **argv) {
 	int n, m;
-	cin >> n >> m;
+	scanf("%d %d", &n, &m);
 	struct {
 		int conn, bwd;
 	} mm[n][n];
@@ -15,7 +16,7 @@ int main(int argc, char **argv) {
 		mm[i][i] = {1, 0};
 	while (m--) {
 		int i, j;
-		cin >> i >> j;
+		scanf("%d %d", &i, &j);
 		i--, j--;
 		mm[i][j].conn = 1;
 		mm[i][j].bwd = 0;
@@ -35,6 +36,6 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++)
 		for (int j=0; j<n; j++)
 			k = max(k, mm[i][j].bwd);
-	cout << k << endl;
+	printf("%d\n", k);
 	return 0;
 }
