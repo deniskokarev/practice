@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <vector>
 #include <climits>
+#include <cassert>
 
 using namespace std;
 
@@ -15,9 +16,12 @@ struct N {
 constexpr int DMAX = INT_MAX/2; // cannot get higher than that without loops
 
 void append_path(vector<int> &path, const vector<vector<N>> &mm, int f, int t) {
+	int cnt = 0;
 	while (mm[f][t].to != t) {
 		path.push_back(mm[f][t].to_id);
 		f = mm[f][t].to;
+		cnt++;
+		assert(cnt < 1000 && "should be no loops");
 	}
 	path.push_back(mm[f][t].to_id);
 }
@@ -32,6 +36,8 @@ int main(int argc, char **argv) {
 		scanf("%d %d %d", &i, &j, &d);
 		mm[i][j] = N {1, d, j, id};
 	}
+	for (int i=1; i<=n; i++)
+		mm[i][i] = N {1, 0, i, -1};
 #if 0
 	for (int i=1; i<=n; i++) {
 		for (int j=1; j<=n; j++)
@@ -40,6 +46,7 @@ int main(int argc, char **argv) {
 	}
 	fprintf(stderr, "\n");
 #endif
+	for (auto twice:{0,1})
 	for (int k=1; k<=n; k++) {
 		for (int i=1; i<=n; i++) {
 			for (int j=1; j<=n; j++) {
