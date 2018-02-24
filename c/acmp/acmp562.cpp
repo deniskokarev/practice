@@ -11,6 +11,8 @@ int main(int argc, char **argv) {
 		int conn, bwd;
 	} mm[n][n];
 	memset(mm, 0, sizeof(mm));
+	for (int i=0; i<n; i++)
+		mm[i][i] = {1, 0};
 	while (m--) {
 		int i, j;
 		cin >> i >> j;
@@ -25,8 +27,10 @@ int main(int argc, char **argv) {
 	for (int k=0; k<n; k++)
 		for (int i=0; i<n; i++)
 			for (int j=0; j<n; j++)
-				if (mm[i][j].conn || (mm[i][k].conn && mm[k][j].conn))
+				if (mm[i][j].conn && (mm[i][k].conn && mm[k][j].conn))
 					mm[i][j] = { 1, min(mm[i][j].bwd, mm[i][k].bwd+mm[k][j].bwd) };
+				else if (mm[i][k].conn && mm[k][j].conn)
+					mm[i][j] = { 1, mm[i][k].bwd+mm[k][j].bwd };
 	int k = 0;
 	for (int i=0; i<n; i++)
 		for (int j=0; j<n; j++)
