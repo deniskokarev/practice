@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 	D dd[n];
 	fill(dd, dd+n, D {DINF, -1});
 	dd[0] = D {0, -1};
-	int loop = -1;
+	int loop = -1;	// the path from 0->loop has a loop somewhere in between
 	for (int v=0; v<n; v++) {
 		for (int i=0; i<n; i++) {
 			for (int j=0; j<n; j++) {
@@ -64,15 +64,15 @@ int main(int argc, char **argv) {
 	} else {
 		int seen[n];
 		fill(seen, seen+n, 0);
-		int li;
-		for (li=loop; !seen[li]; li=dd[li].f)
-			seen[li] = 1;
+		int lbeg; // find beginning of the loop when going back from loop->0 
+		for (lbeg=loop; !seen[lbeg]; lbeg=dd[lbeg].f)
+			seen[lbeg] = 1;
 		int pl[n+1];
 		int plsz = 0;
-		pl[plsz++] = li;
-		for (int i=dd[loop].f; i>=0 && i!=loop; i=dd[i].f)
+		pl[plsz++] = lbeg;
+		for (int i=dd[lbeg].f; i!=lbeg; i=dd[i].f)
 			pl[plsz++] = i;
-		pl[plsz++] = loop;
+		pl[plsz++] = lbeg;
 		printf("YES\n%d\n", plsz);
 		for (int j=plsz-1; j>=0; j--)
 			printf("%d ", pl[j]+1);
