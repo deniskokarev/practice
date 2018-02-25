@@ -1,10 +1,11 @@
 /* ACMP 138 */
 #include <cstdio>
+#include <climits>
 #include <vector>
 
 using namespace std;
 
-constexpr int DINF = 30000;
+constexpr int DINF = INT_MAX/2;
 
 int main(int argc, char **argv) {
 	int n, m;
@@ -20,14 +21,12 @@ int main(int argc, char **argv) {
 		mm[i][i] = 0;
 	// ford
 	int f=0;
-	vector<int> dd(n);
-	for (int j=0; j<n; j++)
-		dd[j] = mm[f][j];
+	vector<int> dd(mm[f]);
 	for (int i=0; i<n; i++)
 		for (int j=0; j<n; j++)
 			dd[j] = min(dd[j], dd[i]+mm[i][j]);
 	for (auto d:dd)
-		printf("%d ", d);
+		printf("%d ", (d<30000)?d:30000);
 	printf("\n");
 	return 0;
 }
