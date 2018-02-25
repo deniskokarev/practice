@@ -7,6 +7,10 @@ using namespace std;
 
 constexpr int DINF = INT_MAX/2;
 
+struct D {
+	int w, f;
+};
+
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
@@ -14,30 +18,43 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) {
 		for (int j=0; j<n; j++) {
 			scanf("%d", &mm[i][j]);
-			if (mm[i][j] > 10000)
+			if (mm[i][j] >= 100000)
 				mm[i][j] = DINF;
 		}
 	}
-	int path[n];
-	char seen[n];
-	fill(seen, seen+n, 0);
-	// ford
-	int dd[n];
-	fill(dd, dd+n, DINF);
-	dd[0] = 0;
+	// ford with pathes
+	D dd[n];
+	fill(dd, dd+n, D {DINF, -1});
+	dd[0] = D {0, -1};
 	int loop = -1;
 	for (int v=0; v<n; v++) {
 		for (int i=0; i<n; i++) {
 			for (int j=0; j<n; j++) {
-				if (dd[j] > max(-DINF, dd[i]+mm[i][j])) {
-					dd[j] = dd[i]+mm[i][j];
-					path[j] = i;
-					if (seen[i]) {
-						loop = i;
-						goto end;
-					}
-					seen[i] = 1;
+				int nw = dd[i].w+mm[i][j];
+				if (nw < -DINF) {
+					loop = j;
+					goto end;
 				}
+				if (dd[j].w > nw) {
+					dd[j].w = nw;
+					dd[j].f = i;
+				}
+			}
+		}
+	}
+	// ford one last time
+	for (int i=0; i<n; i++) {
+		for (int j=0; j<n; j++) {
+			int nw = dd[i].w+mm[i][j];
+			if (nw < -DINF) {
+				loop = j;
+				goto end;
+			}
+			if (dd[j].w > nw) {
+				dd[j].w = nw;
+				dd[j].f = i;
+				loop = j;
+				goto end;
 			}
 		}
 	}
@@ -45,11 +62,10 @@ int main(int argc, char **argv) {
 	if (loop < 0) {
 		printf("NO\n");
 	} else {
-		int i = loop;
 		int pl[n+1];
 		int plsz = 0;
 		pl[plsz++] = loop;
-		for (i=path[i]; i!=loop; i=path[i])
+		for (int i=dd[loop].f; i>=0 && i!=loop; i=dd[i].f)
 			pl[plsz++] = i;
 		pl[plsz++] = loop;
 		printf("YES\n%d\n", plsz);
