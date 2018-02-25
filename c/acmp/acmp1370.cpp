@@ -4,35 +4,33 @@
 
 using namespace std;
 
+constexpr int DMIN = INT_MIN/2;
+
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	int64_t mm[n][n];
+	int mm[n][n];
 	for (int i=0; i<n; i++)
 		for (int j=0; j<n; j++)
 			cin >> mm[i][j];
+	// floyd
 	for (int k=0; k<n; k++)
 		for (int i=0; i<n; i++)
 			for (int j=0; j<n; j++)
-				mm[i][j] = min(mm[i][j], mm[i][k]+mm[k][j]);
-	int64_t mm2[n][n];
-	memcpy(mm2, mm, sizeof(mm));
-	for (int k=0; k<n; k++)
+				mm[i][j] = min(mm[i][j], max(DMIN, mm[i][k]+mm[k][j]));
+	bool nl = false;
+	int ans;
+	// check main diag for neg loops
+	for (int i=0; i<n; i++)
+		nl |= (mm[i][i]<0);
+	if (nl) {
+		ans = -1;
+	} else {
+		ans = INT_MAX;
 		for (int i=0; i<n; i++)
 			for (int j=0; j<n; j++)
-				mm2[i][j] = min(mm2[i][j], mm2[i][k]+mm[k][j]);
-	int64_t ans = INT_MAX;
-	for (int i=0; i<n; i++) {
-		for (int j=0; j<n; j++) {
-			if (i != j) {
-				if (mm2[i][j] >= mm[i][j]) {
-					ans = min(ans, mm2[i][j]);
-				} else {
-					cout << -1 << endl;
-					return 0;
-				}
-			}
-		}
+				if (i != j)
+					ans = min(ans, mm[i][j]);
 	}
 	cout << ans << endl;
 	return 0;
