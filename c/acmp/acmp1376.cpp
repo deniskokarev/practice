@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	for (int i=0; i<n; i++)
-		if (mm[i][i].w > savemm[i][i].w)
+		if (mm[i][i].w == DINF || mm[i][i].w > savemm[i][i].w)
 			savemm[i][i].conn = 2; // mark loops
 	memcpy(mm, savemm, sizeof(mm));
 	vector<int> path;
