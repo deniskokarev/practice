@@ -62,9 +62,14 @@ int main(int argc, char **argv) {
 	if (loop < 0) {
 		printf("NO\n");
 	} else {
+		int seen[n];
+		fill(seen, seen+n, 0);
+		int li;
+		for (li=loop; !seen[li]; li=dd[li].f)
+			seen[li] = 1;
 		int pl[n+1];
 		int plsz = 0;
-		pl[plsz++] = loop;
+		pl[plsz++] = li;
 		for (int i=dd[loop].f; i>=0 && i!=loop; i=dd[i].f)
 			pl[plsz++] = i;
 		pl[plsz++] = loop;
