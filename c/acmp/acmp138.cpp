@@ -1,32 +1,32 @@
 /* ACMP 138 */
 #include <cstdio>
 #include <climits>
-#include <vector>
+#include <algorithm>
 
 using namespace std;
 
 constexpr int DINF = INT_MAX/2;
 
+struct E {
+	int i, j, w;
+};
+
 int main(int argc, char **argv) {
 	int n, m;
 	scanf("%d %d", &n, &m);
-	vector<vector<int>> mm(n, vector<int>(n, DINF));
-	while (m--) {
-		int i, j, w;
-		scanf("%d%d%d", &i, &j, &w);
-		i--, j--;
-		mm[i][j] = min(mm[i][j], w);
-	}
-	for (int i=0; i<n; i++)
-		mm[i][i] = 0;
 	// ford
-	int f=0;
-	vector<int> dd(mm[f]);
-	for (int i=0; i<n; i++)
-		for (int j=0; j<n; j++)
-			dd[j] = min(dd[j], dd[i]+mm[i][j]);
-	for (auto d:dd)
-		printf("%d ", (d<30000)?d:30000);
+	E ee[m];
+	for (int ei=0; ei<m; ei++)
+		scanf("%d%d%d", &ee[ei].i, &ee[ei].j, &ee[ei].w);
+	int dd[n+1];
+	fill(dd, dd+n+1, DINF);
+	int f=1;
+	dd[f] = 0;
+	for (int i=1; i<n; i++)
+		for (int ei=0; ei<m; ei++)
+			dd[ee[ei].j] = min(dd[ee[ei].j], dd[ee[ei].i]+ee[ei].w);
+	for (int j=1; j<=n; j++)
+		printf("%d ", (dd[j]<30000)?dd[j]:30000);
 	printf("\n");
 	return 0;
 }
