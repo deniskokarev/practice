@@ -14,15 +14,13 @@ static int w(int i, int j) {
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
-	// ford
+	// a-la ford, only backwards and with O(n^2), as we have a DAG
 	int dd[n+1];
 	fill(dd, dd+n+1, DINF);
-	int f=1;
-	dd[f] = 0;
-	for (int v=1; v<=n; v++)
-		for (int i=1; i<=n; i++)
-			for (int j=i+1; j<=n; j++)
-				dd[j] = min(dd[j], dd[i]+w(i, j));
-	printf("%d\n", dd[n]);
+	dd[n] = 0;
+	for (int f=n-1; f>0; f--)
+		for (int t=f+1; t<=n; t++)
+			dd[f] = min(dd[f], dd[t]+w(f, t));
+	printf("%d\n", dd[1]);
 	return 0;
 }
