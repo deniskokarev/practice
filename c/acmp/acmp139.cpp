@@ -14,12 +14,9 @@ struct E {
 int main(int argc, char **argv) {
 	int n, m;
 	scanf("%d%d", &n, &m);
-	E ee[m+n];
+	E ee[m];
 	for (int ei=0; ei<m; ei++)
 		scanf("%d%d%d", &ee[ei].i, &ee[ei].j, &ee[ei].w);
-	// adding main diagonal
-	for (int i=1,ei=m; ei<m+n; i++,ei++)
-		ee[ei] = {i, i, 0};
 	// ford
 	int64_t dd[n+1];
 	fill(dd, dd+n+1, -DINF);
