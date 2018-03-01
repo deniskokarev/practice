@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 		dd[e.j] = max(dd[e.j], min(dd[e.i]+e.w, DINF));
 	if (ans == DINF || ans < dd[n])
 		printf(":)\n");
-	else if (ans == -DINF)
+	else if (ans <= -DINF/2)
 		printf(":(\n");
 	else
 		printf("%lld\n", ans);
