@@ -21,32 +21,33 @@ int main(int argc, char **argv) {
 	struct D {
 		int64_t w;
 		bool conn;
+		int l;
 	} dd[n+1];
-	fill(dd, dd+n+1, D {0, false});
+	fill(dd, dd+n+1, D {0, false, 0});
 	dd[1] = D {0, true};
-	for (int v=0; v<n-1; v++) {
+	for (int v=0; v<n; v++) {
 		for (const auto &e:ee) {
 			int64_t nd = min(dd[e.i].w+e.w, DINF);
 			if (dd[e.j].conn && dd[e.i].conn) {
 				if (dd[e.j].w < nd)
-					dd[e.j] = D {nd, true};
+					dd[e.j] = D {nd, true, dd[e.i].l+1};
 			} else if (dd[e.i].conn) {
-				dd[e.j] = D {nd, true};
+				dd[e.j] = D {nd, true, dd[e.i].l};
 			}
 		}
 	}
 	D ans = dd[n];
-	for (const auto &e:ee) {
-		int64_t nd = min(dd[e.i].w+e.w, DINF);
-		if (dd[e.j].conn && dd[e.i].conn) {
-			if (dd[e.j].w < nd)
-				dd[e.j] = D {nd, true};
-		} else if (dd[e.i].conn) {
-			dd[e.j] = D {nd, true};
-		}
-	}
 	if (ans.conn) {
-		if (ans.w == DINF || ans.w < dd[n].w)
+		for (const auto &e:ee) {
+			int64_t nd = min(dd[e.i].w+e.w, DINF);
+			if (dd[e.j].conn && dd[e.i].conn) {
+				if (dd[e.j].w < nd)
+					dd[e.j] = D {nd, true, dd[e.i].l+1};
+			} else if (dd[e.i].conn) {
+				dd[e.j] = D {nd, true, dd[e.i].l};
+			}
+		}
+		if (ans.w == DINF || ans.l < dd[n].l)
 			printf(":)\n");
 		else
 			printf("%lld\n", ans.w);
