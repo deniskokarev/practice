@@ -12,7 +12,8 @@ struct E {
 
 struct D {
 	int64_t w;
-	int from_i;
+	bool lead2n;
+	bool conn;
 };
 
 int main(int argc, char **argv) {
@@ -22,34 +23,35 @@ int main(int argc, char **argv) {
 	fill(ee, ee+m, E {0, 0, 0, 0});
 	for (int i=0; i<m; i++)
 		scanf("%d%d%d", &ee[i].i, &ee[i].j, &ee[i].w);
-	// keep only biggest edges from same i->j
-	sort(ee, ee+m, [](const E &a, const E &b) {return (a.i<b.i) || (a.j==b.j && a.j < b.j) || (a.i==b.i && a.j==b.j && a.w > b.w);});
-	auto t = unique(ee, ee+m, [](const E &a, const E &b){return a.i==b.i && a.j==b.j;});
-	m = t-ee;
+	// ford
 	D dd[n+1];
-	fill(dd, dd+n+1, D {INT64_MIN/2, 0});
-	dd[1] = D {0, -1};
-	bool loop[n+1];
-	fill(loop, loop+n+1, false);
-	for (int v=0; v<2*n; v++) {
+	fill(dd, dd+n+1, D {INT64_MIN/2, false, false});
+	// mark all vertices that may lead to n
+	dd[n] = D {INT64_MIN/2, true, false};
+	for (int v=0; v<n-1; v++)
+		for (int i=0; i<m; i++)
+			dd[ee[i].i].lead2n |= dd[ee[i].j].lead2n;
+	// ford to find best path
+	dd[1].w = 0;
+	dd[1].conn = true;
+	bool has_loop = false;
+	for (int v=0; v<n; v++) {
 		for (int i=0; i<m; i++) {
 			auto &e = ee[i];
-			if (dd[e.i].from_i && dd[e.j].w < dd[e.i].w+e.w) {
+			if (dd[e.i].conn && dd[e.j].conn && dd[e.j].w < dd[e.i].w+e.w) {
 				dd[e.j].w = min(dd[e.i].w+e.w, INT64_MAX/2);
-				dd[e.j].from_i = e.i;
 				if (e.cnt++)
-					loop[e.j] = true;
+					has_loop = dd[e.j].lead2n;
+			} else if (dd[e.i].conn && !dd[e.j].conn) {
+				dd[e.j].w = min(dd[e.i].w+e.w, INT64_MAX/2);
+				dd[e.j].conn = true;
+				e.cnt++;
 			}
 		}
 	}
-	int i;
-	bool has_loop = false;
-	for (i=n; i>0 && !(has_loop=loop[i]); i=dd[i].from_i) {
-		fprintf(stderr, "%d <-\n", i);
-	}
 	if (has_loop) {
 		printf(":)\n");
-	} else if (dd[n].from_i == 0) {
+	} else if (dd[n].w == INT64_MIN/2) {
 		printf(":(\n");
 	} else {
 		printf("%lld\n", dd[n].w);
