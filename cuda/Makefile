@@ -1,0 +1,44 @@
+BINS = a acuda
+INCGT = ../c/googletest/googletest/include
+LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
+LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
+
+CXXFLAGS += -std=c++11 -Wall -g -O0 -I$(INCGT) 
+CFLAGS += -std=c99 -Wall -g -O
+LINK.o = $(LINK.cc)
+LDFLAGS = -L/usr/local/cuda/lib -lcuda -lcudart -rpath /usr/local/cuda/lib
+EXTRA_LIBS = -lpthread
+
+
+# nvcc
+NVCC      := nvcc
+NVCCFLAGS :=
+NVCCFLAGS += -G
+NVCCFLAGS += -gencode arch=compute_30,code=sm_30 \
+             -gencode arch=compute_35,code=sm_35 \
+             -gencode arch=compute_50,code=sm_50 \
+             -gencode arch=compute_50,code=compute_50
+
+%.o: %.cu
+	$(NVCC) $< $(NVCCFLAGS) -c -o $@
+
+all: $(BINS)
+
+$(LIBGTMAIN): $(LIBGT)
+$(LIBGT):
+	[ -d libgt ] || mkdir libgt
+	cd libgt && cmake ../googletest && $(MAKE)
+
+libgt: $(LIBGTMAIN)
+
+a: a.o
+
+acuda: acuda.o
+
+test:
+
+clean:
+	rm -f *.o
+	rm -rf libgt
+	rm -f $(BINS)
+	rm -rf Build
