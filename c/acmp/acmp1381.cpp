@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 					qq.push(Q {top.len+mm[top.node][j], j, top.node});
 		}
 	};
-	if (from_node[f] > 0) {
+	if (from_node[f] >= 0) {
 		int path[n+1];
 		int psz = 0;
 		for (int i=f; i>0; i=from_node[i])
