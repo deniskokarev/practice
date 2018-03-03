@@ -1,5 +1,7 @@
 #include <iostream>
 #include <math.h>
+#include <cuda_runtime.h>
+
 // Kernel function to add the elements of two arrays
 __global__
 void add(int n, float *x, float *y) {
@@ -22,7 +24,7 @@ int main(void) {
 	}
 
 	// Run kernel on 1M elements on the GPU
-	add<<<1, 1>>>(N, x, y);
+	add<<<1, 256>>>(N, x, y);
 
 	// Wait for GPU to finish before accessing on host
 	cudaDeviceSynchronize();
