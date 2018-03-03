@@ -40,6 +40,6 @@ int main(int argc, char **argv) {
 				dd[e.j] = e.tout;
 		}
 	}
-	printf("%d\n", dd[e]);
+	printf("%d\n", dd[e]==DINF?-1:dd[e]);
 	return 0;
 }
