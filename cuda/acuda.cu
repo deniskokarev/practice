@@ -4,15 +4,16 @@
 
 // Kernel function to add the elements of two arrays
 __global__
-void add(int n, float *x, float *y) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-	for (int i = index; i < n; i+=stride)
+void add(int n, float *x, float *y, int chunk_thread) {
+	int chunk_block = blockDim.x*chunk_thread;
+	int from_n = chunk_block*blockIdx.x + chunk_thread*threadIdx.x;
+	int to_n = min(n, from_n+chunk_thread);
+	for (int i = from_n; i < to_n; i++)
 		y[i] = x[i] + y[i];
 }
 
 int main(void) {
-	int N = 1<<20;
+	int N = (1<<20);
 	float *x, *y;
 
 	// Allocate Unified Memory – accessible from CPU or GPU
@@ -26,9 +27,12 @@ int main(void) {
 	}
 
 	int blockSize = 256;
-	int numBlocks = (N + blockSize - 1) / blockSize;
+	//int numBlocks = (N + blockSize - 1) / blockSize;
+	int numBlocks = 8;
 	// Run kernel on 1M elements on the GPU
-	add<<<numBlocks, blockSize>>>(N, x, y);
+	const int chunk_thread = (N+numBlocks*blockSize-1)/numBlocks/blockSize;
+
+	add<<<numBlocks, blockSize>>>(N, x, y, chunk_thread);
 
 	// Wait for GPU to finish before accessing on host
 	cudaDeviceSynchronize();
