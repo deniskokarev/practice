@@ -43,10 +43,8 @@ int main(int argc, char **argv) {
 			}
 			sz = STRSZ-over;
 		}
-		if (nstreams < STREAMS) {
-			memset(buf[nstreams+1], SFILL, (STREAMS-nstreams-1)*STRSZ-1); // fill up
-			buf[STREAMS-1][STRSZ-1] = '\n';
-		}
+		if (nstreams < STREAMS)
+			memset(buf[nstreams+1], SFILL, (STREAMS-nstreams-1)*STRSZ); // fill up
 		fwrite(buf, 1, STREAMS*STRSZ, stdout);
 	}
 }
