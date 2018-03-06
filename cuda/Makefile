@@ -1,4 +1,4 @@
-BINS = a acuda
+BINS = a acuda memtrans bandwidthtest match
 INCGT = ../c/googletest/googletest/include
 LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
@@ -35,10 +35,17 @@ a: a.o
 
 acuda: acuda.o
 
+memtrans: memtrans.o
+
+bandwidthtest: bandwidthtest.o
+
+match: match.o
+
 test:
 
 clean:
 	rm -f *.o
+	rm -f *~
 	rm -rf libgt
 	rm -f $(BINS)
 	rm -rf Build

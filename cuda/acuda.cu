@@ -12,7 +12,7 @@ void add(int n, float *x, float *y) {
 }
 
 int main(void) {
-	int N = (1<<20);
+	int N = (1<<24);
 	float *x, *y;
 
 	// Allocate Unified Memory – accessible from CPU or GPU
@@ -25,12 +25,11 @@ int main(void) {
 		y[i] = 2.0f;
 	}
 
+	int numSMs;
+	cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, 0);
 	int blockSize = 256;
-	//int numBlocks = (N + blockSize - 1) / blockSize;
-	int numBlocks = 16;
+	int numBlocks = 32*numSMs;
 	// Run kernel on 1M elements on the GPU
-	//const int chunk_thread = (N+numBlocks*blockSize-1)/numBlocks/blockSize;
-
 	add<<<numBlocks, blockSize>>>(N, x, y);
 
 	// Wait for GPU to finish before accessing on host
