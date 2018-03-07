@@ -39,7 +39,11 @@ memtrans: memtrans.o
 
 bandwidthtest: bandwidthtest.o
 
-match: match.o
+match.o: transpose.hh die.h
+
+transpose.o: transpose.hh die.h
+
+match: match.o transpose.o die.o
 
 test:
 
