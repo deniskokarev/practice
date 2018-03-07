@@ -8,7 +8,7 @@
 #include "die.h"
 #include "transpose.hh"
 
-constexpr int STREAMS = 128; // 16K
+constexpr int STREAMS = 1<<14; // 16K
 constexpr int STRSZ = STREAMS;
 constexpr char NL = '\n';
 constexpr char SFILL = ' ';
@@ -28,7 +28,14 @@ int main(int argc, char **argv) {
 		char *s = ibuf[0];
 		memcpy(s, ibuf[STREAMS], over);
 		int nstreams;
-		for (nstreams=0; nstreams < STREAMS && (rc=fread(s+over, 1, sz, stdin)) > 0; nstreams++,s+=STRSZ) {
+		memset(ibuf+over, SFILL, STRSZ-over);
+		nstreams = 0;
+		rc = fread(s+over, 1, sz, stdin);
+		if (rc < 0)
+			die("read error");
+		if (rc == 0)
+			break;
+		do {
 			if (rc == sz) {
 				int i;
 				for (i=STRSZ-1; i>0 && s[i] != NL; i--);
@@ -38,13 +45,16 @@ int main(int argc, char **argv) {
 				memcpy(s+STRSZ, s+i+1, over);
 				memset(s+i, SFILL, over);
 				s[STRSZ-1] = '\n';
+				nstreams++;
+				s = ibuf[nstreams];
 			} else {
 				memset(s+over+rc, SFILL, STRSZ-over-rc);
 				over = 0;
 				break;
 			}
-			sz = STRSZ-over;
-		}
+		} while(nstreams < STREAMS && (rc=fread(s+over, 1, sz, stdin)) >= 0);
+		if (rc < 0)
+			die("read error");
 		if (nstreams < STREAMS)
 			memset(ibuf[nstreams+1], SFILL, (STREAMS-nstreams-1)*STRSZ); // fill up
 		//fwrite(ibuf, 1, STREAMS*STRSZ, stdout);
