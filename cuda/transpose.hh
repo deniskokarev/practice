@@ -1,11 +1,14 @@
+#ifndef __TRANSPOSE_H__
+#define __TRANSPOSE_H__
+
 namespace Match {
 	class CudaTranspose {
+	public:
+		char *d_obuf;
+		char *d_ibuf;
 		const char *ibuf;
 		char *obuf;
 		int dim;
-		char *d_ibuf;
-		char *d_obuf;
-		bool was_init;
 	public:
 		CudaTranspose();
 		int init(const char *ib, char *ob, int d);
@@ -13,3 +16,5 @@ namespace Match {
 		void run();
 	};
 }
+
+#endif // __TRANSPOSE_H__

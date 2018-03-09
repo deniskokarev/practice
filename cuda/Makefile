@@ -12,8 +12,8 @@ EXTRA_LIBS = -lpthread
 
 # nvcc
 NVCC      := nvcc
-NVCCFLAGS :=
-NVCCFLAGS += -G
+NVCCFLAGS := -std=c++11
+NVCCFLAGS += -O
 NVCCFLAGS += -gencode arch=compute_30,code=sm_30 \
              -gencode arch=compute_35,code=sm_35 \
              -gencode arch=compute_50,code=sm_50 \
@@ -43,7 +43,11 @@ match.o: transpose.hh die.h
 
 transpose.o: transpose.hh die.h
 
-match: match.o transpose.o die.o
+detect.o: detect.hh die.h
+
+match: match.o transpose.o detect.o die.o
+
+trans: trans.o
 
 test:
 

@@ -41,6 +41,16 @@ static cudaError_t checkCuda(cudaError_t result) {
 	return result;
 }
 
+__global__ void copy(char *odata, const char *idata)
+{
+  int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
+    odata[(y+j)*width + x] = idata[(y+j)*width + x];
+}
+
 // No bank-conflict transpose
 // Same as transposeCoalesced except the first tile dimension is padded 
 // to avoid shared memory bank conflicts.
@@ -64,8 +74,36 @@ __global__ void transposeNoBankConflicts(char *odata, const char *idata)
      odata[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
 }
 
-Match::CudaTranspose::CudaTranspose() {
-	was_init = false;
+__global__ void transposeNaive(char *odata, const char *idata)
+{
+  int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+
+  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
+    odata[x*width + (y+j)] = idata[(y+j)*width + x];
+}
+
+// copy kernel using shared memory
+// Also used as reference case, demonstrating effect of using shared memory.
+__global__ void copySharedMem(char *odata, const char *idata)
+{
+  __shared__ float tile[TILE_DIM * TILE_DIM];
+  
+  int x = blockIdx.x * TILE_DIM + threadIdx.x;
+  int y = blockIdx.y * TILE_DIM + threadIdx.y;
+  int width = gridDim.x * TILE_DIM;
+
+  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+     tile[(threadIdx.y+j)*TILE_DIM + threadIdx.x] = idata[(y+j)*width + x];
+
+  __syncthreads();
+
+  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[(threadIdx.y+j)*TILE_DIM + threadIdx.x];          
+}
+
+Match::CudaTranspose::CudaTranspose():d_obuf(nullptr),d_ibuf(nullptr),ibuf(nullptr),obuf(nullptr),dim(0) {
 }
 
 int Match::CudaTranspose::init(const char *ib, char *ob, int d) {
@@ -79,21 +117,22 @@ int Match::CudaTranspose::init(const char *ib, char *ob, int d) {
 		return rc;
 	if ((rc=cudaMalloc(&d_obuf, dim*dim))!=0)
 		return rc;
-	was_init = true;
 	return 0;
 }
 
 Match::CudaTranspose::~CudaTranspose() {
-	if (was_init) {
+	if (d_ibuf)
 		checkCuda(cudaFree((void*)d_ibuf));
+	if (d_obuf)
 		checkCuda(cudaFree((void*)d_obuf));
-	}
 }
 
 void Match::CudaTranspose::run() {
 	dim3 dimGrid(dim/TILE_DIM, dim/TILE_DIM, 1);
 	dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
 	checkCuda(cudaMemcpy(d_ibuf, ibuf, dim*dim, cudaMemcpyHostToDevice));
-	transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_obuf, d_ibuf);
+	//copySharedMem<<<dimGrid, dimBlock>>>(d_obuf, d_ibuf);
+	//transposeNaive<<<dimGrid, dimBlock>>>(d_obuf, d_ibuf);
+	transposeNoBankConflicts<<<dimGrid, dimBlock>>>((char*)d_obuf, (const char*)d_ibuf);
 	checkCuda(cudaMemcpy(obuf, d_obuf, dim*dim, cudaMemcpyDeviceToHost));
 }
