@@ -16,72 +16,76 @@ static cudaError_t checkCuda(cudaError_t result) {
 	return result;
 }
 
+__device__ void compactLinks(Link *odata, const uint16_t dim);
+
 /**
  * detect a sequence of ascending chars
  */
-__global__ void detectSeq(Link *odata, char *idata, unsigned *d_nlink, uint16_t dim) {
+__global__ void detectSeq(Link *odata, const char *idata, unsigned *d_nlink, uint16_t dim) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int ofs = col;
 	uint16_t nlink = 0;
-	char ch = 0;
-	char match = 0;
+	char expch = 0;
 	Link l;
 	l.len = 0;
 	l.pos = 0;
 	l.next = 0;
-	for (uint16_t row=0; row<dim; row++,ofs+=dim) {
-		if (idata[ofs] == ch) {
+	uint16_t row;
+	for (row=0; row<dim; row++,ofs+=dim) {
+		if (idata[ofs] == expch) {
 			l.len++;
-			match = 1;
 		} else {
-			if (match) {
+			if (l.len>0) {
 				l.len++;
+				l.pos = row-l.len;
 				odata[ofs] = l;
 				nlink++;
 				l.next = row;
 			}
 			l.len = 0;
-			match = 0;
 		}
-		ch = idata[ofs]+1;
+		expch = idata[ofs]+1;
 	}
-	d_nlink[col] = nlink;
-	if (l.len > 0) {
-		l.next = dim;
+	if (l.len>0) {
 		l.len++;
+		l.pos = row-l.len;
+		odata[ofs] = l;
+		nlink++;
+		l.next = row;
 	}
+	ofs += dim;
 	odata[ofs] = l;
-	ofs = col+dim*dim;
-	int oofs = col+dim*(dim-1);
-	uint16_t next = 0;
-	uint16_t left = nlink;
-	for (uint16_t row=dim-1; row>0; row--,ofs-=dim) {
-		if (row == l.next) {
-			l = odata[ofs];
-			odata[oofs].len = l.len;
-			odata[oofs].pos = row-l.len;
-			odata[oofs].next = next;
-			oofs--;
-			left--;
-			next = row;
-		}
-	}
-	l.len = 0;
-	l.pos = 0;
-	l.next = next;
-	ofs = dim*dim+col;
-	odata[ofs] = l;
+	d_nlink[col] = nlink;
+	compactLinks(odata, dim);
 }
 
-__global__ void recalcLinksSeq(Link *odata, uint16_t dim, uint16_t nlink) {
+/**
+ * "compact" linked-lists into sequential entries
+ */
+__device__ void compactLinks(Link *odata, const uint16_t dim) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	int zrow = dim-nlink-1;
-	int erow = dim;
-	Link l = odata[erow*dim+col];
-	odata[zrow*dim+col] = l;
-	int ofs = zrow*dim+col;
-	for (int row=zrow; row<dim; row++,ofs+=dim)
-		odata[ofs].next -= zrow;
+	int ofs = (dim+1)*dim+col;
+	int oofs = dim*dim+col;
+	Link l = odata[ofs];
+	ofs = oofs;
+	int nlink = 0;
+	for (uint16_t row=dim; row>0; row--,ofs-=dim) {
+		if (row == l.next) {
+			l = odata[oofs] = odata[ofs];
+			oofs -= dim;
+			nlink++;
+		}
+	}
+	uint16_t startrow = dim-nlink;
+	odata[col].len = nlink;
+	oofs = dim+col;
+	ofs = dim+col;
+	for (uint16_t row=1; row<=dim; row++,ofs+=dim) {
+		if (row > startrow) {
+			odata[oofs] = odata[ofs];
+			oofs += dim;
+		}
+	}
 }
 
 __global__ void reduceMax(const unsigned *d_in, unsigned *d_out, unsigned dim) {
@@ -106,7 +110,7 @@ __global__ void reduceMax(const unsigned *d_in, unsigned *d_out, unsigned dim) {
 Match::Detect::Detect(const char *_d_ibuf, Link *ob, int w):d_ibuf(_d_ibuf),d_obuf(nullptr),obuf(ob),d_nlink(nullptr),d_nlink_block(nullptr),width(w),err(nullptr) {
 	if (w%THREADS == 0) {
 		cudaError_t rc;
-		if ((rc=cudaMalloc(&d_obuf, (w+1)*w*sizeof(Link))) != 0)
+		if ((rc=cudaMalloc(&d_obuf, (w+2)*w*sizeof(Link))) != 0)
 			err = cudaGetErrorString(rc);
 		if ((rc=cudaMalloc(&d_nlink, w*sizeof(int))) != 0)
 			err = cudaGetErrorString(rc);
@@ -133,14 +137,13 @@ Match::Detect::~Detect() {
 
 unsigned Match::Detect::run() {
 	int blocks = width/THREADS;
-	detectSeq<<<blocks,THREADS>>>((Link*)d_obuf, (char*)d_ibuf, d_nlink, width);
+	detectSeq<<<blocks,THREADS>>>(d_obuf, d_ibuf, d_nlink, width);
 	checkCuda(cudaGetLastError());
 	reduceMax<<<blocks,THREADS>>>(d_nlink, d_nlink_block, width);
 	checkCuda(cudaGetLastError());
 	reduceMax<<<1,blocks>>>(d_nlink_block, d_nlink_block, width);
 	checkCuda(cudaGetLastError());
 	checkCuda(cudaMemcpy(&nlinkmax, d_nlink_block, sizeof(unsigned), cudaMemcpyDeviceToHost));
-	recalcLinksSeq<<<blocks,THREADS>>>((Link*)d_obuf, width, nlinkmax);
-	checkCuda(cudaMemcpy(obuf, d_obuf+(width-nlinkmax)*width, nlinkmax*width*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
+	checkCuda(cudaMemcpy(obuf, d_obuf, (nlinkmax+1)*width*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
 	return nlinkmax;
 }

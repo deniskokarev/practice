@@ -132,5 +132,5 @@ void Match::CudaTranspose::run() {
 	checkCuda(cudaMemcpy(d_ibuf, ibuf, dim*dim, cudaMemcpyHostToDevice));
 	transposeNoBankConflicts<<<dimGrid, dimBlock>>>((char*)d_obuf, (const char*)d_ibuf);
 	checkCuda(cudaGetLastError());
-	checkCuda(cudaMemcpy(obuf, d_obuf, dim*dim, cudaMemcpyDeviceToHost));
+	//checkCuda(cudaMemcpy(obuf, d_obuf, dim*dim, cudaMemcpyDeviceToHost));
 }

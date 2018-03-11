@@ -10,7 +10,7 @@
 #include "detect.hh"
 #include <memory>
 
-constexpr int STREAMS = 1<<13; // 256;
+constexpr int STREAMS = 256; // 1<<13; // 256;
 constexpr int STRSZ = STREAMS;
 constexpr char NL = '\n';
 constexpr char SFILL = ' ';
@@ -63,8 +63,17 @@ int main(int argc, char **argv) {
 			memset(&ibuf[STRSZ*(nstreams+1)], SFILL, (STREAMS-nstreams-1)*STRSZ); // fill up
 		//fwrite(ibuf.get(), 1, STREAMS*STRSZ, stdout);
 		transpose.run();
-		fwrite(obuf.get(), 1, STREAMS*STRSZ, stdout);
+		//fwrite(obuf.get(), 1, STREAMS*STRSZ, stdout);
 		int mxlen = detect.run();
 		fprintf(stderr, "mxlen = %d\n", mxlen);
+		for (int stream=0; stream<STREAMS; stream++) {
+			//for (auto next=detect.obuf[STRSZ*STREAMS+stream].next; next!=0; next=detect.obuf[stream+next*STREAMS].next) {
+			int nlinks = detect.obuf[stream].len;
+			for (int row=1; row<=nlinks; row++) {
+				auto &link = detect.obuf[stream+row*STREAMS];
+				printf("detected [%d,%d,%d]", stream, link.pos, link.len); fwrite(&ibuf[stream*STRSZ+link.pos], 1, link.len, stdout);
+				printf("\n");
+			}
+		}
 	}
 }

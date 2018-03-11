@@ -4,7 +4,7 @@ LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
 
 CXXFLAGS += -std=c++11 -Wall -g -O0 -I$(INCGT) 
-CFLAGS += -std=c99 -Wall -g -O
+CFLAGS += -std=c99 -Wall -g -O0
 LINK.o = $(LINK.cc)
 LDFLAGS = -L/usr/local/cuda/lib -lcuda -lcudart -rpath /usr/local/cuda/lib
 EXTRA_LIBS = -lpthread
@@ -13,7 +13,7 @@ EXTRA_LIBS = -lpthread
 # nvcc
 NVCC      := nvcc
 NVCCFLAGS := -std=c++11
-NVCCFLAGS += -O
+NVCCFLAGS += -G -O0
 NVCCFLAGS += -gencode arch=compute_30,code=sm_30 \
              -gencode arch=compute_35,code=sm_35 \
              -gencode arch=compute_50,code=sm_50 \
