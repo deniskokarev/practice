@@ -6,7 +6,7 @@
 #include <device_functions.h>
 #include <algorithm>
 
-constexpr int THREADS = 256;
+constexpr int THREADS = 1024;
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -28,8 +28,7 @@ __global__ void detectSeq(Link *odata, const char *idata, unsigned *d_nlink, uin
 	char expch = 0;
 	Link l;
 	l.len = 0;
-	l.pos = 0;
-	l.next = 0;
+	l.c.prev = 0;
 	uint16_t row;
 	for (row=0; row<dim; row++,ofs+=dim) {
 		if (idata[ofs] == expch) {
@@ -37,10 +36,9 @@ __global__ void detectSeq(Link *odata, const char *idata, unsigned *d_nlink, uin
 		} else {
 			if (l.len>0) {
 				l.len++;
-				l.pos = row-l.len;
 				odata[ofs] = l;
 				nlink++;
-				l.next = row;
+				l.c.prev = row;
 			}
 			l.len = 0;
 		}
@@ -48,10 +46,9 @@ __global__ void detectSeq(Link *odata, const char *idata, unsigned *d_nlink, uin
 	}
 	if (l.len>0) {
 		l.len++;
-		l.pos = row-l.len;
 		odata[ofs] = l;
 		nlink++;
-		l.next = row;
+		l.c.prev = row;
 	}
 	ofs += dim;
 	odata[ofs] = l;
@@ -70,8 +67,9 @@ __device__ void compactLinks(Link *odata, const uint16_t dim) {
 	ofs = oofs;
 	int nlink = 0;
 	for (uint16_t row=dim; row>0; row--,ofs-=dim) {
-		if (row == l.next) {
-			l = odata[oofs] = odata[ofs];
+		if (row == l.c.prev) {
+			l = odata[ofs];
+			odata[oofs] = {l.len, {uint16_t(row-l.len)}};
 			oofs -= dim;
 			nlink++;
 		}

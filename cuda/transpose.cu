@@ -74,35 +74,6 @@ __global__ void transposeNoBankConflicts(char *odata, const char *idata)
      odata[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
 }
 
-__global__ void transposeNaive(char *odata, const char *idata)
-{
-  int x = blockIdx.x * TILE_DIM + threadIdx.x;
-  int y = blockIdx.y * TILE_DIM + threadIdx.y;
-  int width = gridDim.x * TILE_DIM;
-
-  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
-    odata[x*width + (y+j)] = idata[(y+j)*width + x];
-}
-
-// copy kernel using shared memory
-// Also used as reference case, demonstrating effect of using shared memory.
-__global__ void copySharedMem(char *odata, const char *idata)
-{
-  __shared__ float tile[TILE_DIM * TILE_DIM];
-  
-  int x = blockIdx.x * TILE_DIM + threadIdx.x;
-  int y = blockIdx.y * TILE_DIM + threadIdx.y;
-  int width = gridDim.x * TILE_DIM;
-
-  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-     tile[(threadIdx.y+j)*TILE_DIM + threadIdx.x] = idata[(y+j)*width + x];
-
-  __syncthreads();
-
-  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-     odata[(y+j)*width + x] = tile[(threadIdx.y+j)*TILE_DIM + threadIdx.x];          
-}
-
 Match::CudaTranspose::CudaTranspose(const char *ib, char *ob, int d):d_obuf(nullptr),d_ibuf(nullptr),ibuf(ib),obuf(ob),dim(d),err(nullptr) {
 	if (d % TILE_DIM == 0) {
 		cudaError_t rc;

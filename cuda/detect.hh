@@ -6,8 +6,10 @@
 
 struct Link {
 	uint16_t len;
-	uint16_t pos;
-	uint16_t next;
+	union {
+		uint16_t pos;
+		uint16_t prev;
+	} c;
 };
 
 namespace Match {
