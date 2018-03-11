@@ -8,32 +8,31 @@
 #include "die.h"
 #include "transpose.hh"
 #include "detect.hh"
+#include <memory>
 
-constexpr int STREAMS = 256;
+constexpr int STREAMS = 1<<14; // 16K
 constexpr int STRSZ = STREAMS;
 constexpr char NL = '\n';
 constexpr char SFILL = ' ';
 
-char ibuf[STREAMS+1][STRSZ];
-char obuf[STRSZ][STREAMS];
-Link link[STRSZ][STREAMS];
-
 int main(int argc, char **argv) {
 	int rc;
 	int over = 0;
+	std::unique_ptr<char[]> ibuf(new char[STRSZ*(STREAMS+1)]);
+	std::unique_ptr<char[]> obuf(new char[STRSZ*STREAMS]);
+	std::unique_ptr<Link[]> link(new Link[STRSZ*STREAMS]);
 	Match::CudaTranspose transpose;
 	Match::Detect detect(transpose.d_obuf);
-
-	if ((rc=transpose.init((char*)ibuf, (char*)obuf, STRSZ))!=0)
+	if ((rc=transpose.init(ibuf.get(), obuf.get(), STRSZ))!=0)
 		die("CudaTranspose initialization error");
-	if ((rc=detect.init((Link*)link, STRSZ))!=0)
+	if ((rc=detect.init(link.get(), STRSZ))!=0)
 		die("CudaDetect initialization error");
 	while (!feof(stdin)) {
 		size_t sz = STRSZ-over;
-		char *s = ibuf[0];
-		memcpy(s, ibuf[STREAMS], over);
+		char *s = ibuf.get();
+		memcpy(s, &ibuf[STRSZ*STREAMS], over);
 		int nstreams;
-		memset(ibuf+over, SFILL, STRSZ-over);
+		memset(&ibuf[over], SFILL, STRSZ-over);
 		nstreams = 0;
 		rc = fread(s+over, 1, sz, stdin);
 		if (rc < 0)
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
 				memset(s+i, SFILL, over);
 				s[STRSZ-1] = '\n';
 				nstreams++;
-				s = ibuf[nstreams];
+				s = &ibuf[STRSZ*nstreams];
 			} else {
 				memset(s+over+rc, SFILL, STRSZ-over-rc);
 				over = 0;
@@ -61,10 +60,10 @@ int main(int argc, char **argv) {
 		if (rc < 0)
 			die("read error");
 		if (nstreams < STREAMS)
-			memset(ibuf[nstreams+1], SFILL, (STREAMS-nstreams-1)*STRSZ); // fill up
-		//fwrite(ibuf, 1, STREAMS*STRSZ, stdout);
+			memset(&ibuf[STRSZ*(nstreams+1)], SFILL, (STREAMS-nstreams-1)*STRSZ); // fill up
+		//fwrite(ibuf.get(), 1, STREAMS*STRSZ, stdout);
 		transpose.run();
-		fwrite(obuf, 1, STREAMS*STRSZ, stdout);
+		fwrite(obuf.get(), 1, STREAMS*STRSZ, stdout);
 		int mxlen = detect.run();
 		fprintf(stderr, "mxlen = %d\n", mxlen);
 	}

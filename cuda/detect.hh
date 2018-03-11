@@ -5,8 +5,8 @@
 #include "transpose.hh"
 
 struct Link {
-	unsigned len;
-	unsigned prev;
+	uint16_t len;
+	uint16_t prev;
 };
 
 namespace Match {
