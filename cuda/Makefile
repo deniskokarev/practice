@@ -13,7 +13,7 @@ EXTRA_LIBS = -lpthread
 # nvcc
 NVCC      := nvcc
 NVCCFLAGS := -std=c++11
-NVCCFLAGS += -G -O0
+NVCCFLAGS += -O
 NVCCFLAGS += -gencode arch=compute_30,code=sm_30 \
              -gencode arch=compute_35,code=sm_35 \
              -gencode arch=compute_50,code=sm_50 \
@@ -50,6 +50,7 @@ match: match.o transpose.o detect.o die.o
 trans: trans.o
 
 test:
+	(echo "ab cd ef"; ./test.sh; echo "gh") | nvprof ./match
 
 clean:
 	rm -f *.o

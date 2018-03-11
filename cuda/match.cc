@@ -10,7 +10,7 @@
 #include "detect.hh"
 #include <memory>
 
-constexpr int STREAMS = 256; // 1<<13; // 256;
+constexpr int STREAMS = 1<<13; // 1<<13; // 256;
 constexpr int STRSZ = STREAMS;
 constexpr char NL = '\n';
 constexpr char SFILL = ' ';
