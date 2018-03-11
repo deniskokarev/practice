@@ -6,7 +6,8 @@
 
 struct Link {
 	uint16_t len;
-	uint16_t prev;
+	uint16_t pos;
+	uint16_t next;
 };
 
 namespace Match {
@@ -19,9 +20,11 @@ namespace Match {
 		unsigned *d_nlink_block;
 		unsigned nlinkmax;
 		int width;
+		const char *err;
+		char errbuf[512];
 	public:
-		Detect(const char *d_ibuf);
-		int init(Link *ob, int w);
+		Detect(const char *d_ibuf, Link *ob, int w);
+		operator bool() const;
 		~Detect();
 		unsigned run();
 	};

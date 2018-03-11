@@ -10,7 +10,7 @@
 #include "detect.hh"
 #include <memory>
 
-constexpr int STREAMS = 1<<14; // 16K
+constexpr int STREAMS = 1<<13; // 256;
 constexpr int STRSZ = STREAMS;
 constexpr char NL = '\n';
 constexpr char SFILL = ' ';
@@ -20,12 +20,12 @@ int main(int argc, char **argv) {
 	int over = 0;
 	std::unique_ptr<char[]> ibuf(new char[STRSZ*(STREAMS+1)]);
 	std::unique_ptr<char[]> obuf(new char[STRSZ*STREAMS]);
-	std::unique_ptr<Link[]> link(new Link[STRSZ*STREAMS]);
-	Match::CudaTranspose transpose;
-	Match::Detect detect(transpose.d_obuf);
-	if ((rc=transpose.init(ibuf.get(), obuf.get(), STRSZ))!=0)
-		die("CudaTranspose initialization error");
-	if ((rc=detect.init(link.get(), STRSZ))!=0)
+	std::unique_ptr<Link[]> link(new Link[STRSZ*(STREAMS+1)]);
+	Match::CudaTranspose transpose(ibuf.get(), obuf.get(), STRSZ);
+	if (!transpose)
+		die("CudaTranspose initialization error: %s", transpose.err);
+	Match::Detect detect(transpose.d_obuf, link.get(), STRSZ);
+	if (!detect)
 		die("CudaDetect initialization error");
 	while (!feof(stdin)) {
 		size_t sz = STRSZ-over;

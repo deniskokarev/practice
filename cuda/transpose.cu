@@ -103,36 +103,34 @@ __global__ void copySharedMem(char *odata, const char *idata)
      odata[(y+j)*width + x] = tile[(threadIdx.y+j)*TILE_DIM + threadIdx.x];          
 }
 
-Match::CudaTranspose::CudaTranspose():d_obuf(nullptr),d_ibuf(nullptr),ibuf(nullptr),obuf(nullptr),dim(0) {
+Match::CudaTranspose::CudaTranspose(const char *ib, char *ob, int d):d_obuf(nullptr),d_ibuf(nullptr),ibuf(ib),obuf(ob),dim(d),err(nullptr) {
+	if (d % TILE_DIM == 0) {
+		cudaError_t rc;
+		if ((rc=cudaMalloc(&d_ibuf, dim*dim))!=0)
+			err = cudaGetErrorString(rc);
+		if ((rc=cudaMalloc(&d_obuf, dim*dim))!=0)
+			err = cudaGetErrorString(rc);
+	} else {
+		err = "Dimention must be divisible by TILE_DIM";
+	}
 }
 
-int Match::CudaTranspose::init(const char *ib, char *ob, int d) {
-	if (d % TILE_DIM != 0)
-		return -1;
-	ibuf = ib;
-	obuf= ob;
-	dim = d;
-	int rc;
-	if ((rc=cudaMalloc(&d_ibuf, dim*dim))!=0)
-		return rc;
-	if ((rc=cudaMalloc(&d_obuf, dim*dim))!=0)
-		return rc;
-	return 0;
+Match::CudaTranspose::operator bool() const {
+	return err == nullptr;
 }
 
 Match::CudaTranspose::~CudaTranspose() {
-	if (d_ibuf)
-		checkCuda(cudaFree((void*)d_ibuf));
 	if (d_obuf)
 		checkCuda(cudaFree((void*)d_obuf));
+	if (d_ibuf)
+		checkCuda(cudaFree((void*)d_ibuf));
 }
 
 void Match::CudaTranspose::run() {
 	dim3 dimGrid(dim/TILE_DIM, dim/TILE_DIM, 1);
 	dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
 	checkCuda(cudaMemcpy(d_ibuf, ibuf, dim*dim, cudaMemcpyHostToDevice));
-	//copySharedMem<<<dimGrid, dimBlock>>>(d_obuf, d_ibuf);
-	//transposeNaive<<<dimGrid, dimBlock>>>(d_obuf, d_ibuf);
 	transposeNoBankConflicts<<<dimGrid, dimBlock>>>((char*)d_obuf, (const char*)d_ibuf);
+	checkCuda(cudaGetLastError());
 	checkCuda(cudaMemcpy(obuf, d_obuf, dim*dim, cudaMemcpyDeviceToHost));
 }

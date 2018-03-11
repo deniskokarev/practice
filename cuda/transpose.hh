@@ -9,9 +9,10 @@ namespace Match {
 		const char *ibuf;
 		char *obuf;
 		int dim;
+		const char *err;
 	public:
-		CudaTranspose();
-		int init(const char *ib, char *ob, int d);
+		CudaTranspose(const char *ib, char *ob, int d);
+		operator bool() const;
 		~CudaTranspose();
 		void run();
 	};
