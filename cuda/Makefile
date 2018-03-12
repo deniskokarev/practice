@@ -1,4 +1,4 @@
-BINS = a acuda memtrans bandwidthtest match
+BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep
 INCGT = ../c/googletest/googletest/include
 LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
@@ -49,12 +49,35 @@ match: match.o transpose.o detect.o die.o
 
 trans: trans.o
 
-test:
+actcomp.o: act.h
+
+actcomp: actcomp.o
+	$(LINK.cc) -o $(@) actcomp.o
+
+act.o: act.h
+
+actmatch.o: act.h
+
+actmatch: act.o actmatch.o
+
+actfgrep.o: act.h
+
+actfgrep: act.o actfgrep.o
+
+test: test_cuda test_act
+
+test_cuda: match
 	(echo "ab cd ef"; ./test.sh; echo "gh") | nvprof ./match
+
+test_act: actcomp actmatch
+	./actcomp pat3.txt pat3.bin
+	echo "you must see 0 1 3 4 5 6"
+	echo "att.com" | ./actmatch pat3.bin
 
 clean:
 	rm -f *.o
 	rm -f *~
 	rm -rf libgt
 	rm -f $(BINS)
+	rm -f pat*.bin
 	rm -rf Build

@@ -10,7 +10,7 @@ INCGT = ./googletest/googletest/include
 LIBGT = ./libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ./libgt/googlemock/gtest/libgtest_main.a
 
-CXXFLAGS += -std=c++11 -Wall -g -O -I$(INCGT) 
+CXXFLAGS += -std=c++11 -Wall -g -O0 -I$(INCGT) 
 CFLAGS += -std=c99 -Wall -g -O
 LINK.o = $(LINK.cc)
 LDFLAGS =
