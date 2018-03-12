@@ -1,12 +1,12 @@
 #include <cuda_runtime.h>
-#include "transpose.hh"
+#include "transpose.cuh"
 #include "detect.hh"
 #include "die.h"
 #include <stdio.h>
 #include <device_functions.h>
 #include <algorithm>
 
-constexpr int THREADS = 1024;
+constexpr int THREADS = 256;
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -105,7 +105,7 @@ __global__ void reduceMax(const unsigned *d_in, unsigned *d_out, unsigned dim) {
 		d_out[blockIdx.x] = mx;
 }
 
-Match::Detect::Detect(const char *_d_ibuf, Link *ob, int w):d_ibuf(_d_ibuf),d_obuf(nullptr),obuf(ob),d_nlink(nullptr),d_nlink_block(nullptr),width(w),err(nullptr) {
+Match::Detect::Detect(const char *_d_ibuf, Link *ob, int w):d_ibuf(_d_ibuf),d_obuf(nullptr),d_tobuf(nullptr),obuf(ob),d_nlink(nullptr),d_nlink_block(nullptr),width(w),err(nullptr) {
 	if (w%THREADS == 0) {
 		cudaError_t rc;
 		if ((rc=cudaMalloc(&d_obuf, (w+2)*w*sizeof(Link))) != 0)
@@ -125,6 +125,8 @@ Match::Detect::operator bool() const {
 }
 
 Match::Detect::~Detect() {
+	if (d_tobuf)
+		checkCuda(cudaFree((void*)d_tobuf));
 	if (d_nlink_block)
 		checkCuda(cudaFree((void*)d_nlink_block));
 	if (d_nlink)
@@ -142,6 +144,18 @@ unsigned Match::Detect::run() {
 	reduceMax<<<1,blocks>>>(d_nlink_block, d_nlink_block, width);
 	checkCuda(cudaGetLastError());
 	checkCuda(cudaMemcpy(&nlinkmax, d_nlink_block, sizeof(unsigned), cudaMemcpyDeviceToHost));
-	checkCuda(cudaMemcpy(obuf, d_obuf, (nlinkmax+1)*width*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
-	return nlinkmax;
+	if (nlinkmax > 0) {
+		int h = (nlinkmax+1+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
+		fprintf(stderr, "Allocating sz=%d\n", int(h*width*sizeof(Link)));
+		checkCuda(cudaMalloc(&d_tobuf, h*width*sizeof(Link)));
+		fprintf(stderr, "Doing transpose with h=%d\n", h);
+		dim3 dimGrid(width/TRANSPOSE_TILE_DIM, h/TRANSPOSE_TILE_DIM, 1);
+		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
+		transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_tobuf, d_obuf);
+		checkCuda(cudaGetLastError());
+		checkCuda(cudaMemcpy(obuf, d_tobuf, h*width*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
+		return h;
+	} else {
+		return 0;
+	}
 }

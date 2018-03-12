@@ -64,13 +64,15 @@ int main(int argc, char **argv) {
 		//fwrite(ibuf.get(), 1, STREAMS*STRSZ, stdout);
 		transpose.run();
 		//fwrite(obuf.get(), 1, STREAMS*STRSZ, stdout);
-		int mxlen = detect.run();
-		fprintf(stderr, "mxlen = %d\n", mxlen);
+		int dw = detect.run();
+		fprintf(stderr, "detected width = %d\n", dw);
 		for (int stream=0; stream<STREAMS; stream++) {
-			//for (auto next=detect.obuf[STRSZ*STREAMS+stream].next; next!=0; next=detect.obuf[stream+next*STREAMS].next) {
-			int nlinks = detect.obuf[stream].len;
-			for (int row=1; row<=nlinks; row++) {
-				auto &link = detect.obuf[stream+row*STREAMS];
+			int ofs = stream*dw;
+			int nlinks = detect.obuf[ofs].len;
+			//fprintf(stderr, "nlinks=%d\n", nlinks);
+			ofs++;
+			for (int p=0; p<nlinks; p++,ofs++) {
+				auto &link = detect.obuf[ofs];
 				printf("detected [%d,%d,%d]", stream, link.c.pos, link.len); fwrite(&ibuf[stream*STRSZ+link.c.pos], 1, link.len, stdout);
 				printf("\n");
 			}

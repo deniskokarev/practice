@@ -41,9 +41,9 @@ bandwidthtest: bandwidthtest.o
 
 match.o: transpose.hh detect.hh die.h
 
-transpose.o: transpose.hh die.h
+transpose.o: transpose.hh transpose.cuh die.h
 
-detect.o: detect.hh die.h
+detect.o: detect.hh transpose.cuh die.h
 
 match: match.o transpose.o detect.o die.o
 

@@ -26,11 +26,11 @@
  */
 
 #include <cuda_runtime.h>
+#include "transpose.cuh"
 #include "transpose.hh"
 #include "die.h"
 
 // 256 threads altogether
-const int TILE_DIM = 32;
 const int BLOCK_ROWS = 8;
 
 // Convenience function for checking CUDA runtime API results
@@ -41,48 +41,15 @@ static cudaError_t checkCuda(cudaError_t result) {
 	return result;
 }
 
-__global__ void copy(char *odata, const char *idata)
-{
-  int x = blockIdx.x * TILE_DIM + threadIdx.x;
-  int y = blockIdx.y * TILE_DIM + threadIdx.y;
-  int width = gridDim.x * TILE_DIM;
-
-  for (int j = 0; j < TILE_DIM; j+= BLOCK_ROWS)
-    odata[(y+j)*width + x] = idata[(y+j)*width + x];
-}
-
-// No bank-conflict transpose
-// Same as transposeCoalesced except the first tile dimension is padded 
-// to avoid shared memory bank conflicts.
-__global__ void transposeNoBankConflicts(char *odata, const char *idata)
-{
-  __shared__ char tile[TILE_DIM][TILE_DIM+1];
-    
-  int x = blockIdx.x * TILE_DIM + threadIdx.x;
-  int y = blockIdx.y * TILE_DIM + threadIdx.y;
-  int width = gridDim.x * TILE_DIM;
-
-  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-     tile[threadIdx.y+j][threadIdx.x] = idata[(y+j)*width + x];
-
-  __syncthreads();
-
-  x = blockIdx.y * TILE_DIM + threadIdx.x;  // transpose block offset
-  y = blockIdx.x * TILE_DIM + threadIdx.y;
-
-  for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS)
-     odata[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
-}
-
 Match::CudaTranspose::CudaTranspose(const char *ib, char *ob, int d):d_obuf(nullptr),d_ibuf(nullptr),ibuf(ib),obuf(ob),dim(d),err(nullptr) {
-	if (d % TILE_DIM == 0) {
+	if (d % TRANSPOSE_TILE_DIM == 0) {
 		cudaError_t rc;
 		if ((rc=cudaMalloc(&d_ibuf, dim*dim))!=0)
 			err = cudaGetErrorString(rc);
 		if ((rc=cudaMalloc(&d_obuf, dim*dim))!=0)
 			err = cudaGetErrorString(rc);
 	} else {
-		err = "Dimention must be divisible by TILE_DIM";
+		err = "Dimention must be divisible by TRANSPOSE_TILE_DIM";
 	}
 }
 
@@ -98,10 +65,10 @@ Match::CudaTranspose::~CudaTranspose() {
 }
 
 void Match::CudaTranspose::run() {
-	dim3 dimGrid(dim/TILE_DIM, dim/TILE_DIM, 1);
-	dim3 dimBlock(TILE_DIM, BLOCK_ROWS, 1);
+	dim3 dimGrid(dim/TRANSPOSE_TILE_DIM, dim/TRANSPOSE_TILE_DIM, 1);
+	dim3 dimBlock(TRANSPOSE_TILE_DIM, BLOCK_ROWS, 1);
 	checkCuda(cudaMemcpy(d_ibuf, ibuf, dim*dim, cudaMemcpyHostToDevice));
-	transposeNoBankConflicts<<<dimGrid, dimBlock>>>((char*)d_obuf, (const char*)d_ibuf);
+	transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_obuf, d_ibuf);
 	checkCuda(cudaGetLastError());
 	//checkCuda(cudaMemcpy(obuf, d_obuf, dim*dim, cudaMemcpyDeviceToHost));
 }

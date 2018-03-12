@@ -17,6 +17,7 @@ namespace Match {
 	public:
 		const char *d_ibuf;
 		Link *d_obuf;
+		Link *d_tobuf;
 		Link *obuf;
 		unsigned *d_nlink;
 		unsigned *d_nlink_block;
