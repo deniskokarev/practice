@@ -10,7 +10,7 @@ struct Q {
 	int len;
 	int node;
 	bool operator<(const Q &b) const {
-		return len > b.len; // for min heap
+		return len < b.len; // for min heap
 	}
 };
 
@@ -62,9 +62,9 @@ int main(int argc, char **argv) {
 			f = m+1;
 	}
 	f--;
-	//fprintf(stderr, "dijkstra(%d)=%d\n", f, dijkstra(ee, n, f));
+	cerr << "dijkstra(" << f << ")=" << dijkstra(ee, n, f) << endl;
 	int ans = f-3*1000*1000;
 	ans = (ans<0)?0:ans/100;
-	printf("%d\n", ans);
+	cout << ans << endl;
 	return 0;
 }
