@@ -20,7 +20,7 @@ struct E {
 	int len;
 };
 
-constexpr int DINF = -1;
+constexpr int DINF = INT_MAX;
 
 inline int dijkstra(const vector<vector<E>> &ee, int n, int mxw) {
 	vector<int> dist(n, DINF);
@@ -36,7 +36,7 @@ inline int dijkstra(const vector<vector<E>> &ee, int n, int mxw) {
 					qq.push(Q {top.len+e.len, e.to});
 		}
 	}
-	return (dist[n-1]>1440)?DINF:dist[n-1];
+	return dist[n-1];
 };
 
 int main(int argc, char **argv) {
@@ -52,15 +52,17 @@ int main(int argc, char **argv) {
 		swap(i, e.to);
 		ee[i].push_back(e);
 	}
+	// upper bound search
 	int f = 0, t = INT_MAX;
-	//fprintf(stderr, "dijkstra(0)=%d\n", dijkstra(ee, n, 0));
 	while (f<t) {
 		m = f+(t-f)/2;
-		if (dijkstra(ee, n, m) == DINF)
+		if (dijkstra(ee, n, m) > 1440)
 			t = m;
 		else
 			f = m+1;
 	}
+	f--;
+	//fprintf(stderr, "dijkstra(%d)=%d\n", f, dijkstra(ee, n, f));
 	int ans = f-3*1000*1000;
 	ans = (ans<0)?0:ans/100;
 	printf("%d\n", ans);
