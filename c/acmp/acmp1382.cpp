@@ -10,7 +10,7 @@ struct Q {
 	int len;
 	int node;
 	bool operator<(const Q &b) const {
-		return len < b.len; // for min heap
+		return len > b.len; // for min heap
 	}
 };
 
@@ -44,18 +44,18 @@ int main(int argc, char **argv) {
 	cin >> n >> m;
 	vector<vector<E>> ee(n);
 	while (m--) {
-		int i;
+		int from;
 		E e;
-		cin >> i >> e.to >> e.len >> e.weight;
-		i--, e.to--;
-		ee[i].push_back(e);
-		swap(i, e.to);
-		ee[i].push_back(e);
+		cin >> from >> e.to >> e.len >> e.weight;
+		from--, e.to--;
+		ee[from].push_back(e);
+		swap(from, e.to);
+		ee[from].push_back(e);
 	}
 	// upper bound search
 	int f = 0, t = INT_MAX;
 	while (f<t) {
-		m = f+(t-f)/2;
+		int m = f+(t-f)/2;
 		if (dijkstra(ee, n, m) > 1440)
 			t = m;
 		else
@@ -65,6 +65,6 @@ int main(int argc, char **argv) {
 	cerr << "dijkstra(" << f << ")=" << dijkstra(ee, n, f) << endl;
 	int ans = f-3*1000*1000;
 	ans = (ans<0)?0:ans/100;
-	cout << ans << endl;
+	cout << min(ans,10000000) << endl;
 	return 0;
 }
