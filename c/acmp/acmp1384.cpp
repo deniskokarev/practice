@@ -6,35 +6,31 @@
 #include <climits>
  
 using namespace std;
- 
+  
 struct Q {
-	int node;
+	int16_t node;
+	int16_t from;
 	unsigned c;
-	int from;
 	bool operator<(const Q &b) const {
 		return c > b.c; // for min heap
 	}
 };
- 
+  
 struct E {
 	int to;
 	unsigned c;
 };
- 
+  
 struct D {
-	int from;
-	int to;
+	int16_t from;
+	int16_t to;
 	unsigned c;
 	unsigned cto;
 };
- 
-void minpath(const vector<vector<E>> &ee, vector<D> &dist, int start, const vector<int> &tt) {
+  
+void minpath(const vector<vector<E>> &ee, vector<D> &dist, int16_t start, const vector<int> &tt) {
 	priority_queue<Q> qq;
-	for (auto &d:dist) {
-		d.c = UINT_MAX;
-		d.from = -1;
-	}
-	qq.push(Q{start, 0, -1});
+	qq.push(Q{start, -1, 0});
 	int fnd_type = tt[start]%2+1; // 1<->2
 	while (!qq.empty()) {
 		Q top = qq.top();
@@ -42,27 +38,27 @@ void minpath(const vector<vector<E>> &ee, vector<D> &dist, int start, const vect
 		if (tt[top.node] == fnd_type) {
 			// short-circuit everything on the way
 			for (int f=top.from; f>=0; f=dist[f].from) {
-				if (dist[f].cto > top.c - dist[f].c) {
+				if (dist[f].cto == UINT_MAX) {
 					dist[f].cto = top.c - dist[f].c;
 					dist[f].to = top.node;
 				}
 			}
 			return;
 		} else {
-			if (dist[top.node].c == UINT_MAX) {
+			if (dist[top.node].c > top.c) {
 				dist[top.node].c = top.c;
 				dist[top.node].from = top.from;
 				if (dist[top.node].cto == UINT_MAX) {
 					for (auto &e:ee[top.node])
-						qq.push(Q{e.to, top.c+e.c, top.node});
+						qq.push(Q{int16_t(e.to), top.node, top.c+e.c});
 				} else {
-					qq.push(Q{dist[top.node].to, top.c+dist[top.node].cto, top.node});
+					qq.push(Q{dist[top.node].to, top.node, top.c+dist[top.node].cto});
 				}
 			}
 		}
 	}
 }
- 
+  
 int main(int argc, char **argv) {
 	int n, m;
 	scanf("%d%d", &n, &m);
@@ -81,13 +77,8 @@ int main(int argc, char **argv) {
 	}
 	vector<D> dist(tt.size(), D{-1,-1,UINT_MAX,UINT_MAX});
 	for (int i=0; i<n; i++) {
-		if (tt[i] == 1) {
+		if (tt[i] == 1 && dist[i].cto == UINT_MAX) {
 			minpath(ee, dist, i, tt);
-#if 0
-			fprintf(stderr, "=== working on %d ===\n", i);
-			for (int i=0; i<n; i++)
-				fprintf(stderr, "i=%d, cto=%d, to=%d\n", i, dist[i].cto, dist[i].to);
-#endif
 		}
 	}
 	unsigned mn = UINT_MAX;
