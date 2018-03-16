@@ -63,6 +63,11 @@ int main(int argc, char **argv) {
 		if (tt[i] == 1) {
 			int j;
 			unsigned m = minpath(ee, i, tt, j);
+			if (m != UINT_MAX) {
+				// short-circuit
+				ee[i].clear();
+				ee[i].push_back(E{j, m});
+			}
 			if (m < mn) {
 				mni = i;
 				mnj = j;
