@@ -62,17 +62,17 @@ int main(int argc, char **argv) {
 	fill(seen, seen+n, false);
 	priority_queue<Q> qq;
 	qq.push(Q{0,0});
-	int ans = 0;
+	double ans = 0;
 	while (!qq.empty()) {
 		Q top = qq.top();
 		qq.pop();
 		if (!seen[top.to]) {
-			ans += top.len;
+			ans += sqrt(top.len);
 			seen[top.to] = 1;
 			for (E *e = ee[top.to]; e; e=e->next)
 				qq.push(Q{e->len, e->to});
 		}
 	}
-	printf("%.05f\n", sqrt((double)ans));
+	printf("%.05f\n", ans);
 	return 0;
 }
