@@ -9,6 +9,7 @@ using namespace std;
 struct Q {
 	int len;
 	int to;
+	int id;
 	bool operator<(const Q &b) const {
 		return len > b.len;
 	}
@@ -44,11 +45,30 @@ int main(int argc, char **argv) {
 		ee[j] = &eall[k*2+1];
 	}
 	int seen[n];
-	fill(seen, seen+n, -2);
+	fill(seen, seen+n, -1);
 	int ans[m+1];
-	fill(ans, ans+m+1, 0);
-	// id - is the edge we want to exclude this iteration
-	for (int id=0; id<m+1; id++) { 
+	fill(ans, ans+m+1, INT_MAX);
+	int ids[m];
+	int ids_sz = 0;
+	{
+		ans[0] = 0;
+		priority_queue<Q> qq;
+		qq.push(Q{0,0,-1});
+		while (!qq.empty()) {
+			Q top = qq.top();
+			qq.pop();
+			if (seen[top.to] != 0) {
+				seen[top.to] = 0;
+				ans[0] += top.len;
+				ids[ids_sz++] = top.id;
+				for (E *e = ee[top.to]; e; e=e->next)
+					qq.push(Q{e->len, e->to, e->id});
+			}
+		}
+	}
+	for (int i=1; i<ids_sz; i++) {
+		int id = ids[i];
+		ans[id] = 0;
 		priority_queue<Q> qq;
 		qq.push(Q{0,0});
 		int cnt = 0;
@@ -56,9 +76,9 @@ int main(int argc, char **argv) {
 			Q top = qq.top();
 			qq.pop();
 			if (seen[top.to] != id) {
+				seen[top.to] = id;
 				ans[id] += top.len;
 				cnt++;
-				seen[top.to] = id;
 				for (E *e = ee[top.to]; e; e=e->next)
 					if (e->id != id)
 						qq.push(Q{e->len, e->to});
@@ -68,7 +88,6 @@ int main(int argc, char **argv) {
 			ans[id] = INT_MAX;
 	}
 	sort(ans, ans+m+1);
-	unique(ans, ans+m+1);
 	printf("%d %d\n", ans[0], ans[1]);
 	return 0;
 }
