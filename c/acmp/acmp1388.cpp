@@ -6,26 +6,19 @@
 
 using namespace std;
 
+struct E {
+	int len;
+	int to;
+	int id;	// id to be used for exclusion
+	E *next;
+};
+
 struct Q {
 	int len;
 	int to;
 	int id;
 	bool operator<(const Q &b) const {
 		return len > b.len;
-	}
-};
-
-struct E {
-	int len;
-	int to;
-	int id;
-	E *next;
-};
-
-struct P {
-	int x, y;
-	int len(const P &b) const {
-		return (x-b.x)*(x-b.x) + (y-b.y)*(y-b.y);
 	}
 };
 
@@ -44,28 +37,34 @@ int main(int argc, char **argv) {
 		eall[k*2+1] = E {l, i, k+1, ee[j]};
 		ee[j] = &eall[k*2+1];
 	}
+	// seen[] array contains uniq ids
 	int seen[n];
 	fill(seen, seen+n, -1);
+	// all answers are by default +INF
 	int ans[m+1];
 	fill(ans, ans+m+1, INT_MAX);
+	// collect ids of all edges on the min spanning tree
 	int ids[m];
 	int ids_sz = 0;
+	// regular MST run
 	{
-		ans[0] = 0;
+		int id = 0;
+		ans[id] = 0;
 		priority_queue<Q> qq;
 		qq.push(Q{0,0,-1});
 		while (!qq.empty()) {
 			Q top = qq.top();
 			qq.pop();
-			if (seen[top.to] != 0) {
-				seen[top.to] = 0;
-				ans[0] += top.len;
+			if (seen[top.to] != id) {
+				seen[top.to] = id;
+				ans[id] += top.len;
 				ids[ids_sz++] = top.id;
 				for (E *e = ee[top.to]; e; e=e->next)
 					qq.push(Q{e->len, e->to, e->id});
 			}
 		}
 	}
+	// subsequent MST runs excluding only one edge laying on original MST
 	for (int i=1; i<ids_sz; i++) {
 		int id = ids[i];
 		ans[id] = 0;
