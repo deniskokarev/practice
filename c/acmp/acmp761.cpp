@@ -1,0 +1,68 @@
+/* ACMP 761 */
+#include <cstdio>
+#include <algorithm>
+
+using namespace std;
+
+struct E {
+	int vf;
+	int vt;
+	int id;
+	E *next;
+};
+
+struct S {
+	int vf, vt;
+	E *e;
+};
+
+int main(int argc, char **argv) {
+	int n, m;
+	scanf("%d%d", &n, &m);
+	E allee[m*2];
+	E *e = allee;
+	E *ee[n];
+	fill(ee, ee+n, nullptr);
+	for (int i=0; i<m; i++) {
+		int vf, vt;
+		scanf("%d%d", &vf, &vt);
+		vf--, vt--;
+		*e = E {vf, vt, i, ee[vf]};
+		ee[vf] = e++;
+		*e = E {vt, vf, i, ee[vt]};
+		ee[vt] = e++;
+	}
+	bool e_seen[m];
+	fill(e_seen, e_seen+m, false);
+	int cnt = 0;
+	int loops = 0;
+	while (cnt < m) {
+		loops++;
+		int stack[m];
+		int stack_sz = 0;
+		for (int i=0; i<m*2; i++) {
+			E &e = allee[i];
+			if (!e_seen[e.id]) {
+				e_seen[e.id] = true;
+				stack[stack_sz++] = e.vt;
+				cnt++;
+				break;
+			}
+		}
+		while (stack_sz > 0) {
+			int top = stack[stack_sz-1];
+			E *e;
+			for (e=ee[top]; e; e=e->next) {
+				if (!e_seen[e->id]) {
+					e_seen[e->id] = true;
+					stack[stack_sz++] = e->vt;
+					cnt++;
+					break;
+				}
+			}
+			if (e == nullptr)
+				stack_sz--;
+		}
+	}
+	printf("%d\n", loops);
+}
