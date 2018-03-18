@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	int loops = 0;
 	while (cnt < m) {
 		loops++;
-		int stack[m];
+		int stack[m+1];
 		int stack_sz = 0;
 		E *e = nullptr;
 		for (int i=0; i<m*2; i++)
@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
 				if (!e_seen[allee[i].id])
 					e = &allee[i];
 		if (e) {
+			stack[stack_sz++] = e->vf;
 			e_seen[e->id] = true;
 			stack[stack_sz++] = e->vt;
 			cnt++;
