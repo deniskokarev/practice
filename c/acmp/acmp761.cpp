@@ -23,10 +23,14 @@ int main(int argc, char **argv) {
 	E *e = allee;
 	E *ee[n];
 	fill(ee, ee+n, nullptr);
+	int ecnt[n];
+	fill(ecnt, ecnt+n, 0);
 	for (int i=0; i<m; i++) {
 		int vf, vt;
 		scanf("%d%d", &vf, &vt);
 		vf--, vt--;
+		ecnt[vf]++;
+		ecnt[vt]++;
 		*e = E {vf, vt, i, ee[vf]};
 		ee[vf] = e++;
 		*e = E {vt, vf, i, ee[vt]};
@@ -40,14 +44,20 @@ int main(int argc, char **argv) {
 		loops++;
 		int stack[m];
 		int stack_sz = 0;
-		for (int i=0; i<m*2; i++) {
-			E &e = allee[i];
-			if (!e_seen[e.id]) {
-				e_seen[e.id] = true;
-				stack[stack_sz++] = e.vt;
-				cnt++;
-				break;
-			}
+		E *e = nullptr;
+		for (int i=0; i<m*2; i++)
+			if (!e_seen[allee[i].id] && (ecnt[allee[i].vf]&1)==1)
+				e = &allee[i];
+		if (!e)
+			for (int i=0; i<m*2; i++)
+				if (!e_seen[allee[i].id])
+					e = &allee[i];
+		if (e) {
+			e_seen[e->id] = true;
+			stack[stack_sz++] = e->vt;
+			cnt++;
+			ecnt[e->vf]--;
+			ecnt[e->vt]--;
 		}
 		while (stack_sz > 0) {
 			int top = stack[stack_sz-1];
@@ -57,6 +67,8 @@ int main(int argc, char **argv) {
 					e_seen[e->id] = true;
 					stack[stack_sz++] = e->vt;
 					cnt++;
+					ecnt[e->vf]--;
+					ecnt[e->vt]--;
 					break;
 				}
 			}
