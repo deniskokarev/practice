@@ -52,14 +52,8 @@ int main(int argc, char **argv) {
 			for (int i=0; i<m*2; i++)
 				if (!e_seen[allee[i].id])
 					e = &allee[i];
-		if (e) {
+		if (e)
 			stack[stack_sz++] = e->vf;
-			e_seen[e->id] = true;
-			stack[stack_sz++] = e->vt;
-			cnt++;
-			ecnt[e->vf]--;
-			ecnt[e->vt]--;
-		}
 		while (stack_sz > 0) {
 			int top = stack[stack_sz-1];
 			E *e;
@@ -74,7 +68,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			if (e == nullptr)
-				stack_sz--;
+				break;
 		}
 	}
 	printf("%d\n", loops);
