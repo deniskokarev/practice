@@ -1,6 +1,8 @@
 /* ACMP 761 */
 #include <cstdio>
 #include <algorithm>
+#include <queue>
+#include <cassert>
 
 using namespace std;
 
@@ -36,40 +38,45 @@ int main(int argc, char **argv) {
 		*e = E {vt, vf, i, ee[vt]};
 		ee[vt] = e++;
 	}
-	bool e_seen[m];
-	fill(e_seen, e_seen+m, false);
-	int cnt = 0;
-	int loops = 0;
-	while (cnt < m) {
-		loops++;
-		int stack[m+1];
-		int stack_sz = 0;
-		E *e = nullptr;
-		for (int i=0; i<m*2; i++)
-			if (!e_seen[allee[i].id] && (ecnt[allee[i].vf]&1)==1)
-				e = &allee[i];
-		if (!e)
-			for (int i=0; i<m*2; i++)
-				if (!e_seen[allee[i].id])
-					e = &allee[i];
-		if (e)
-			stack[stack_sz++] = e->vf;
-		while (stack_sz > 0) {
-			int top = stack[stack_sz-1];
-			E *e;
-			for (e=ee[top]; e; e=e->next) {
-				if (!e_seen[e->id]) {
-					e_seen[e->id] = true;
-					stack[stack_sz++] = e->vt;
-					cnt++;
-					ecnt[e->vf]--;
-					ecnt[e->vt]--;
-					break;
+	int vcolor[n];
+	fill(vcolor, vcolor+n, -1);
+	int color = 0;
+	struct C {
+		int odd, even;
+		int edges;
+	} ccnt[n];
+	fill(ccnt, ccnt+n, C{0,0,0});
+	for (int i=0; i<n; i++) {
+		if (vcolor[i] < 0) {
+			queue<int> qq;
+			qq.push(i);
+			while (!qq.empty()) {
+				int v = qq.front();
+				qq.pop();
+				if (vcolor[v]<0) {
+					vcolor[v] = color;
+					if (ecnt[v]&1)
+						ccnt[color].odd++;
+					else
+						ccnt[color].even++;
+					ccnt[color].edges += ecnt[v];
+					for (auto e=ee[v]; e; e=e->next)
+						qq.push(e->vt);
 				}
 			}
-			if (e == nullptr)
-				break;
+			color++;
 		}
 	}
-	printf("%d\n", loops);
+	int ans = 0;
+	for (int c=0; c<color; c++) {
+		assert((ccnt[c].odd & 1) == 0);
+		if (ccnt[c].edges > 0) {
+			if (ccnt[c].odd == 0) {
+				ans++;
+			} else {
+				ans += ccnt[c].odd/2;
+			}
+		}
+	}
+	printf("%d\n", ans);
 }
