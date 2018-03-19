@@ -1,21 +1,13 @@
 /* ACMP 761 */
-#include <cstdio>
+#include <stdio.h>
 #include <algorithm>
 #include <queue>
-#include <cassert>
 
 using namespace std;
 
 struct E {
-	int vf;
 	int vt;
-	int id;
 	E *next;
-};
-
-struct S {
-	int vf, vt;
-	E *e;
 };
 
 int main(int argc, char **argv) {
@@ -33,14 +25,18 @@ int main(int argc, char **argv) {
 		vf--, vt--;
 		ecnt[vf]++;
 		ecnt[vt]++;
-		*e = E {vf, vt, i, ee[vf]};
+		*e = E {vt, ee[vf]};
 		ee[vf] = e++;
-		*e = E {vt, vf, i, ee[vt]};
+		*e = E {vf, ee[vt]};
 		ee[vt] = e++;
 	}
+	// don't need to actually walk euler path
+	// enough to find odd/even vertice counts in each
+	// connected component of that graph
 	int vcolor[n];
 	fill(vcolor, vcolor+n, -1);
 	int color = 0;
+	// number of odd/even nodes and edges of the connected component
 	struct C {
 		int odd, even;
 		int edges;
@@ -69,13 +65,11 @@ int main(int argc, char **argv) {
 	}
 	int ans = 0;
 	for (int c=0; c<color; c++) {
-		assert((ccnt[c].odd & 1) == 0);
 		if (ccnt[c].edges > 0) {
-			if (ccnt[c].odd == 0) {
+			if (ccnt[c].odd == 0)
 				ans++;
-			} else {
+			else
 				ans += ccnt[c].odd/2;
-			}
 		}
 	}
 	printf("%d\n", ans);
