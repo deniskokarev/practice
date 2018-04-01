@@ -15,15 +15,14 @@ int main(int argc, char **argv) {
 	mn = mx = cc[0];
 	int mxend = s;
 	for (int i=1; i<n; i++) {
-		if (cc[i] > mx) {
+		if (cc[i] > mx)
 			mx = cc[i];
-			int end = mx*(s/mn)+s%mn;
-			mxend = max(mxend, end);
-		}
 		if (cc[i] < mn) {
 			mn = cc[i];
 			mx = mn;
 		}
+		int end = mx*(s/mn)+s%mn;
+		mxend = max(mxend, end);
 	}
 	mn = mx = cc[0];
 	int mnend = s;
@@ -32,11 +31,10 @@ int main(int argc, char **argv) {
 			mx = cc[i];
 			mn = mx;
 		}
-		if (cc[i] < mn) {
+		if (cc[i] < mn)
 			mn = cc[i];
-			int end = mn*(s/mx)+s%mx;
-			mnend = min(mnend, end);
-		}
+		int end = mn*(s/mx)+s%mx;
+		mnend = min(mnend, end);
 	}
 	printf("%d %d\n", mnend, mxend);
 	return 0;
