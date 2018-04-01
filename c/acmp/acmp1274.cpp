@@ -9,19 +9,15 @@ int main(int argc, char **argv) {
 	int cc[n];
 	for (auto &c:cc)
 		scanf("%d", &c);
-	int64_t mn = cc[0];
 	int64_t mxend = s;
-	for (int i=1; i<n; i++) {
-		mn = std::min(mn, int64_t(cc[i]));
-		int64_t end = cc[i]*(s/mn)+s%mn;
-		mxend = std::max(mxend, end);
-	}
-	int64_t mx = cc[0];
 	int64_t mnend = s;
-	for (int i=1; i<n; i++) {
+	int64_t mn, mx;
+	mx = mn = cc[0];
+	for (int i=0; i<n; i++) {
 		mx = std::max(mx, int64_t(cc[i]));
-		int64_t end = cc[i]*(s/mx)+s%mx;
-		mnend = std::min(mnend, end);
+		mn = std::min(mn, int64_t(cc[i]));
+		mxend = std::max(mxend, int64_t(cc[i])*(s/mn)+s%mn);
+		mnend = std::min(mnend, int64_t(cc[i])*(s/mx)+s%mx);
 	}
 	printf("%lld %lld\n", mnend, mxend);
 	return 0;
