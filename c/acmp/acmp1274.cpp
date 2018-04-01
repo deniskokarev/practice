@@ -1,9 +1,7 @@
 /* ACMP 1274 */
-#include <stdio.h>
-#include <limits.h>
-
-#define max(A,B) ((A>B)?A:B)
-#define min(A,B) ((A<B)?A:B)
+#include <cstdio>
+#include <cinttypes>
+#include <algorithm>
 
 int main(int argc, char **argv) {
 	int n, s;
@@ -11,31 +9,31 @@ int main(int argc, char **argv) {
 	int cc[n];
 	for (auto &c:cc)
 		scanf("%d", &c);
-	int mn, mx;
+	int64_t mn, mx;
 	mn = mx = cc[0];
-	int mxend = s;
-	for (int i=1; i<n; i++) {
+	int64_t mxend = s;
+	for (int i=0; i<n; i++) {
 		if (cc[i] > mx)
 			mx = cc[i];
 		if (cc[i] < mn) {
 			mn = cc[i];
 			mx = mn;
 		}
-		int end = mx*(s/mn)+s%mn;
-		mxend = max(mxend, end);
+		int64_t end = mx*(s/mn)+s%mn;
+		mxend = std::max(mxend, end);
 	}
 	mn = mx = cc[0];
-	int mnend = s;
-	for (int i=1; i<n; i++) {
+	int64_t mnend = s;
+	for (int i=0; i<n; i++) {
 		if (cc[i] > mx) {
 			mx = cc[i];
 			mn = mx;
 		}
 		if (cc[i] < mn)
 			mn = cc[i];
-		int end = mn*(s/mx)+s%mx;
-		mnend = min(mnend, end);
+		int64_t end = mn*(s/mx)+s%mx;
+		mnend = std::min(mnend, end);
 	}
-	printf("%d %d\n", mnend, mxend);
+	printf("%lld %lld\n", mnend, mxend);
 	return 0;
 }
