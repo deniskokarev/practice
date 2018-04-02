@@ -1,36 +1,37 @@
 /* ACMP 443 */
-#include <iostream>
+#include <stdio.h>
 #include <algorithm>
 
-using namespace std;
+constexpr int MXLEN = 101;
 
-int myhash(const string &s, int m, int x) {
-	int p = 1;
+inline int myhash(const char *s, int m, const int (&pp)[MXLEN][10]) {
 	int h = 0;
-	for (auto c:s) {
-		h += p*(c-'0');
-		h %= m;
-		p *= x;
-		p %= m;
-	}
-	return h;
+	for (int i=0; *s; i++,s++)
+		h += pp[i][*s-'0'];
+	return h%m;
 }
 
 int main(int argc, char **argv) {
 	int n, m, x;
-	cin >> n >> m >> x;
+	scanf("%d%d%d", &n, &m, &x);
+	// precompute hash for every digit at each place to minimize % op at runtime
+	int pp[MXLEN][10] = {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}};
+	for (int i=1; i<MXLEN; i++) {
+		pp[i][0] = 0;
+		pp[i][1] = (pp[i-1][1]*x) % m;
+		for (int d=2; d<10; d++)
+			pp[i][d] = pp[i][1]*d%m;
+	}
 	int hh[m];
-	fill(hh, hh+m, 1);
+	std::fill(hh, hh+m, 0);
 	for (int i=0; i<n; i++) {
-		string s;
-		cin >> s;
-		hh[myhash(s, m, x)]++;
+		char s[MXLEN];
+		scanf("%s", s);
+		hh[myhash(s, m, pp)]++;
 	}
 	int a = 0;
-	for (auto h:hh) {
-		int cnt = h-1;
-		a += cnt*(cnt-1)/2;
-	}
-	cout << a << endl;
+	for (auto h:hh)
+		a += h*(h-1)/2;
+	printf("%d\n", a);
 	return 0;
 }
