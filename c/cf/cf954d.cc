@@ -2,6 +2,7 @@
 #include <cstring>
 #include <algorithm>
 #include <queue>
+#include <cassert>
 /* CodeForces CF954D problem */
 
 using namespace std;
@@ -56,13 +57,14 @@ int main(int argc, char **argv) {
 	}
 	int dist_s[n];
 	dijkstra(ee, dist_s, n, s);
-	int srt_st = dist_s[t];
+	int spath = dist_s[t];
 	int dist_t[n];
 	dijkstra(ee, dist_t, n, t);
+	assert(dist_t[s] == spath);
 	int ans = 0;
 	for (int i=0; i<n; i++)
 		for (int j=i+1; j<n; j++)
-			if (mm[i][j]==0 && (dist_s[i]+dist_t[i] != srt_st || dist_s[j]+dist_t[j] != srt_st || dist_s[i] == dist_s[j]))
+			if (mm[i][j]==0 && dist_s[i]+dist_t[j]+1 >= spath && dist_s[j]+dist_t[i]+1 >= spath)
 				ans++;
 	printf("%d\n", ans);
 	return 0;
