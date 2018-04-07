@@ -1,0 +1,8 @@
+a
+ab
+abc
+abcd
+efgh
+fgh
+gh
+h
