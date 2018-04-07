@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 			if (rc == rsz) {
 				over = rfindnl(buf, STRSZ);
 				if (over == STRSZ)
-					die("Line size may not exceed %d", STRSZ);
+					die("Line size must be less than %d", STRSZ);
 				memcpy(next_buf, buf+STRSZ-over, over);
 				memset(buf+STRSZ-over, SFILL, over);
 				buf = next_buf;
