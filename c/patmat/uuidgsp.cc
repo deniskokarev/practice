@@ -17,7 +17,6 @@
 
 constexpr int STREAMS = 8;
 constexpr int STRSZ = 1<<20;
-constexpr char NL = '\n';
 constexpr char SFILL = ' ';
 
 struct MATCH {
@@ -105,7 +104,7 @@ void prn(const char *ibuf, const MATCH *obuf, const unsigned *o_sz) {
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
 			//fprintf(stderr, "\tpos: %d, sz: %d\n", mm[i].pos, mm[i].sz);
-		  if ((rc=fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
+			if ((rc=fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
 				die("Write error");
 			if (fputc('\n', stdout) != '\n')
 				die("Write error");
@@ -113,8 +112,14 @@ void prn(const char *ibuf, const MATCH *obuf, const unsigned *o_sz) {
 	}
 }
 
+static int rfindnl(const char *buf, int sz) {
+	int over = 0;
+	while (sz > 0 && buf[sz-1] != '\n')
+		sz--, over++;
+	return over;
+}
+
 int main(int argc, char **argv) {
-	int rc;
 	int over = 0;
 	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]);
 	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS+1)]);
@@ -126,39 +131,34 @@ int main(int argc, char **argv) {
 	for (int i=0; i<STREAMS; ++i)
 		threads[i] = std::thread(match_thread, &tharg, i);
 	int batch = 0;
+	// read input and scatter it into STREAMS channels
 	while (!feof(stdin)) {
-		size_t sz = STRSZ-over;
-		char *s = ibuf;
-		memcpy(s, ibuf+STRSZ*STREAMS, over);
-		int nstreams;
-		nstreams = 0;
-		rc = fread(s+over, 1, sz, stdin);
-		if (rc < 0)
-			die("read error");
-		if (rc == 0)
-			break;
-		do {
-			if (rc == (int)sz) {
-				int i;
-				for (i=STRSZ-1; i>0 && s[i] != NL; i--);
-				if (i==0)
-					die("Cannot use strings greater than %d", STRSZ);
-				over = STRSZ-i-1;
-				memcpy(s+STRSZ, s+i+1, over);
-				memset(s+i, SFILL, over);
-				s[STRSZ-1] = '\n';
-				nstreams++;
-				s += STRSZ;
+		int ns = 0;
+		char *buf = ibuf;
+		char *next_buf = buf+STRSZ;
+		memcpy(buf, buf+STREAMS*STRSZ, over);
+		while (ns < STREAMS) {
+			int rsz = STRSZ-over;
+			int rc = fread(buf+over, 1, rsz, stdin);
+			if (rc == rsz) {
+				over = rfindnl(buf, STRSZ);
+				if (over == STRSZ)
+					die("Line size may not exceed %d", STRSZ);
+				memcpy(next_buf, buf+STRSZ-over, over);
+				memset(buf+STRSZ-over, SFILL, over);
+				buf = next_buf;
+				next_buf = buf+STRSZ;
+				ns++;
+			} else if (rc < 0) {
+				die("read error");
 			} else {
-				memset(s+over+rc, SFILL, STRSZ-over-rc);
-				over = 0;
+				memset(buf+over+rc, SFILL, STRSZ-over-rc);
+				ns++;
 				break;
 			}
-		} while(nstreams < STREAMS && (rc=fread(s+over, 1, sz, stdin)) >= 0);
-		if (rc < 0)
-			die("read error");
-		if (nstreams < STREAMS)
-			memset(ibuf+STRSZ*(nstreams+1), SFILL, (STREAMS-nstreams-1)*STRSZ); // fill up
+		}
+		if (ns < STREAMS)
+			memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
 		threads_go(&tharg);
 		//fprintf(stderr, "batch wait: %d\n", batch);
 		threads_wait(&tharg);
