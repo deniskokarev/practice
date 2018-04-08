@@ -2,18 +2,18 @@
  * similar to uuidgrep, only
  * extracting UUIDs from stream of ASCII strings
  * use STREAMS parallel threads for speed
+ * CUDA version of the tool
  * @author Denis Kokarev
  */
 #include <cstdio>
 #include <cstdlib>
-#include <errno.h>
-#include "die.h"
-#include <memory>
 #include <cstring>
-#include "uuidmatch.h"
+#include <memory>
+#include <algorithm>
 #include <cuda_runtime.h>
 #include "transpose.cuh"
-#include <algorithm>
+#include "uuidmatch.h"
+#include "die.h"
 
 constexpr int THREADS = 256;
 constexpr int STRSZ = 1<<14; // must be under uint16
@@ -24,20 +24,6 @@ struct MATCH {
 	uint16_t pos;
 	uint16_t sz;
 };
-
-void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz, const uint16_t rowsz) {
-	for (int stream=0; stream<STREAMS; stream++) {
-		unsigned sz = o_sz[stream];
-		const MATCH *mm = obuf+rowsz*stream;
-		const char *s = ibuf+STRSZ*stream;
-		for (unsigned i=0; i<sz; i++) {
-			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
-				die("Write error");
-			if (fputc('\n', stdout) != '\n')
-				die("Write error");
-		}
-	}
-}
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -129,10 +115,6 @@ public:
 		detect<<<STREAMS/THREADS,THREADS>>>(d_tobuf, d_tibuf, d_nmatch, STREAMS);
 		checkCuda(cudaGetLastError());
 		checkCuda(cudaMemcpy(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost));
-#if 0
-		for (int i=0; i<STREAMS; i++)
-			fprintf(stderr, "nmatch[%d] = %d\n", i, nmatch[i]);
-#endif
 		uint16_t nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
 			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
@@ -144,6 +126,20 @@ public:
 		}
 	}
 };
+
+void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz, const uint16_t rowsz) {
+	for (int stream=0; stream<STREAMS; stream++) {
+		unsigned sz = o_sz[stream];
+		const MATCH *mm = obuf+rowsz*stream;
+		const char *s = ibuf+STRSZ*stream;
+		for (unsigned i=0; i<sz; i++) {
+			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
+				die("Write error");
+			if (fputc('\n', stdout) != '\n')
+				die("Write error");
+		}
+	}
+}
 
 inline int rfindnl(const char *buf, int sz) {
 	int over = 0;
@@ -159,7 +155,7 @@ int main(int argc, char **argv) {
 	char *ibuf = up_ibuf.get();
 	MATCH *obuf = up_obuf.get();
 	uint16_t nmatch[STREAMS];
-	CudaDetect cuda_detect;
+	CudaDetect detect;
 	// read input and scatter it into STREAMS channels
 	while (!feof(stdin)) {
 		int ns = 0;
@@ -180,7 +176,7 @@ int main(int argc, char **argv) {
 			} else if (rc < 0) {
 				die("read error");
 			} else {
-				// eof - we didn't get full block
+				// we didn't get full block - must be eof
 				memset(buf+over+rc, SFILL, STRSZ-over-rc);
 				ns++;
 				memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
@@ -189,7 +185,7 @@ int main(int argc, char **argv) {
 		}
 		//////// run the batch
 		uint16_t rowsz;
-		cuda_detect(ibuf, obuf, nmatch, rowsz);
+		detect(ibuf, obuf, nmatch, rowsz);
 		prn(ibuf, obuf, nmatch, rowsz);
 	}
 }
