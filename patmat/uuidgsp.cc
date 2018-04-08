@@ -72,7 +72,6 @@ void match_thread(THARG *t, int n) {
 			break;
 		}
 	}
-	//fprintf(stderr, "done thread %d\n", n);
 }
 
 void threads_go(THARG *t) {
@@ -99,11 +98,9 @@ void prn(const char *ibuf, const MATCH *obuf, const unsigned *o_sz) {
 	int rc;
 	for (int stream=0; stream<STREAMS; stream++) {
 		unsigned sz = o_sz[stream];
-		//fprintf(stderr, "stream: %d, sz: %d\n", stream, sz);
 		const MATCH *mm = obuf+STRSZ*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
-			//fprintf(stderr, "\tpos: %d, sz: %d\n", mm[i].pos, mm[i].sz);
 			if ((rc=fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
 				die("Write error");
 			if (fputc('\n', stdout) != '\n')
@@ -112,7 +109,7 @@ void prn(const char *ibuf, const MATCH *obuf, const unsigned *o_sz) {
 	}
 }
 
-static int rfindnl(const char *buf, int sz) {
+inline int rfindnl(const char *buf, int sz) {
 	int over = 0;
 	while (sz > 0 && buf[sz-1] != '\n')
 		sz--, over++;
@@ -121,8 +118,8 @@ static int rfindnl(const char *buf, int sz) {
 
 int main(int argc, char **argv) {
 	int over = 0;
-	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]);
-	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS+1)]);
+	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]); // +1 to carry over the remaining of the line
+	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS)]);
 	char *ibuf = up_ibuf.get();
 	MATCH *obuf = up_obuf.get();
 	unsigned o_sz[STREAMS];
@@ -130,12 +127,10 @@ int main(int argc, char **argv) {
 	THARG tharg {ibuf, obuf, o_sz};
 	for (int i=0; i<STREAMS; ++i)
 		threads[i] = std::thread(match_thread, &tharg, i);
-	int batch = 0;
 	// read input and scatter it into STREAMS channels
 	while (!feof(stdin)) {
 		int ns = 0;
 		char *buf = ibuf;
-		char *next_buf = buf+STRSZ;
 		memcpy(buf, buf+STREAMS*STRSZ, over);
 		while (ns < STREAMS) {
 			int rsz = STRSZ-over;
@@ -144,26 +139,24 @@ int main(int argc, char **argv) {
 				over = rfindnl(buf, STRSZ);
 				if (over == STRSZ)
 					die("Line size must be less than %d", STRSZ);
+				char *next_buf = buf+STRSZ;
 				memcpy(next_buf, buf+STRSZ-over, over);
 				memset(buf+STRSZ-over, SFILL, over);
 				buf = next_buf;
-				next_buf = buf+STRSZ;
 				ns++;
 			} else if (rc < 0) {
 				die("read error");
 			} else {
+				// eof - we didn't get enough data
 				memset(buf+over+rc, SFILL, STRSZ-over-rc);
 				ns++;
+				memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
 				break;
 			}
 		}
-		if (ns < STREAMS)
-			memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
 		threads_go(&tharg);
-		//fprintf(stderr, "batch wait: %d\n", batch);
 		threads_wait(&tharg);
 		prn(ibuf, obuf, o_sz);
-		batch++;
 	}
 	threads_done(&tharg);
 	for (auto &t: threads)
