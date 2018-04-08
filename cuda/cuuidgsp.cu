@@ -16,7 +16,7 @@
 #include <algorithm>
 
 constexpr int THREADS = 256;
-constexpr int STRSZ = 1<<8; // must be under uint16
+constexpr int STRSZ = 1<<14; // must be under uint16
 constexpr int STREAMS = STRSZ;
 constexpr char SFILL = ' ';
 
@@ -108,8 +108,8 @@ public:
 	CudaDetect() {
 		checkCuda(cudaMalloc(&d_ibuf, STREAMS*STRSZ*sizeof(*d_ibuf)));
 		checkCuda(cudaMalloc(&d_tibuf, STREAMS*STRSZ*sizeof(*d_tibuf)));
-		checkCuda(cudaMalloc(&d_tobuf, STREAMS*STRSZ*sizeof(*d_tobuf)));
-		checkCuda(cudaMalloc(&d_obuf, STREAMS*STRSZ*sizeof(*d_tobuf)));
+		checkCuda(cudaMalloc(&d_tobuf, STREAMS*(STRSZ/UMPATLEN+1)*sizeof(*d_tobuf)));
+		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/UMPATLEN+1)*sizeof(*d_tobuf)));
 		checkCuda(cudaMalloc(&d_nmatch, STREAMS*sizeof(*d_nmatch)));
 		checkCuda(cudaMemcpyToSymbol(cuda_uuid_pattern, uuid_pattern, sizeof(uuid_pattern)));
 	}

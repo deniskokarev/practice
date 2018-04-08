@@ -1,4 +1,4 @@
-BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep
+BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep cuuidgsp
 INCGT = ../c/googletest/googletest/include
 LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
@@ -68,6 +68,8 @@ test: test_cuda test_act
 
 test_cuda: match
 	(echo "ab cd ef"; ./test.sh; echo "gh") | nvprof ./match
+
+cuuidgsp: cuuidgsp.o uuidmatch.o die.o
 
 test_act: actcomp actmatch
 	./actcomp pat3.txt pat3.bin
