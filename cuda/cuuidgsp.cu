@@ -25,10 +25,10 @@ struct MATCH {
 	uint16_t sz;
 };
 
-void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz) {
+void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz, const uint16_t rowsz) {
 	for (int stream=0; stream<STREAMS; stream++) {
 		unsigned sz = o_sz[stream];
-		const MATCH *mm = obuf+STRSZ*stream;
+		const MATCH *mm = obuf+rowsz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
 			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
@@ -120,7 +120,7 @@ public:
 		checkCuda(cudaFree(d_obuf));
 		checkCuda(cudaFree(d_nmatch));
 	}
-	void operator()(const char *ibuf, MATCH *obuf, uint16_t *nmatch) {
+	void operator()(const char *ibuf, MATCH *obuf, uint16_t *nmatch, uint16_t &rowsz) {
 		checkCuda(cudaMemcpy(d_ibuf, ibuf, sizeof(*ibuf)*STRSZ*STREAMS, cudaMemcpyHostToDevice));
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
 		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
@@ -133,14 +133,14 @@ public:
 		for (int i=0; i<STREAMS; i++)
 			fprintf(stderr, "nmatch[%d] = %d\n", i, nmatch[i]);
 #endif
-		int nmx = *std::max_element(nmatch, nmatch+STREAMS);
+		uint16_t nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
-			int h = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
-			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, h/TRANSPOSE_TILE_DIM, 1);
+			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
+			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
 			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
 			transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_obuf, d_tobuf);
 			checkCuda(cudaGetLastError());
-			checkCuda(cudaMemcpy(obuf, d_obuf, h*STREAMS*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
+			checkCuda(cudaMemcpy(obuf, d_obuf, rowsz*STREAMS*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
 		}
 	}
 };
@@ -188,7 +188,8 @@ int main(int argc, char **argv) {
 			}
 		}
 		//////// run the batch
-		cuda_detect(ibuf, obuf, nmatch);
-		prn(ibuf, obuf, nmatch);
+		uint16_t rowsz;
+		cuda_detect(ibuf, obuf, nmatch, rowsz);
+		prn(ibuf, obuf, nmatch, rowsz);
 	}
 }
