@@ -92,7 +92,7 @@ __global__ void detect(MATCH *odata, const char *idata, uint16_t *d_nmatch, uint
 			odata[oofs] = MATCH {uint16_t(row-UMPATLEN+1), UMPATLEN};
 			oofs += stride;
 			nmatch++;
-			printf("found uuid at row %d\n", row);
+			//printf("found uuid at row %d\n", row);
 		}
 	}
 	d_nmatch[col] = nmatch;
@@ -124,7 +124,7 @@ public:
 		checkCuda(cudaMemcpy(d_ibuf, ibuf, sizeof(*ibuf)*STRSZ*STREAMS, cudaMemcpyHostToDevice));
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
 		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
-		transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_tobuf, d_obuf);
+		transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_tibuf, d_ibuf);
 		checkCuda(cudaGetLastError());
 		detect<<<STREAMS/THREADS,THREADS>>>(d_tobuf, d_tibuf, d_nmatch, STREAMS);
 		checkCuda(cudaGetLastError());
