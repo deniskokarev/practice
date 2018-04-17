@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <set>
+#include <cassert>
 /* ACMP 1392 */
 using namespace std;
 
@@ -58,14 +59,20 @@ int main(int argc, char **argv) {
 		q.insert(n);
 	while (!q.empty()) {
 		N top = *q.begin();
-		E *mnto = top.ee;
+		E *mnto = nullptr;
 		for (E *e=top.ee; e; e=e->next)
-			if (nn[e->to].ecnt < nn[mnto->to].ecnt)
+			if (!nn[e->to].sel)
+				mnto = e;
+		assert(mnto != nullptr);
+		for (E *e=top.ee; e; e=e->next)
+			if (!nn[e->to].sel && nn[e->to].ecnt < nn[mnto->to].ecnt)
 				mnto = e;
 		if (top.type == T_W)
 			cout << top.id+1 << " " << nn[mnto->to].id-n+1 << endl;
 		else
 			cout << nn[mnto->to].id-n+1 << " " << top.id+1 << endl;
+		nn[top.id].sel = true;
+		nn[mnto->to].sel = true;
 		q.erase(top);
 		q.erase(nn[mnto->to]);
 	}
