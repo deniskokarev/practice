@@ -17,10 +17,9 @@
 
 constexpr int STREAMS = 8;
 constexpr int STRSZ = 1<<20;
-constexpr char SFILL = ' ';
 
 struct MATCH {
-	unsigned pos;
+	int pos;
 	unsigned sz;
 };
 
@@ -101,27 +100,45 @@ public:
 
 class Detect: public ParallelExec {
 	const char *ibuf;
+	int ibufsz;
 	MATCH *obuf;
 	unsigned *nmatch;
-	unsigned match_one_stream(const char *s, unsigned s_sz, MATCH *out) {
+	UMSTATE last_umstate;
+	virtual void exec_batch_slice(int n) override {
+		const char *s = ibuf+STRSZ*n;
+		MATCH *out = obuf+STRSZ*n;
 		MATCH *res(out);
 		UMSTATE umstate;
-		um_init(&umstate);
-		for (unsigned i=0; i<s_sz; i++,s++)
+		if (n == 0)
+			umstate = last_umstate;
+		else
+			um_init(&umstate);
+		int i;
+		int sz = std::min(STRSZ, ibufsz-STRSZ*n);
+		for (i=0; i<sz; i++,s++)
 			if (um_match(&umstate, *s))
 				*res++ = MATCH {i-UMPATLEN+1, UMPATLEN};
-		return res-out;
-	}
-	virtual void exec_batch_slice(int n) override {
-		const char *in = ibuf+STRSZ*n;
-		MATCH *out = obuf+STRSZ*n;
-		nmatch[n] = match_one_stream(in, STRSZ, out);
+		if (n == nthreads-1) {
+			last_umstate = umstate;
+		} else {
+			while (umstate != 0 && i<sz+UMPATLEN) {
+				if (um_match(&umstate, *s)) {
+					*res++ = MATCH {i-UMPATLEN+1, UMPATLEN};
+					break;
+				}
+				i++;
+				s++;
+			}
+		}
+		nmatch[n] = res-out;
 	}
 public:
 	Detect():ParallelExec(STREAMS),ibuf{nullptr},obuf{nullptr},nmatch{nullptr} {
+		um_init(&last_umstate);
 	}
-	void operator()(const char *_ibuf, MATCH *_obuf, unsigned *_nmatch, unsigned &rowsz) {
+	void operator()(const char *_ibuf, int _ibufsz, MATCH *_obuf, unsigned *_nmatch, unsigned &rowsz) {
 		ibuf = _ibuf;
+		ibufsz = _ibufsz;
 		obuf = _obuf;
 		nmatch = _nmatch;
 		exec_batch();
@@ -143,51 +160,19 @@ void prn(const char *ibuf, const MATCH *obuf, const unsigned *nmatch, const unsi
 	}
 }
 
-inline int rfindnl(const char *buf, int sz) {
-	int over = 0;
-	while (sz > 0 && buf[sz-1] != '\n')
-		sz--, over++;
-	return over;
-}
-
 int main(int argc, char **argv) {
-	int over = 0;
 	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]); // +1 to carry over the remaining of the line
 	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS)]);
 	char *ibuf = up_ibuf.get();
 	MATCH *obuf = up_obuf.get();
 	unsigned nmatch[STREAMS];
 	Detect detect;
-	// read input and scatter it into STREAMS channels
 	while (!feof(stdin)) {
-		int ns = 0;
-		char *buf = ibuf;
-		memcpy(buf, buf+STREAMS*STRSZ, over);
-		while (ns < STREAMS) {
-			int rsz = STRSZ-over;
-			int rc = fread(buf+over, 1, rsz, stdin);
-			if (rc == rsz) {
-				over = rfindnl(buf, STRSZ);
-				if (over == STRSZ)
-					die("Line size must be less than %d", STRSZ);
-				char *next_buf = buf+STRSZ;
-				memcpy(next_buf, buf+STRSZ-over, over);
-				memset(buf+STRSZ-over, SFILL, over);
-				buf = next_buf;
-				ns++;
-			} else if (rc < 0) {
-				die("read error");
-			} else {
-				// we didn't get full block - must be eof
-				memset(buf+over+rc, SFILL, STRSZ-over-rc);
-				ns++;
-				memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
-				break;
-			}
-		}
+		memcpy(ibuf+(STRSZ-UMPATLEN), ibuf+STREAMS*STRSZ+(STRSZ-UMPATLEN), UMPATLEN);
+		int sz = fread(ibuf+STRSZ, 1, STRSZ, stdin);
 		//////// run the batch
 		unsigned rowsz;
-		detect(ibuf, obuf, nmatch, rowsz);
-		prn(ibuf, obuf, nmatch, rowsz);
+		detect(ibuf+STRSZ, sz, obuf, nmatch, rowsz);
+		prn(ibuf+STRSZ, obuf, nmatch, rowsz);
 	}
 }
