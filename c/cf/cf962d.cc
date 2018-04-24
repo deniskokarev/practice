@@ -15,15 +15,15 @@ int main(int argc, char **argv) {
 		mm[a].insert(i);
 	}
 	int del = 0;
-	for (auto &m:mm) {
+	for (auto m:mm) {
 		while (m.second.size()>1) {
 			auto p = m.second.begin();
 			aa[*p] = -1;
 			m.second.erase(p);
 			p = m.second.begin();
-			m.second.erase(p);
 			aa[*p] = m.first*2;
 			mm[m.first*2].insert(*p);
+			m.second.erase(p);
 			del++;
 		}
 	}
