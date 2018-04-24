@@ -8,9 +8,9 @@ int main(int argc, char **argv) {
 	map<int64_t,set<int>> mm;
 	int n;
 	cin >> n;
-	int aa[n];
+	int64_t aa[n];
 	for (int i=0; i<n; i++) {
-		int &a = aa[i];
+		auto &a = aa[i];
 		cin >> a;
 		mm[a].insert(i);
 	}
