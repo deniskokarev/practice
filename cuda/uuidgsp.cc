@@ -11,6 +11,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 #include "uuidmatch.h"
 #include "die.h"
 
@@ -23,38 +24,85 @@ struct MATCH {
 	unsigned sz;
 };
 
-class Detect {
+class ParallelExec {
+protected:
+	int nthreads;
+	int batch;
+private:
+	// pre-spawn this many threads
+	std::vector<std::thread> threads;
+	int cnt;
+	// threads wait on this cv to start the batch
+	std::mutex mtx_begin;
+	std::condition_variable cv_begin;
+	// threads notify this cv at the end of batch
+	std::mutex mtx_end;
+	std::condition_variable cv_end;
+	void threads_go() {
+		std::lock_guard<std::mutex> lck(mtx_begin);
+		batch++;
+		cnt += nthreads;
+		cv_begin.notify_all();
+	}
+	void threads_wait() {
+		std::unique_lock<std::mutex> lck(mtx_end);
+		while (cnt > 0)
+			cv_end.wait(lck);
+	}
+	void threads_done() {
+		std::lock_guard<std::mutex> lck(mtx_begin);
+		batch++;
+		cnt--; // go below 0 to finish
+		cv_begin.notify_all();
+	}
+	static void run_thread(ParallelExec *th, int n) {
+		th->run(n);
+	}
+	void run(int n) {
+		int local_batch = 0;
+		while (true) {
+			// wait for new data from producer
+			{
+				std::unique_lock<std::mutex> lck(mtx_begin);
+				while (batch == local_batch)
+					cv_begin.wait(lck);
+				local_batch = batch;
+			}
+			if (cnt > 0) {
+				// process this batch and notify producer
+				exec_batch_slice(n);
+				{
+					std::lock_guard<std::mutex> lck(mtx_end);
+					cnt--;
+					cv_end.notify_one();
+				}
+			} else {
+				// quit
+				break;
+			}
+		}
+	}
+public:
+	ParallelExec(int nthreads):nthreads(nthreads),batch(0),threads(nthreads),cnt(0) {
+		for (int i=0; i<nthreads; i++)
+			threads[i] = std::thread(run_thread, this, i);
+	}
+	~ParallelExec() {
+		threads_done();
+		for (auto &t: threads)
+			t.join();
+	}
+	void exec_batch() {
+		threads_go();
+		threads_wait();
+	}
+	virtual void exec_batch_slice(int n) = 0;
+};
+
+class Detect: public ParallelExec {
 	const char *ibuf;
 	MATCH *obuf;
 	unsigned *nmatch;
-	int batch;
-	int cnt;
-	// producer notifies, consumer waits
-	std::mutex mtx_producer;
-	std::condition_variable cv_producer;
-	// consumer notifies, producer waits
-	std::mutex mtx_consumer;
-	std::condition_variable cv_consumer;
-	// pre-spawn this many threads
-	std::thread threads[STREAMS];
-protected:
-	void threads_go() {
-		std::lock_guard<std::mutex> lck(mtx_producer);
-		batch++;
-		cnt += STREAMS;
-		cv_producer.notify_all();
-	}
-	void threads_wait() {
-		std::unique_lock<std::mutex> lck(mtx_consumer);
-		while (cnt > 0)
-			cv_consumer.wait(lck);
-	}
-	void threads_done() {
-		std::lock_guard<std::mutex> lck(mtx_producer);
-		batch++;
-		cnt--; // go below 0
-		cv_producer.notify_all();
-	}
 	unsigned match_one_stream(const char *s, unsigned s_sz, MATCH *out) {
 		MATCH *res(out);
 		UMSTATE umstate;
@@ -64,47 +112,19 @@ protected:
 				*res++ = MATCH {i-UMPATLEN+1, UMPATLEN};
 		return res-out;
 	}
-	static void match_thread(Detect *d, int n) {
-		int batch = 0;
-		while (true) {
-			// wait for new data from producer
-			{
-				std::unique_lock<std::mutex> lck(d->mtx_producer);
-				while (d->batch == batch)
-					d->cv_producer.wait(lck);
-				batch = d->batch;
-			}
-			const char *in = d->ibuf+STRSZ*n;
-			MATCH *out = d->obuf+STRSZ*n;
-			if (d->cnt > 0) {
-				// process this batch and notify producer
-				d->nmatch[n] = d->match_one_stream(in, STRSZ, out);
-				{
-					std::lock_guard<std::mutex> lck(d->mtx_consumer);
-					d->cnt--;
-					d->cv_consumer.notify_one();
-				}
-			} else {
-				break;
-			}
-		}
+	virtual void exec_batch_slice(int n) override {
+		const char *in = ibuf+STRSZ*n;
+		MATCH *out = obuf+STRSZ*n;
+		nmatch[n] = match_one_stream(in, STRSZ, out);
 	}
 public:
-	Detect():ibuf{nullptr},obuf{nullptr},nmatch{nullptr},batch{0},cnt{0} {
-		for (int i=0; i<STREAMS; ++i)
-			threads[i] = std::thread(match_thread, this, i);
-	}
-	~Detect() {
-		threads_done();
-		for (auto &t: threads)
-			t.join();
+	Detect():ParallelExec(STREAMS),ibuf{nullptr},obuf{nullptr},nmatch{nullptr} {
 	}
 	void operator()(const char *_ibuf, MATCH *_obuf, unsigned *_nmatch, unsigned &rowsz) {
 		ibuf = _ibuf;
 		obuf = _obuf;
 		nmatch = _nmatch;
-		threads_go();
-		threads_wait();
+		exec_batch();
 		rowsz = STRSZ;
 	}
 };
