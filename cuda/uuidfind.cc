@@ -85,6 +85,7 @@ protected:
 					d->cv_consumer.notify_one();
 				}
 			} else {
+				// quit when cnt goes below 0
 				break;
 			}
 		}
@@ -227,7 +228,7 @@ struct BUF {
 
 class PipeStageRead: public PipeStage {
 	static constexpr int depth = 2;
-	static constexpr int buf_sz = 65536;
+	static constexpr int buf_sz = 1024*1024;
 	FILE *fin;
 	std::unique_ptr<char[]> up_buf[depth];
 	BUF buf[depth];
