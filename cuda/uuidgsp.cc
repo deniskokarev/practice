@@ -167,9 +167,10 @@ int main(int argc, char **argv) {
 	MATCH *obuf = up_obuf.get();
 	unsigned nmatch[STREAMS];
 	Detect detect;
+	memset(ibuf+(STRSZ-UMPATLEN), 0, UMPATLEN);
 	while (!feof(stdin)) {
 		memcpy(ibuf+(STRSZ-UMPATLEN), ibuf+STREAMS*STRSZ+(STRSZ-UMPATLEN), UMPATLEN);
-		int sz = fread(ibuf+STRSZ, 1, STRSZ, stdin);
+		int sz = fread(ibuf+STRSZ, 1, STREAMS*STRSZ, stdin);
 		//////// run the batch
 		unsigned rowsz;
 		detect(ibuf+STRSZ, sz, obuf, nmatch, rowsz);
