@@ -1,4 +1,4 @@
-BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep cuuidgsp uuidgsp
+BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep cuuidgsp uuidgsp uuidfind
 INCGT = ../c/googletest/googletest/include
 LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
@@ -17,7 +17,8 @@ NVCCFLAGS += -O3
 NVCCFLAGS += -gencode arch=compute_30,code=sm_30 \
              -gencode arch=compute_35,code=sm_35 \
              -gencode arch=compute_50,code=sm_50 \
-             -gencode arch=compute_50,code=compute_50
+             -gencode arch=compute_60,code=sm_60 \
+             -gencode arch=compute_60,code=compute_60
 
 %.o: %.cu
 	$(NVCC) $< $(NVCCFLAGS) -c -o $@
@@ -72,6 +73,8 @@ test_cuda: match
 cuuidgsp: cuuidgsp.o uuidmatch.o die.o
 
 uuidgsp: uuidgsp.o uuidmatch.o die.o
+
+uuidfind: uuidfind.o uuidmatch.o die.o
 
 test_act: actcomp actmatch
 	./actcomp pat3.txt pat3.bin
