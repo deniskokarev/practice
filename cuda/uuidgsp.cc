@@ -15,8 +15,8 @@
 #include "uuidmatch.h"
 #include "die.h"
 
-constexpr int STREAMS = 8;
-constexpr int STRSZ = 1<<20;
+constexpr int STREAMS = 16;
+constexpr int STRSZ = 1<<16;
 
 struct MATCH {
 	int pos;
@@ -103,38 +103,40 @@ class Detect: public ParallelExec {
 	int ibufsz;
 	MATCH *obuf;
 	unsigned *nmatch;
-	UMSTATE last_umstate;
+	UMSTATE first_umstate, last_umstate;
 	virtual void exec_batch_slice(int n) override {
 		const char *s = ibuf+STRSZ*n;
 		MATCH *out = obuf+STRSZ*n;
 		MATCH *res(out);
 		UMSTATE umstate;
 		if (n == 0)
-			umstate = last_umstate;
+			umstate = first_umstate;
 		else
 			um_init(&umstate);
 		int i;
 		int sz = std::min(STRSZ, ibufsz-STRSZ*n);
-		for (i=0; i<sz; i++,s++)
-			if (um_match(&umstate, *s))
-				*res++ = MATCH {i-UMPATLEN+1, UMPATLEN};
-		if (n == nthreads-1) {
-			last_umstate = umstate;
-		} else {
-			while (umstate != 0 && i<sz+UMPATLEN) {
-				if (um_match(&umstate, *s)) {
+		if (sz > 0) {
+			for (i=0; i<sz; i++,s++)
+				if (um_match(&umstate, *s))
 					*res++ = MATCH {i-UMPATLEN+1, UMPATLEN};
-					break;
+			if (n == nthreads-1) {
+				last_umstate = umstate;
+			} else {
+				while (umstate != 0 && i<sz+UMPATLEN) {
+					if (um_match(&umstate, *s)) {
+						*res++ = MATCH {i-UMPATLEN+1, UMPATLEN};
+						break;
+					}
+					i++;
+					s++;
 				}
-				i++;
-				s++;
 			}
 		}
 		nmatch[n] = res-out;
 	}
 public:
 	Detect():ParallelExec(STREAMS),ibuf{nullptr},obuf{nullptr},nmatch{nullptr} {
-		um_init(&last_umstate);
+		um_init(&first_umstate);
 	}
 	void operator()(const char *_ibuf, int _ibufsz, MATCH *_obuf, unsigned *_nmatch, unsigned &rowsz) {
 		ibuf = _ibuf;
@@ -143,6 +145,7 @@ public:
 		nmatch = _nmatch;
 		exec_batch();
 		rowsz = STRSZ;
+		first_umstate = last_umstate;
 	}
 };
 
@@ -161,15 +164,15 @@ void prn(const char *ibuf, const MATCH *obuf, const unsigned *nmatch, const unsi
 }
 
 int main(int argc, char **argv) {
-	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]); // +1 to carry over the remaining of the line
+	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]); // +1 to carry over the remaining pattern
 	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS)]);
 	char *ibuf = up_ibuf.get();
 	MATCH *obuf = up_obuf.get();
 	unsigned nmatch[STREAMS];
 	Detect detect;
-	memset(ibuf+(STRSZ-UMPATLEN), 0, UMPATLEN);
+	memset(ibuf+STRSZ-UMPATLEN, 0, UMPATLEN);
 	while (!feof(stdin)) {
-		memcpy(ibuf+(STRSZ-UMPATLEN), ibuf+STREAMS*STRSZ+(STRSZ-UMPATLEN), UMPATLEN);
+		memcpy(ibuf+STRSZ-UMPATLEN, ibuf+STREAMS*STRSZ+STRSZ-UMPATLEN, UMPATLEN);
 		int sz = fread(ibuf+STRSZ, 1, STREAMS*STRSZ, stdin);
 		//////// run the batch
 		unsigned rowsz;
