@@ -129,15 +129,20 @@ public:
 		while (!tail.parent.done && tail.parent.batch<=tail.parent.depth) {
 			tail.parent.thread_notify_go();
 			tail.parent.thread_wait_done();
-			value = tail.parent.last_arg;
 		}
+		value = tail.parent.last_arg;
+		tail.parent.thread_notify_go();
+		return *this;
+	}
+	PipeOutputIterator &seek_end() {
+		value = nullptr;
 		return *this;
 	}
 	void operator++() {
+		tail.parent.thread_wait_done();
+		value = tail.parent.last_arg;
 		if (!tail.parent.done) {
 			tail.parent.thread_notify_go();
-			tail.parent.thread_wait_done();
-			value = tail.parent.last_arg;
 		} else {
 			value = nullptr;
 		}
@@ -163,7 +168,7 @@ public:
 		return begin_it.seek_begin();
 	}
 	PipeOutputIterator &end() {
-		return end_it;
+		return end_it.seek_end();
 	}
 };
 
@@ -227,7 +232,7 @@ public:
 };
 
 int main(int argc, char **argv) {
-	GenStage generate(10);
+	GenStage generate(1);
 	CategorizeStage categorize(generate);
 	LabelStage label(categorize);
 	for (auto pel:PipeOutput(label)) {
