@@ -2,6 +2,7 @@ BINS = a b c d e f \
 	alg/comb_test \
 	alg/ilog_test \
 	alg/heap_test \
+	alg/par_test \
 	draft/knapsack_test \
 	draft/matmul_test \
 	draft/lcs_test \
@@ -56,6 +57,11 @@ alg/heap_test.o: alg/heap.hh
 alg/heap_test: alg/heap_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
+alg/par.o: alg/par.hh
+alg/par_test.o: alg/par.hh
+alg/par_test: alg/par_test.o alg/par.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
+
 draft/knapsack.o: draft/knapsack.hh
 draft/knapsack_test: draft/knapsack_test.o draft/knapsack.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
@@ -69,12 +75,15 @@ draft/lcs_test.o: draft/lcs.hh
 draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
-test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./draft/knapsack_test ./draft/matmul_test
+
+test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./alg/par_test ./draft/knapsack_test ./draft/matmul_test
 	./alg/comb_test
 	./alg/ilog_test
 	./alg/heap_test
+	./alg/par_test
 	./draft/knapsack_test
 	./draft/matmul_test
+
 
 clean:
 	rm -f alg/ilog.c alg/ilog.h
