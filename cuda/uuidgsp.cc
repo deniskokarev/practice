@@ -15,8 +15,8 @@
 #include "uuidmatch.h"
 #include "die.h"
 
-constexpr int STREAMS = 128;
-constexpr int STRSZ = 1<<8;
+constexpr int STREAMS = 4;
+constexpr int STRSZ = 1<<20;
 
 struct MATCH {
 	int pos;
@@ -276,31 +276,28 @@ public:
 	}
 };
 
-// pipeline element carries only pointers allocated by pipe head
-struct DETECT {
-	char *ibuf;
-	int ibufsz;
-	MATCH *obuf;
-	unsigned *nmatch;
-};
-
 // owns input the data buffers for the pipeline
 class ReadStage: public PipeHeadExec {
-	static constexpr int stages = 3; // need to keep 3 buffers
+public:
+	struct TRESULT {
+		char *buf;
+		int sz;
+	};
+private:
+	static constexpr int stages = 3; // need to drag the input over 3 pipe segments
 	FILE *fin;
-	DETECT in[stages];
-	std::unique_ptr<char[]> up_ibuf;
-	std::unique_ptr<MATCH[]> up_obuf;
-	std::unique_ptr<unsigned[]> up_nmatch;
+	TRESULT res[stages];
+	std::unique_ptr<char[]> up_buf;
+private:
 	virtual void *next() override {
 		if (!feof(fin)) {
-			// DEBUG
-			if (batch%stages == 0)
-				memcpy(in[0].ibuf-UMPATLEN, in[stages-1].ibuf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
-			in[batch%stages].ibufsz = fread(in[batch%stages].ibuf, 1, STREAMS*STRSZ, fin);
-			if (in[batch%stages].ibufsz < 0)
+			if (batch%stages == 0) // wrap the remaining line around
+				memcpy(res[0].buf-UMPATLEN, res[stages-1].buf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
+			TRESULT &r = res[batch%stages];
+			r.sz = fread(r.buf, 1, STREAMS*STRSZ, fin);
+			if (r.sz < 0)
 				die("Read error");
-			return &in[batch%stages];
+			return &r;
 		} else {
 			return nullptr;
 		}
@@ -308,14 +305,10 @@ class ReadStage: public PipeHeadExec {
 public:
 	ReadStage(FILE *fin):PipeHeadExec(),
 						 fin(fin),
-						 up_ibuf(new char[STRSZ*STREAMS*stages+STRSZ]),
-						 up_obuf(new MATCH[STRSZ*STREAMS*stages]),
-						 up_nmatch(new unsigned[STREAMS*stages]) {
-		in[0] = {up_ibuf.get()+STRSZ, 0, up_obuf.get(), up_nmatch.get()};
+						 up_buf(new char[STRSZ*STREAMS*stages+STRSZ]) {
+		res[0] = {up_buf.get()+STRSZ, 0};
 		for (int i=1; i<stages; i++)
-			in[i] = {in[i-1].ibuf+STRSZ*STREAMS, 0, in[i-1].obuf+STRSZ*STREAMS, in[i-1].nmatch+STREAMS};
-		// DEBUG
-		memset(in[stages-1].ibuf+STREAMS*STRSZ-UMPATLEN, 0, UMPATLEN);
+			res[i] = {res[i-1].buf+STRSZ*STREAMS, 0};
 	}
 };
 
@@ -371,26 +364,39 @@ public:
 };
 
 class DetectStage: public PipeStageExec {
+public:
+	struct TRESULT {
+		ReadStage::TRESULT in;
+		unsigned match_row_sz;
+		MATCH *match;
+		unsigned *nmatch;
+	};
+private:
 	static constexpr int stages = 2;
-	DETECT in[stages];
-	DETECT d; // last arg
+	std::unique_ptr<MATCH> up_match[stages];
+	std::unique_ptr<unsigned> up_nmatch[stages];
+	TRESULT res[stages];
 	Detect detect;
 	virtual void *next(void *arg) override {
-		d = *(DETECT*)arg; 
-		unsigned unused;
-		detect(d.ibuf, d.ibufsz, d.obuf, d.nmatch, unused);
-		in[batch%stages] = d;
-		return &in[batch%stages];
+		TRESULT &r = res[batch%stages];
+		r.in = *(ReadStage::TRESULT*)arg;
+		detect(r.in.buf, r.in.sz, r.match, r.nmatch, r.match_row_sz);
+		return &r;
 	}
 public:
-	DetectStage(PipeHeadExec &parent):PipeStageExec(parent),detect() {
+	DetectStage(ReadStage &parent):PipeStageExec(parent),detect() {
+		for (int i=0; i<stages; i++) {
+			up_match[i] = std::unique_ptr<MATCH>(new MATCH[STRSZ*STREAMS]);
+			up_nmatch[i] = std::unique_ptr<unsigned>(new unsigned[STREAMS*stages]);
+			res[i] = {ReadStage::TRESULT {nullptr, 0}, 0, up_match[i].get(), up_nmatch[i].get()};
+		}
 	}
 };
 
-void prn(const char *ibuf, const MATCH *obuf, const unsigned *nmatch, const unsigned rowsz) {
+void prn(const char *ibuf, const MATCH *match, const unsigned *nmatch, const unsigned match_row_sz) {
 	for (int stream=0; stream<STREAMS; stream++) {
 		unsigned sz = nmatch[stream];
-		const MATCH *mm = obuf+rowsz*stream;
+		const MATCH *mm = match+match_row_sz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
 			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
@@ -405,7 +411,7 @@ int main(int argc, char **argv) {
 	ReadStage read(stdin);
 	DetectStage detect(read);
 	for (auto it:PipeOutput(detect)) {
-		DETECT *d = (DETECT*)it;
-		prn(d->ibuf, d->obuf, d->nmatch, STRSZ);
+		DetectStage::TRESULT *r = (DetectStage::TRESULT*)it;
+		prn(r->in.buf, r->match, r->nmatch, r->match_row_sz);
 	}
 }
