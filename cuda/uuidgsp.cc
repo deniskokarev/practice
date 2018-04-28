@@ -16,7 +16,7 @@
 #include "die.h"
 
 constexpr int STREAMS = 8;
-constexpr int STRSZ = 1<<16;
+constexpr int STRSZ = 1<<8;
 
 struct MATCH {
 	int pos;
@@ -292,12 +292,13 @@ class ReadStage: public PipeHeadExec {
 	std::unique_ptr<unsigned[]> up_nmatch;
 	virtual void *next() override {
 		if (!feof(fin)) {
+			// DEBUG
 			if (batch%stages == 0)
 				memcpy(in[0].ibuf-UMPATLEN, in[stages-1].ibuf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
-			in[batch&1].ibufsz = fread(in[batch&1].ibuf, 1, STREAMS*STRSZ, fin);
-			if (in[batch&1].ibufsz < 0)
+			in[batch%stages].ibufsz = fread(in[batch%stages].ibuf, 1, STREAMS*STRSZ, fin);
+			if (in[batch%stages].ibufsz < 0)
 				die("Read error");
-			return &in[batch&1];
+			return &in[batch%stages];
 		} else {
 			return nullptr;
 		}
@@ -311,18 +312,20 @@ public:
 		in[0] = {up_ibuf.get()+STRSZ, 0, up_obuf.get(), up_nmatch.get()};
 		for (int i=1; i<stages; i++)
 			in[i] = {in[i-1].ibuf+STRSZ*STREAMS, 0, in[i-1].obuf+STRSZ*STREAMS, in[i-1].nmatch+STRSZ*STREAMS};
+		// DEBUG
 		memset(in[stages-1].ibuf+STREAMS*STRSZ-UMPATLEN, 0, UMPATLEN);
 	}
 };
 
-class DetectStage: public ParallelExec, public PipeStageExec {
-	static constexpr int stages = 2;
-	DETECT in[stages];
-	DETECT d;
+class Detect: public ParallelExec {
+	const char *ibuf;
+	int ibufsz;
+	MATCH *obuf;
+	unsigned *nmatch;
 	UMSTATE first_umstate, last_umstate;
 	virtual void exec_slice(int n) override {
-		const char *s = d.ibuf+STRSZ*n;
-		MATCH *out = d.obuf+STRSZ*n;
+		const char *s = ibuf+STRSZ*n;
+		MATCH *out = obuf+STRSZ*n;
 		MATCH *res(out);
 		UMSTATE umstate;
 		if (n == 0)
@@ -330,7 +333,7 @@ class DetectStage: public ParallelExec, public PipeStageExec {
 		else
 			um_init(&umstate);
 		int i;
-		int sz = std::min(STRSZ, d.ibufsz-STRSZ*n);
+		int sz = std::min(STRSZ, ibufsz-STRSZ*n);
 		if (sz > 0) {
 			for (i=0; i<sz; i++,s++)
 				if (um_match(&umstate, *s))
@@ -348,16 +351,37 @@ class DetectStage: public ParallelExec, public PipeStageExec {
 				}
 			}
 		}
-		d.nmatch[n] = res-out;
+		nmatch[n] = res-out;
 	}
-	virtual void *next(void *arg) override {
-		d = in[batch%stages] = *(DETECT*)arg; 
+public:
+	Detect():ParallelExec(STREAMS),ibuf(nullptr),obuf(nullptr),nmatch(nullptr) {
+		um_init(&first_umstate);
+	}
+	void operator()(const char *_ibuf, int _ibufsz, MATCH *_obuf, unsigned *_nmatch, unsigned &rowsz) {
+		ibuf = _ibuf;
+		ibufsz = _ibufsz;
+		obuf = _obuf;
+		nmatch = _nmatch;
 		exec();
+		rowsz = STRSZ;
+		first_umstate = last_umstate;
+	}
+};
+
+class DetectStage: public PipeStageExec {
+	static constexpr int stages = 2;
+	DETECT in[stages];
+	DETECT d; // last arg
+	Detect detect;
+	virtual void *next(void *arg) override {
+		d = *(DETECT*)arg; 
+		unsigned unused;
+		detect(d.ibuf, d.ibufsz, d.obuf, d.nmatch, unused);
+		in[batch%stages] = d;
 		return &in[batch%stages];
 	}
 public:
-	DetectStage(PipeHeadExec &parent):ParallelExec(STREAMS),PipeStageExec(parent) {
-		um_init(&first_umstate);
+	DetectStage(PipeHeadExec &parent):PipeStageExec(parent),detect() {
 	}
 };
 
