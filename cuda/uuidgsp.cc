@@ -15,7 +15,7 @@
 #include "uuidmatch.h"
 #include "die.h"
 
-constexpr int STREAMS = 8;
+constexpr int STREAMS = 128;
 constexpr int STRSZ = 1<<8;
 
 struct MATCH {
@@ -30,10 +30,12 @@ class ParallelExec {
 protected:
 	int nthreads;
 private:
+	// marching tick for threads
 	int tick;
 	// pre-spawn this many threads
 	std::vector<std::thread> threads;
-	int cnt;
+	// number of active threads on this batch
+	int active_cnt;
 	// threads wait on this cv to start the batch
 	std::mutex mtx_begin;
 	std::condition_variable cv_begin;
@@ -43,18 +45,18 @@ private:
 	void threads_go() {
 		std::lock_guard<std::mutex> lck(mtx_begin);
 		tick++;
-		cnt += nthreads;
+		active_cnt += nthreads;
 		cv_begin.notify_all();
 	}
 	void threads_wait() {
 		std::unique_lock<std::mutex> lck(mtx_end);
-		while (cnt > 0)
+		while (active_cnt > 0)
 			cv_end.wait(lck);
 	}
 	void threads_done() {
 		std::lock_guard<std::mutex> lck(mtx_begin);
 		tick++;
-		cnt--; // go below 0 to finish
+		active_cnt--; // go below 0 to finish
 		cv_begin.notify_all();
 	}
 	static void run_thread(ParallelExec *th, int n) {
@@ -70,12 +72,12 @@ private:
 					cv_begin.wait(lck);
 				local_tick = tick;
 			}
-			if (cnt > 0) {
+			if (active_cnt > 0) {
 				// process this batch and notify producer
 				exec_slice(n);
 				{
 					std::lock_guard<std::mutex> lck(mtx_end);
-					cnt--;
+					active_cnt--;
 					cv_end.notify_one();
 				}
 			} else {
@@ -87,7 +89,7 @@ private:
 protected:
 	virtual void exec_slice(int n) = 0;
 public:
-	ParallelExec(int nthreads):nthreads(nthreads),tick(0),threads(nthreads),cnt(0) {
+	ParallelExec(int nthreads):nthreads(nthreads),tick(0),threads(nthreads),active_cnt(0) {
 		for (int i=0; i<nthreads; i++)
 			threads[i] = std::thread(run_thread, this, i);
 	}
@@ -282,9 +284,9 @@ struct DETECT {
 	unsigned *nmatch;
 };
 
-// owns all the data buffers for the pipeline
+// owns input the data buffers for the pipeline
 class ReadStage: public PipeHeadExec {
-	static constexpr int stages = 3;
+	static constexpr int stages = 3; // need to keep 3 buffers
 	FILE *fin;
 	DETECT in[stages];
 	std::unique_ptr<char[]> up_ibuf;
@@ -311,7 +313,7 @@ public:
 						 up_nmatch(new unsigned[STREAMS*stages]) {
 		in[0] = {up_ibuf.get()+STRSZ, 0, up_obuf.get(), up_nmatch.get()};
 		for (int i=1; i<stages; i++)
-			in[i] = {in[i-1].ibuf+STRSZ*STREAMS, 0, in[i-1].obuf+STRSZ*STREAMS, in[i-1].nmatch+STRSZ*STREAMS};
+			in[i] = {in[i-1].ibuf+STRSZ*STREAMS, 0, in[i-1].obuf+STRSZ*STREAMS, in[i-1].nmatch+STREAMS};
 		// DEBUG
 		memset(in[stages-1].ibuf+STREAMS*STRSZ-UMPATLEN, 0, UMPATLEN);
 	}
