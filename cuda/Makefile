@@ -72,7 +72,8 @@ test_cuda: match
 
 cuuidgsp: cuuidgsp.o uuidmatch.o die.o
 
-uuidgsp: uuidgsp.o uuidmatch.o die.o
+uuidgsp.o: par.hh die.h
+uuidgsp: uuidgsp.o uuidmatch.o die.o par.o
 
 uuidfind: uuidfind.o uuidmatch.o die.o
 
