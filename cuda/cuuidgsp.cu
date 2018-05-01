@@ -69,6 +69,8 @@ __global__ void detect(MATCH *odata, const char *idata, int ibuf_sz, uint16_t *d
 	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
 	if (col == 0)
 		state = d_umstate[STREAMS-1];
+	else
+		state = 0;
 	int lastrow = min(nrows, ibuf_sz-col*nrows);
 	for (row=0; row<lastrow; row++,iofs+=stride) {
 		if (cuda_um_match(&state, idata[iofs])) {
