@@ -16,12 +16,11 @@
 #include "die.h"
 
 constexpr int THREADS = 256;
-constexpr int STRSZ = 1<<14; // must be under uint16
+constexpr int STRSZ = 1<<14; // must be under int16
 constexpr int STREAMS = STRSZ;
-constexpr char SFILL = ' ';
 
 struct MATCH {
-	uint16_t pos;
+	int16_t pos;
 	uint16_t sz;
 };
 
@@ -31,11 +30,6 @@ static cudaError_t checkCuda(cudaError_t result) {
 	if (result != cudaSuccess)
 		die("CUDA Runtime Error: %s\n", cudaGetErrorString(result));
 	return result;
-}
-
-// start with automate position 0
-inline __device__ void cuda_um_init(UMSTATE *state) {
-	*state = 0;
 }
 
 inline __device__ int cuda_ch_category(unsigned char c) {
@@ -64,21 +58,36 @@ inline __device__ int cuda_um_match(UMSTATE *state, char ch) {
 /**
  * detect uuids
  */
-__global__ void detect(MATCH *odata, const char *idata, uint16_t *d_nmatch, uint16_t nrows) {
+__global__ void detect(MATCH *odata, const char *idata, int ibuf_sz, uint16_t *d_nmatch, UMSTATE *d_umstate, uint16_t nrows) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int iofs = col;
 	int oofs = col;
 	int stride = gridDim.x * blockDim.x;
 	uint16_t nmatch = 0;
 	uint16_t row;
-	UMSTATE state;
-	cuda_um_init(&state);
-	for (row=0; row<nrows; row++,iofs+=stride) {
+	UMSTATE &state = d_umstate[col];
+	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
+	if (col == 0)
+		state = d_umstate[STREAMS-1];
+	int lastrow = min(nrows, ibuf_sz-col*nrows);
+	for (row=0; row<lastrow; row++,iofs+=stride) {
 		if (cuda_um_match(&state, idata[iofs])) {
-			odata[oofs] = MATCH {uint16_t(row-UMPATLEN+1), UMPATLEN};
+			odata[oofs] = MATCH {int16_t(row-UMPATLEN+1), UMPATLEN};
 			oofs += stride;
 			nmatch++;
-			//printf("found uuid at row %d\n", row);
+		}
+	}
+	if (col < STREAMS-1) {
+		iofs = col+1;
+		while (state != 0 && row<lastrow+UMPATLEN) {
+			if (cuda_um_match(&state, idata[iofs])) {
+				odata[oofs] = MATCH {int16_t(row-UMPATLEN+1), UMPATLEN};
+				oofs += stride;
+				nmatch++;
+				break;
+			}
+			row++;
+			iofs+=stride;
 		}
 	}
 	d_nmatch[col] = nmatch;
@@ -90,13 +99,16 @@ class CudaDetect {
 	MATCH *d_tobuf; // transposed output
 	MATCH *d_obuf; // regular output
 	uint16_t *d_nmatch;
+	UMSTATE *d_umstate;
 public:
 	CudaDetect() {
 		checkCuda(cudaMalloc(&d_ibuf, STREAMS*STRSZ*sizeof(*d_ibuf)));
 		checkCuda(cudaMalloc(&d_tibuf, STREAMS*STRSZ*sizeof(*d_tibuf)));
-		checkCuda(cudaMalloc(&d_tobuf, STREAMS*(STRSZ/UMPATLEN+1)*sizeof(*d_tobuf)));
-		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/UMPATLEN+1)*sizeof(*d_tobuf)));
+		checkCuda(cudaMalloc(&d_tobuf, STREAMS*(STRSZ/UMPATLEN+2)*sizeof(*d_tobuf)));
+		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/UMPATLEN+2)*sizeof(*d_tobuf)));
 		checkCuda(cudaMalloc(&d_nmatch, STREAMS*sizeof(*d_nmatch)));
+		checkCuda(cudaMalloc(&d_umstate, STREAMS*sizeof(*d_umstate)));
+		checkCuda(cudaMemset(d_umstate, 0, STREAMS*sizeof(*d_umstate)));
 		checkCuda(cudaMemcpyToSymbol(cuda_uuid_pattern, uuid_pattern, sizeof(uuid_pattern)));
 	}
 	~CudaDetect() {
@@ -105,14 +117,15 @@ public:
 		checkCuda(cudaFree(d_tobuf));
 		checkCuda(cudaFree(d_obuf));
 		checkCuda(cudaFree(d_nmatch));
+		checkCuda(cudaFree(d_umstate));
 	}
-	void operator()(const char *ibuf, MATCH *obuf, uint16_t *nmatch, uint16_t &rowsz) {
-		checkCuda(cudaMemcpy(d_ibuf, ibuf, sizeof(*ibuf)*STRSZ*STREAMS, cudaMemcpyHostToDevice));
+	void operator()(const char *ibuf, int ibuf_sz, MATCH *obuf, uint16_t *nmatch, uint16_t &rowsz) {
+		checkCuda(cudaMemcpy(d_ibuf, ibuf, ibuf_sz, cudaMemcpyHostToDevice));
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
 		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
 		transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_tibuf, d_ibuf);
 		checkCuda(cudaGetLastError());
-		detect<<<STREAMS/THREADS,THREADS>>>(d_tobuf, d_tibuf, d_nmatch, STREAMS);
+		detect<<<STREAMS/THREADS,THREADS>>>(d_tobuf, d_tibuf, ibuf_sz, d_nmatch, d_umstate, STREAMS);
 		checkCuda(cudaGetLastError());
 		checkCuda(cudaMemcpy(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost));
 		uint16_t nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
@@ -149,43 +162,21 @@ inline int rfindnl(const char *buf, int sz) {
 }
 
 int main(int argc, char **argv) {
-	int over = 0;
-	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]); // +1 to carry over the remaining of the line
-	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS)]);
-	char *ibuf = up_ibuf.get();
+	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*STREAMS+STRSZ]); // +1 to carry over the remaining of the line
+	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*STREAMS]);
+	char *ibuf = up_ibuf.get()+STRSZ;
 	MATCH *obuf = up_obuf.get();
 	uint16_t nmatch[STREAMS];
 	CudaDetect detect;
-	// read input and scatter it into STREAMS channels
+	// read raw input
 	while (!feof(stdin)) {
-		int ns = 0;
-		char *buf = ibuf;
-		memcpy(buf, buf+STREAMS*STRSZ, over);
-		while (ns < STREAMS) {
-			int rsz = STRSZ-over;
-			int rc = fread(buf+over, 1, rsz, stdin);
-			if (rc == rsz) {
-				over = rfindnl(buf, STRSZ);
-				if (over == STRSZ)
-					die("Line size must be less than %d", STRSZ);
-				char *next_buf = buf+STRSZ;
-				memcpy(next_buf, buf+STRSZ-over, over);
-				memset(buf+STRSZ-over, SFILL, over);
-				buf = next_buf;
-				ns++;
-			} else if (rc < 0) {
-				die("read error");
-			} else {
-				// we didn't get full block - must be eof
-				memset(buf+over+rc, SFILL, STRSZ-over-rc);
-				ns++;
-				memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
-				break;
-			}
-		}
+		memcpy(ibuf-UMPATLEN, ibuf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
+		int sz = fread(ibuf, 1, STREAMS*STRSZ, stdin);
+		if (sz < 0)
+			die("read error");
 		//////// run the batch
 		uint16_t rowsz;
-		detect(ibuf, obuf, nmatch, rowsz);
+		detect(ibuf, sz, obuf, nmatch, rowsz);
 		prn(ibuf, obuf, nmatch, rowsz);
 	}
 }
