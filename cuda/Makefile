@@ -70,9 +70,10 @@ test: test_cuda test_act
 test_cuda: match
 	(echo "ab cd ef"; ./test.sh; echo "gh") | nvprof ./match
 
-cuuidgsp: cuuidgsp.o uuidmatch.o die.o
+cuuidgsp.o: par.hh die.h transpose.cuh uuidmatch.h
+cuuidgsp: cuuidgsp.o uuidmatch.o die.o par.o
 
-uuidgsp.o: par.hh die.h
+uuidgsp.o: par.hh die.h uuidmatch.h
 uuidgsp: uuidgsp.o uuidmatch.o die.o par.o
 
 uuidfind: uuidfind.o uuidmatch.o die.o

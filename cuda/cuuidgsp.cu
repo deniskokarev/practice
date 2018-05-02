@@ -14,6 +14,7 @@
 #include "transpose.cuh"
 #include "uuidmatch.h"
 #include "die.h"
+#include "par.hh"
 
 constexpr int THREADS = 256;
 constexpr int STRSZ = 1<<14; // must be under int16
@@ -22,6 +23,42 @@ constexpr int STREAMS = STRSZ;
 struct MATCH {
 	int16_t pos;
 	uint16_t sz;
+};
+
+// owns input the data buffers for the pipeline
+class ReadStage: public PipeHeadExec {
+public:
+	struct TRESULT {
+		char *buf;
+		int sz;
+	};
+private:
+	static constexpr int stages = 3; // need to drag the input over 3 pipe segments
+	FILE *fin;
+	TRESULT res[stages];
+	std::unique_ptr<char[]> up_buf;
+private:
+	virtual void *next() override {
+		if (!feof(fin)) {
+			if (batch%stages == 0) // wrap the remaining line around
+				memcpy(res[0].buf-UMPATLEN, res[stages-1].buf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
+			TRESULT &r = res[batch%stages];
+			r.sz = fread(r.buf, 1, STREAMS*STRSZ, fin);
+			if (r.sz < 0)
+				die("Read error");
+			return &r;
+		} else {
+			return nullptr;
+		}
+	}
+public:
+	ReadStage(FILE *fin):PipeHeadExec(),
+						 fin(fin),
+						 up_buf(new char[STRSZ*STREAMS*stages+STRSZ]) {
+		res[0] = {up_buf.get()+STRSZ, 0};
+		for (int i=1; i<stages; i++)
+			res[i] = {res[i-1].buf+STRSZ*STREAMS, 0};
+	}
 };
 
 // Convenience function for checking CUDA runtime API results
@@ -58,12 +95,12 @@ inline __device__ int cuda_um_match(UMSTATE *state, char ch) {
 /**
  * detect uuids
  */
-__global__ void detect(MATCH *odata, const char *idata, int ibuf_sz, uint16_t *d_nmatch, UMSTATE *d_umstate, uint16_t nrows) {
+__global__ void detect(MATCH *odata, const char *idata, int ibuf_sz, unsigned *d_nmatch, UMSTATE *d_umstate, uint16_t nrows) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int iofs = col;
 	int oofs = col;
 	int stride = gridDim.x * blockDim.x;
-	uint16_t nmatch = 0;
+	unsigned nmatch = 0;
 	uint16_t row;
 	UMSTATE &state = d_umstate[col];
 	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
@@ -100,7 +137,7 @@ class CudaDetect {
 	char *d_tibuf; // transposed input
 	MATCH *d_tobuf; // transposed output
 	MATCH *d_obuf; // regular output
-	uint16_t *d_nmatch;
+	unsigned *d_nmatch;
 	UMSTATE *d_umstate;
 public:
 	CudaDetect() {
@@ -121,7 +158,7 @@ public:
 		checkCuda(cudaFree(d_nmatch));
 		checkCuda(cudaFree(d_umstate));
 	}
-	void operator()(const char *ibuf, int ibuf_sz, MATCH *obuf, uint16_t *nmatch, uint16_t &rowsz) {
+	void operator()(const char *ibuf, int ibuf_sz, MATCH *obuf, unsigned *nmatch, unsigned &rowsz) {
 		checkCuda(cudaMemcpy(d_ibuf, ibuf, ibuf_sz, cudaMemcpyHostToDevice));
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
 		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
@@ -130,7 +167,7 @@ public:
 		detect<<<STREAMS/THREADS,THREADS>>>(d_tobuf, d_tibuf, ibuf_sz, d_nmatch, d_umstate, STREAMS);
 		checkCuda(cudaGetLastError());
 		checkCuda(cudaMemcpy(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost));
-		uint16_t nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
+		unsigned nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
 			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
 			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
@@ -142,10 +179,40 @@ public:
 	}
 };
 
-void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz, const uint16_t rowsz) {
+class DetectStage: public PipeStageExec {
+public:
+	struct TRESULT {
+		ReadStage::TRESULT in;
+		unsigned match_row_sz;
+		MATCH *match;
+		unsigned *nmatch;
+	};
+private:
+	static constexpr int stages = 2;
+	std::unique_ptr<MATCH> up_match[stages];
+	std::unique_ptr<unsigned> up_nmatch[stages];
+	TRESULT res[stages];
+	CudaDetect detect;
+	virtual void *next(void *arg) override {
+		TRESULT &r = res[batch%stages];
+		r.in = *(ReadStage::TRESULT*)arg;
+		detect(r.in.buf, r.in.sz, r.match, r.nmatch, r.match_row_sz);
+		return &r;
+	}
+public:
+	DetectStage(ReadStage &parent):PipeStageExec(parent),detect() {
+		for (int i=0; i<stages; i++) {
+			up_match[i] = std::unique_ptr<MATCH>(new MATCH[STRSZ*STREAMS]);
+			up_nmatch[i] = std::unique_ptr<unsigned>(new unsigned[STREAMS*stages]);
+			res[i] = {ReadStage::TRESULT {nullptr, 0}, 0, up_match[i].get(), up_nmatch[i].get()};
+		}
+	}
+};
+
+void prn(const char *ibuf, const MATCH *match, const unsigned *nmatch, const unsigned match_row_sz) {
 	for (int stream=0; stream<STREAMS; stream++) {
-		unsigned sz = o_sz[stream];
-		const MATCH *mm = obuf+rowsz*stream;
+		unsigned sz = nmatch[stream];
+		const MATCH *mm = match+match_row_sz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
 			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
@@ -156,29 +223,11 @@ void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz, const uint16
 	}
 }
 
-inline int rfindnl(const char *buf, int sz) {
-	int over = 0;
-	while (sz > 0 && buf[sz-1] != '\n')
-		sz--, over++;
-	return over;
-}
-
 int main(int argc, char **argv) {
-	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*STREAMS+STRSZ]); // +1 to carry over the remaining of the line
-	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*STREAMS]);
-	char *ibuf = up_ibuf.get()+STRSZ;
-	MATCH *obuf = up_obuf.get();
-	uint16_t nmatch[STREAMS];
-	CudaDetect detect;
-	// read raw input
-	while (!feof(stdin)) {
-		memcpy(ibuf-UMPATLEN, ibuf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
-		int sz = fread(ibuf, 1, STREAMS*STRSZ, stdin);
-		if (sz < 0)
-			die("read error");
-		//////// run the batch
-		uint16_t rowsz;
-		detect(ibuf, sz, obuf, nmatch, rowsz);
-		prn(ibuf, obuf, nmatch, rowsz);
+	ReadStage read(stdin);
+	DetectStage detect(read);
+	for (auto it:PipeOutput(detect)) {
+		DetectStage::TRESULT *r = (DetectStage::TRESULT*)it;
+		prn(r->in.buf, r->match, r->nmatch, r->match_row_sz);
 	}
 }
