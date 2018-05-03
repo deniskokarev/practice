@@ -42,7 +42,6 @@ private:
 	char *pinned_buf;
 private:
 	virtual void *next() override {
-		fprintf(stderr, "start read batch %d\n", batch);
 		if (!feof(fin)) {
 			if (batch%stages == 0) // wrap the remaining line around
 				memcpy(res[0].buf-UMPATLEN, res[stages-1].buf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
@@ -50,10 +49,8 @@ private:
 			r.sz = fread(r.buf, 1, STREAMS*STRSZ, fin);
 			if (r.sz < 0)
 				die("Read error");
-			fprintf(stderr, "end read batch %d\n", batch);
 			return &r;
 		} else {
-			fprintf(stderr, "finished read batch %d\n", batch);
 			return nullptr;
 		}
 	}
@@ -63,7 +60,6 @@ public:
 		res[0] = {pinned_buf+STRSZ, 0};
 		for (int i=1; i<stages; i++)
 			res[i] = {res[i-1].buf+STRSZ*STREAMS, 0};
-		fprintf(stderr, "initialized read\n");
 	}
 	~ReadStage() {
 		checkCuda(cudaFreeHost(pinned_buf));
@@ -144,12 +140,10 @@ private:
 	static constexpr int stages = 2;
 	TRESULT res[stages];
 	virtual void *next(void *arg) override {
-		fprintf(stderr, "start h2d batch %d\n", batch);
 		TRESULT &r = res[batch%stages];
 		r.in = *(ReadStage::TRESULT*)arg;
 		checkCuda(cudaMemcpyAsync(r.d_ibuf, r.in.buf, r.in.sz, cudaMemcpyHostToDevice, r.stream));
 		checkCuda(cudaStreamSynchronize(r.stream));
-		fprintf(stderr, "end h2d batch %d\n", batch);
 		return &r;
 	}
 public:
@@ -159,7 +153,6 @@ public:
 			checkCuda(cudaMalloc(&res[i].d_ibuf, STREAMS*STRSZ*sizeof(*res[i].d_ibuf)));
 			checkCuda(cudaStreamCreate(&res[i].stream));
 		}
-		fprintf(stderr, "initialized h2d\n");
 	}
 	~CudaH2DStage() {
 		for (int i=0; i<stages; i++) {
@@ -170,6 +163,8 @@ public:
 	}
 };
 
+// run detection on the device input buffer
+// CudaH2DStage will be responsible for copying the data to device
 class CudaDetect {
 	char *d_tibuf; // transposed input
 	MATCH *d_tobuf; // transposed output
@@ -192,7 +187,6 @@ public:
 		checkCuda(cudaFree(d_obuf));
 		checkCuda(cudaFree(d_nmatch));
 		checkCuda(cudaFree(d_umstate));
-		fprintf(stderr, "initialized cuda detect\n");
 	}
 	void operator()(cudaStream_t stream, const char *d_ibuf, int ibuf_sz, MATCH *obuf, unsigned *nmatch, unsigned &rowsz) {
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
@@ -229,11 +223,9 @@ private:
 	TRESULT res[stages];
 	CudaDetect detect;
 	virtual void *next(void *arg) override {
-		fprintf(stderr, "start detect batch %d\n", batch);
 		TRESULT &r = res[batch%stages];
 		r.in = *(CudaH2DStage::TRESULT*)arg;
 		detect(r.in.stream,r.in.d_ibuf, r.in.in.sz, r.match, r.nmatch, r.match_row_sz);
-		fprintf(stderr, "end detect batch %d\n", batch);
 		return &r;
 	}
 public:
@@ -242,7 +234,6 @@ public:
 			checkCuda(cudaMallocHost(&res[i].match, sizeof(MATCH)*STRSZ*STREAMS));
 			checkCuda(cudaMallocHost(&res[i].nmatch, sizeof(unsigned)*STREAMS));
 		}
-		fprintf(stderr, "initialized detect\n");
 	}
 	~DetectStage() {
 		for (int i=0; i<stages; i++) {
@@ -252,26 +243,41 @@ public:
 	}
 };
 
-void prn(const char *ibuf, const MATCH *match, const unsigned *nmatch, const unsigned match_row_sz) {
+void prn(FILE *fout, const char *ibuf, const MATCH *match, const unsigned *nmatch, const unsigned match_row_sz) {
 	for (int stream=0; stream<STREAMS; stream++) {
 		unsigned sz = nmatch[stream];
 		const MATCH *mm = match+match_row_sz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
-			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
+			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, fout)) != (int)mm[i].sz)
 				die("Write error");
-			if (fputc('\n', stdout) != '\n')
+			if (fputc('\n', fout) != '\n')
 				die("Write error");
 		}
 	}
 }
 
 int main(int argc, char **argv) {
-	ReadStage read(stdin);
+	FILE *fin, *fout;
+	if (argc > 1) {
+		fin = fopen(argv[1], "r");
+		if (!fin)
+			die("cannot open input file: %s\n", argv[1]);
+	} else {
+		fin = stdin;
+	}
+	if (argc > 2) {
+		fout = fopen(argv[2], "a");
+		if (!fin)
+			die("cannot open output file: %s\n", argv[2]);
+	} else {
+		fout = stdout;
+	}
+	ReadStage read(fin);
 	CudaH2DStage h2d(read);
 	DetectStage detect(h2d);
 	for (auto it:PipeOutput(detect)) {
 		DetectStage::TRESULT *r = (DetectStage::TRESULT*)it;
-		prn(r->in.in.buf, r->match, r->nmatch, r->match_row_sz);
+		prn(fout, r->in.in.buf, r->match, r->nmatch, r->match_row_sz);
 	}
 }
