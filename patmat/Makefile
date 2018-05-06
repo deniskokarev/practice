@@ -28,11 +28,19 @@ uuidgrep: uuidgrep.o uuidmatch.o
 
 uuidgsp: uuidgsp.o uuidmatch.o die.o
 
-test: uuidgrep
+test: test_uuidgrep test_act
+
+test_uuidgrep: uuidgrep
 	@echo "You should see 2 UUIDs detected:"
 	echo "2FF7B47D-A232-4A3B-9C5A-7B0D218B00BA-A232-4A3B-9C5A-7B0D218B00BA" | ./uuidgrep
 	@echo "You should see 1 UUID detected:"
 	echo "7B0D218B00BA-A232-4A3B-9C5A-7B0D218B00BA" | ./uuidgrep
+
+test_act: actcomp
+	@echo '*** You should see "a" "ab" "abc" "abcd" "efgh" "fgh" "gh" "h" detected:'
+	echo "abcdefgh" | ./actcomp -v -g pat1.txt /dev/null
+	@echo '*** You should see "a" "at" "t" "t" "att.com" "om" "m" detected:'
+	echo "att.com" | ./actcomp -v -g pat3.txt /dev/null
 
 clean:
 	rm -f *.o
