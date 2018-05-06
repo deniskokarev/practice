@@ -12,16 +12,16 @@ extern "C" {
 /* we'll reserve 0 as NULL indicator */
 #define ACT_ROOT	1
 
-#define ACT_FILE_SIGNATURE	0x70379ca1
+#define ACT_FILE_SIGNATURE	0x30379ca1
 
-/* power 2 of the trie page [1..8] */
-#define ACT_PAGE_P2		1
+/* power 2 of the trie page [1,2,4,8] */
+#define ACT_PAGE_P2		2
 
 typedef struct tag_ACT_NODE {
 	unsigned next[1<<ACT_PAGE_P2]; // where to go upon next char
 	unsigned sufref; // continue to next match
-	unsigned char end:1;
 	int val:31;
+	unsigned char end:1;
 } ACT_NODE;
 
 typedef struct tag_ACT {

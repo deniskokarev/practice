@@ -135,7 +135,7 @@ static void usage(char *cmd) {
 	printf("\t%s <patterns.txt> <patterns.bin>\n", cmd);
 	printf("<patterns.txt> - input - each line has a pattern and 31-bit integer value separated by |\n");
 	printf("<patterns.bin> - output - binary image for matching automata,\n");
-	printf("patterns.bin output size will be about %d times the size of patterns.txt\n", int(sizeof(ACT_NODE)));
+	printf("patterns.bin output size will be about %d times the size of patterns.txt\n", 8*int(sizeof(ACT_NODE))/ACT_PAGE_P2);
 }
 
 int main(int argc, char **argv) {
