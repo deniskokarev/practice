@@ -99,12 +99,12 @@ class ParallelFgrep: public ParallelExec {
 				++p;
 				state.lbeg = p-begin;
 				state.node = ACT_ROOT;
-				if (p >= end)
+				if (p > end)
 					break;
 			} else {
 				++p;
 				if (*p == '\n') {
-					if (p >= end) {
+					if (p > end) {
 						break;
 					} else {
 						++p;
