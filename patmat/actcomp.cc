@@ -16,7 +16,7 @@
 #include "act.h"
 
 struct ACT_NODE_COMP {
-	unsigned next[256] {0};
+	unsigned next[1<<ACT_PAGE_P2] {0};
 	unsigned sufref {0};
 	int val {0};
 	unsigned parent {0};
@@ -27,39 +27,48 @@ struct ACT_NODE_COMP {
 void act_insert(std::vector<ACT_NODE_COMP> &nodes, const unsigned char *s, unsigned s_sz, int val) {
 	unsigned root = ACT_ROOT;
 	while (s_sz--) {
-		unsigned nroot = nodes[root].next[*s];
-		if (nroot == 0) {
-			nroot = nodes.size();
-			nodes.resize(nodes.size()+1);
-			nodes[nroot].ch = *s;
-			nodes[nroot].parent = root;
-			nodes[root].next[*s] = nroot;
+		unsigned bmask = *s++;
+		for (int i=0; i<8/ACT_PAGE_P2; i++,bmask>>=ACT_PAGE_P2) {
+			unsigned char bch = bmask & ((1<<ACT_PAGE_P2)-1);
+			unsigned nroot = nodes[root].next[bch];
+			if (nroot == 0) {
+				nroot = int(nodes.size());
+				nodes.resize(nodes.size()+1); // will call node constructor
+				nodes[nroot].ch = bch;
+				nodes[nroot].parent = root;
+				nodes[root].next[bch] = nroot;
+			}
+			root = nroot;
 		}
-		root = nroot;
-		s++;
 	}
 	nodes[root].val = val;
 	nodes[root].end = 1;
 }
 
 void act_build_sufref(std::vector<ACT_NODE_COMP> &nodes) {
-	nodes[ACT_ROOT].sufref = ACT_ROOT;
-	for (unsigned next:nodes[ACT_ROOT].next)
-		if (next)
-			nodes[next].sufref = ACT_ROOT;
 	std::queue<unsigned> qq;
-	qq.push(ACT_ROOT);
+	// init root and its immediate children
+	// start BFS on grandchildren
+	nodes[ACT_ROOT].sufref = ACT_ROOT;
+	for (unsigned next:nodes[ACT_ROOT].next) {
+		if (next) {
+			nodes[next].sufref = ACT_ROOT;
+			for (unsigned nn:nodes[next].next)
+				if (nn)
+					qq.push(nn);
+		}
+	}
 	while (!qq.empty()) {
 		unsigned root = qq.front();
 		qq.pop();
-		if (nodes[root].sufref == 0) {
-			unsigned psf = nodes[nodes[root].parent].sufref;
-			unsigned char ch = nodes[root].ch;
-			if (nodes[psf].next[ch] != 0)
-				nodes[root].sufref = nodes[psf].next[ch];
-			else
-				nodes[root].sufref = ACT_ROOT;
-		}
+		unsigned char ch = nodes[root].ch;
+		unsigned psf = nodes[nodes[root].parent].sufref;
+		while (psf != ACT_ROOT && nodes[psf].next[ch] == 0)
+			psf = nodes[psf].sufref;
+		if (nodes[psf].next[ch] != 0)
+			nodes[root].sufref = nodes[psf].next[ch];
+		else
+			nodes[root].sufref = ACT_ROOT; // couldn't find suffix
 		for (unsigned next:nodes[root].next)
 			if (next)
 				qq.push(next);
@@ -75,7 +84,7 @@ void act_fill_all_next(std::vector<ACT_NODE_COMP> &nodes) {
 		for (unsigned next:nodes[root].next)
 			if (next)
 				qq.push(next);
-		for (unsigned ch=0; ch<256; ch++) {
+		for (unsigned ch=0; ch<(1<<ACT_PAGE_P2); ch++) {
 			if (nodes[root].next[ch] == 0) {
 				unsigned sr = nodes[root].sufref;
 				if (nodes[sr].next[ch])
@@ -124,9 +133,9 @@ static void usage(char *cmd) {
 	printf("@author Denis Kokarev, at&t\n");
 	printf("Usage:\n");
 	printf("\t%s <patterns.txt> <patterns.bin>\n", cmd);
-	printf("<patterns.txt> - input - each line has a pattern and integer value separated by |\n");
+	printf("<patterns.txt> - input - each line has a pattern and 31-bit integer value separated by |\n");
 	printf("<patterns.bin> - output - binary image for matching automata,\n");
-	printf("patterns.bin output size will be about 1024 times the size of patterns.txt\n");
+	printf("patterns.bin output size will be about %d times the size of patterns.txt\n", 8*int(sizeof(ACT_NODE))/ACT_PAGE_P2);
 }
 
 int main(int argc, char **argv) {
@@ -163,7 +172,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "start compiling %s...\n", fpatnm);
 	while (fgets(s, sizeof(s), fpat)) {
 		line++;
-		int s_sz = strlen(s);
+		int s_sz = int(strlen(s));
 		if (s[s_sz-1] != '\n')
 			die("Input patterns should be no longer than %d\n", (int)sizeof(s));
 		s_sz--;
@@ -198,7 +207,7 @@ int main(int argc, char **argv) {
 		save.val = cn.val;
 		save.end = cn.end;
 		memcpy(save.next, cn.next, sizeof(cn.next));
-		int rc = fwrite(&save, 1, sizeof(save), fbin);
+		size_t rc = fwrite(&save, 1, sizeof(save), fbin);
 		if (rc != sizeof(save))
 			die("write error");
 	}
@@ -207,12 +216,13 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "done saving\n");
 	if (debug) {
 		if (verbose)
-			fprintf(stderr, "ready for input\n");
+			fprintf(stderr, "ready for search:\n");
 		unsigned n = ACT_ROOT;
 		int c;
 		while ((c=fgetc(stdin)) != EOF) {
-			unsigned char uch = c;
-			n = nodes[n].next[uch];
+			unsigned bmask = c;
+			for (int i=0; i<8/ACT_PAGE_P2; i++,bmask>>=ACT_PAGE_P2)
+				n = nodes[n].next[bmask & ((1<<ACT_PAGE_P2)-1)];
 			for (unsigned en=n; en != ACT_ROOT; en=nodes[en].sufref) {
 				if (nodes[en].end) {
 					int val = nodes[en].val;

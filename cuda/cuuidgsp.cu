@@ -8,35 +8,63 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
 #include <algorithm>
 #include <cuda_runtime.h>
 #include "transpose.cuh"
 #include "uuidmatch.h"
 #include "die.h"
+#include "par.hh"
 
 constexpr int THREADS = 256;
-constexpr int STRSZ = 1<<14; // must be under uint16
+constexpr int STRSZ = 1<<14; // must be under int16
 constexpr int STREAMS = STRSZ;
-constexpr char SFILL = ' ';
 
 struct MATCH {
-	uint16_t pos;
+	int16_t pos;
 	uint16_t sz;
 };
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
-static cudaError_t checkCuda(cudaError_t result) {
-	if (result != cudaSuccess)
-		die("CUDA Runtime Error: %s\n", cudaGetErrorString(result));
-	return result;
-}
+#define checkCuda(e) {	if (e!=cudaSuccess) { die("Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); } }
 
-// start with automate position 0
-inline __device__ void cuda_um_init(UMSTATE *state) {
-	*state = 0;
-}
+// owns input the data buffers for the pipeline
+class ReadStage: public PipeHeadExec {
+public:
+	struct TRESULT {
+		char *buf;
+		int sz;
+	};
+private:
+	static constexpr int stages = 4; // need to drag the input over 4 pipe segments
+	FILE *fin;
+	TRESULT res[stages];
+	char *pinned_buf;
+private:
+	virtual void *next() override {
+		if (!feof(fin)) {
+			if (batch%stages == 0) // wrap the remaining line around
+				memcpy(res[0].buf-UMPATLEN, res[stages-1].buf+STREAMS*STRSZ-UMPATLEN, UMPATLEN);
+			TRESULT &r = res[batch%stages];
+			r.sz = fread(r.buf, 1, STREAMS*STRSZ, fin);
+			if (r.sz < 0)
+				die("Read error");
+			return &r;
+		} else {
+			return nullptr;
+		}
+	}
+public:
+	ReadStage(FILE *fin):PipeHeadExec(), fin(fin) {
+		checkCuda(cudaMallocHost(&pinned_buf, STRSZ*STREAMS*stages+STRSZ));
+		res[0] = {pinned_buf+STRSZ, 0};
+		for (int i=1; i<stages; i++)
+			res[i] = {res[i-1].buf+STRSZ*STREAMS, 0};
+	}
+	~ReadStage() {
+		checkCuda(cudaFreeHost(pinned_buf));
+	}
+};
 
 inline __device__ int cuda_ch_category(unsigned char c) {
 	if ((c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F'))
@@ -64,128 +92,192 @@ inline __device__ int cuda_um_match(UMSTATE *state, char ch) {
 /**
  * detect uuids
  */
-__global__ void detect(MATCH *odata, const char *idata, uint16_t *d_nmatch, uint16_t nrows) {
+__global__ void detect(MATCH *odata, const char *idata, int ibuf_sz, unsigned *d_nmatch, UMSTATE *d_umstate, uint16_t nrows) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int iofs = col;
 	int oofs = col;
 	int stride = gridDim.x * blockDim.x;
-	uint16_t nmatch = 0;
+	unsigned nmatch = 0;
 	uint16_t row;
-	UMSTATE state;
-	cuda_um_init(&state);
-	for (row=0; row<nrows; row++,iofs+=stride) {
+	UMSTATE &state = d_umstate[col];
+	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
+	if (col == 0)
+		state = d_umstate[STREAMS-1];
+	else
+		state = 0;
+	int lastrow = min(nrows, ibuf_sz-col*nrows);
+	for (row=0; row<lastrow; row++,iofs+=stride) {
 		if (cuda_um_match(&state, idata[iofs])) {
-			odata[oofs] = MATCH {uint16_t(row-UMPATLEN+1), UMPATLEN};
+			odata[oofs] = MATCH {int16_t(row-UMPATLEN+1), UMPATLEN};
 			oofs += stride;
 			nmatch++;
-			//printf("found uuid at row %d\n", row);
+		}
+	}
+	if (col < STREAMS-1) {
+		iofs = col+1;
+		while (state != 0 && row<lastrow+UMPATLEN) {
+			if (cuda_um_match(&state, idata[iofs])) {
+				odata[oofs] = MATCH {int16_t(row-UMPATLEN+1), UMPATLEN};
+				oofs += stride;
+				nmatch++;
+				break;
+			}
+			row++;
+			iofs+=stride;
 		}
 	}
 	d_nmatch[col] = nmatch;
 }
 
-class CudaDetect {
-	char *d_ibuf; // original input
-	char *d_tibuf; // transposed input
-	MATCH *d_tobuf; // transposed output
-	MATCH *d_obuf; // regular output
-	uint16_t *d_nmatch;
+class CudaH2DStage: public PipeStageExec {
 public:
-	CudaDetect() {
-		checkCuda(cudaMalloc(&d_ibuf, STREAMS*STRSZ*sizeof(*d_ibuf)));
-		checkCuda(cudaMalloc(&d_tibuf, STREAMS*STRSZ*sizeof(*d_tibuf)));
-		checkCuda(cudaMalloc(&d_tobuf, STREAMS*(STRSZ/UMPATLEN+1)*sizeof(*d_tobuf)));
-		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/UMPATLEN+1)*sizeof(*d_tobuf)));
-		checkCuda(cudaMalloc(&d_nmatch, STREAMS*sizeof(*d_nmatch)));
-		checkCuda(cudaMemcpyToSymbol(cuda_uuid_pattern, uuid_pattern, sizeof(uuid_pattern)));
+	struct TRESULT {
+		ReadStage::TRESULT in;
+		char *d_ibuf; // device original input
+		cudaStream_t stream;
+	};
+private:
+	static constexpr int stages = 2;
+	TRESULT res[stages];
+	virtual void *next(void *arg) override {
+		TRESULT &r = res[batch%stages];
+		r.in = *(ReadStage::TRESULT*)arg;
+		checkCuda(cudaMemcpyAsync(r.d_ibuf, r.in.buf, r.in.sz, cudaMemcpyHostToDevice, r.stream));
+		checkCuda(cudaStreamSynchronize(r.stream));
+		return &r;
 	}
-	~CudaDetect() {
-		checkCuda(cudaFree(d_ibuf));
-		checkCuda(cudaFree(d_tibuf));
-		checkCuda(cudaFree(d_tobuf));
-		checkCuda(cudaFree(d_obuf));
-		checkCuda(cudaFree(d_nmatch));
+public:
+	CudaH2DStage(PipeHeadExec &parent):PipeStageExec(parent) {
+		for (int i=0; i<stages; i++) {
+			res[i].in = ReadStage::TRESULT {nullptr, 0};
+			checkCuda(cudaMalloc(&res[i].d_ibuf, STREAMS*STRSZ*sizeof(*res[i].d_ibuf)));
+			checkCuda(cudaStreamCreate(&res[i].stream));
+		}
 	}
-	void operator()(const char *ibuf, MATCH *obuf, uint16_t *nmatch, uint16_t &rowsz) {
-		checkCuda(cudaMemcpy(d_ibuf, ibuf, sizeof(*ibuf)*STRSZ*STREAMS, cudaMemcpyHostToDevice));
-		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
-		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
-		transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_tibuf, d_ibuf);
-		checkCuda(cudaGetLastError());
-		detect<<<STREAMS/THREADS,THREADS>>>(d_tobuf, d_tibuf, d_nmatch, STREAMS);
-		checkCuda(cudaGetLastError());
-		checkCuda(cudaMemcpy(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost));
-		uint16_t nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
-		if (nmx > 0) {
-			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
-			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
-			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
-			transposeNoBankConflicts<<<dimGrid, dimBlock>>>(d_obuf, d_tobuf);
-			checkCuda(cudaGetLastError());
-			checkCuda(cudaMemcpy(obuf, d_obuf, rowsz*STREAMS*sizeof(obuf[0]), cudaMemcpyDeviceToHost));
+	~CudaH2DStage() {
+		for (int i=0; i<stages; i++) {
+			res[i].in = ReadStage::TRESULT {nullptr, 0};
+			checkCuda(cudaFree(res[i].d_ibuf));
+			checkCuda(cudaStreamDestroy(res[i].stream));
 		}
 	}
 };
 
-void prn(const char *ibuf, const MATCH *obuf, const uint16_t *o_sz, const uint16_t rowsz) {
+// run detection on the device input buffer
+// CudaH2DStage will be responsible for copying the data to device
+class CudaDetect {
+	char *d_tibuf; // transposed input
+	MATCH *d_tobuf; // transposed output
+	MATCH *d_obuf; // regular output
+	unsigned *d_nmatch;
+	UMSTATE *d_umstate;
+public:
+	CudaDetect() {
+		checkCuda(cudaMalloc(&d_tibuf, STREAMS*STRSZ*sizeof(*d_tibuf)));
+		checkCuda(cudaMalloc(&d_tobuf, STREAMS*(STRSZ/UMPATLEN+2)*sizeof(*d_tobuf)));
+		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/UMPATLEN+2)*sizeof(*d_tobuf)));
+		checkCuda(cudaMalloc(&d_nmatch, STREAMS*sizeof(*d_nmatch)));
+		checkCuda(cudaMalloc(&d_umstate, STREAMS*sizeof(*d_umstate)));
+		checkCuda(cudaMemset(d_umstate, 0, STREAMS*sizeof(*d_umstate)));
+		checkCuda(cudaMemcpyToSymbol(cuda_uuid_pattern, uuid_pattern, sizeof(uuid_pattern)));
+	}
+	~CudaDetect() {
+		checkCuda(cudaFree(d_tibuf));
+		checkCuda(cudaFree(d_tobuf));
+		checkCuda(cudaFree(d_obuf));
+		checkCuda(cudaFree(d_nmatch));
+		checkCuda(cudaFree(d_umstate));
+	}
+	void operator()(cudaStream_t stream, const char *d_ibuf, int ibuf_sz, MATCH *obuf, unsigned *nmatch, unsigned &rowsz) {
+		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
+		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
+		transposeNoBankConflicts<<<dimGrid, dimBlock, 0, stream>>>(d_tibuf, d_ibuf);
+		checkCuda(cudaGetLastError());
+		detect<<<STREAMS/THREADS,THREADS,0,stream>>>(d_tobuf, d_tibuf, ibuf_sz, d_nmatch, d_umstate, STREAMS);
+		checkCuda(cudaGetLastError());
+		checkCuda(cudaMemcpyAsync(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost, stream));
+		checkCuda(cudaStreamSynchronize(stream));
+		unsigned nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
+		if (nmx > 0) {
+			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
+			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
+			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
+			transposeNoBankConflicts<<<dimGrid, dimBlock, 0, stream>>>(d_obuf, d_tobuf);
+			checkCuda(cudaGetLastError());
+			checkCuda(cudaMemcpyAsync(obuf, d_obuf, rowsz*STREAMS*sizeof(obuf[0]), cudaMemcpyDeviceToHost, stream));
+			checkCuda(cudaStreamSynchronize(stream));
+		}
+	}
+};
+
+class DetectStage: public PipeStageExec {
+public:
+	struct TRESULT {
+		CudaH2DStage::TRESULT in;
+		unsigned match_row_sz;
+		MATCH *match;
+		unsigned *nmatch;
+	};
+private:
+	static constexpr int stages = 2;
+	TRESULT res[stages];
+	CudaDetect detect;
+	virtual void *next(void *arg) override {
+		TRESULT &r = res[batch%stages];
+		r.in = *(CudaH2DStage::TRESULT*)arg;
+		detect(r.in.stream,r.in.d_ibuf, r.in.in.sz, r.match, r.nmatch, r.match_row_sz);
+		return &r;
+	}
+public:
+	DetectStage(PipeHeadExec &parent):PipeStageExec(parent),detect() {
+		for (int i=0; i<stages; i++) {
+			checkCuda(cudaMallocHost(&res[i].match, sizeof(MATCH)*STRSZ*STREAMS));
+			checkCuda(cudaMallocHost(&res[i].nmatch, sizeof(unsigned)*STREAMS));
+		}
+	}
+	~DetectStage() {
+		for (int i=0; i<stages; i++) {
+			checkCuda(cudaFreeHost(res[i].match));
+			checkCuda(cudaFreeHost(res[i].nmatch));
+		}
+	}
+};
+
+void prn(FILE *fout, const char *ibuf, const MATCH *match, const unsigned *nmatch, const unsigned match_row_sz) {
 	for (int stream=0; stream<STREAMS; stream++) {
-		unsigned sz = o_sz[stream];
-		const MATCH *mm = obuf+rowsz*stream;
+		unsigned sz = nmatch[stream];
+		const MATCH *mm = match+match_row_sz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
-			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, stdout)) != (int)mm[i].sz)
+			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, fout)) != (int)mm[i].sz)
 				die("Write error");
-			if (fputc('\n', stdout) != '\n')
+			if (fputc('\n', fout) != '\n')
 				die("Write error");
 		}
 	}
 }
 
-inline int rfindnl(const char *buf, int sz) {
-	int over = 0;
-	while (sz > 0 && buf[sz-1] != '\n')
-		sz--, over++;
-	return over;
-}
-
 int main(int argc, char **argv) {
-	int over = 0;
-	std::unique_ptr<char[]> up_ibuf(new char[STRSZ*(STREAMS+1)]); // +1 to carry over the remaining of the line
-	std::unique_ptr<MATCH[]> up_obuf(new MATCH[STRSZ*(STREAMS)]);
-	char *ibuf = up_ibuf.get();
-	MATCH *obuf = up_obuf.get();
-	uint16_t nmatch[STREAMS];
-	CudaDetect detect;
-	// read input and scatter it into STREAMS channels
-	while (!feof(stdin)) {
-		int ns = 0;
-		char *buf = ibuf;
-		memcpy(buf, buf+STREAMS*STRSZ, over);
-		while (ns < STREAMS) {
-			int rsz = STRSZ-over;
-			int rc = fread(buf+over, 1, rsz, stdin);
-			if (rc == rsz) {
-				over = rfindnl(buf, STRSZ);
-				if (over == STRSZ)
-					die("Line size must be less than %d", STRSZ);
-				char *next_buf = buf+STRSZ;
-				memcpy(next_buf, buf+STRSZ-over, over);
-				memset(buf+STRSZ-over, SFILL, over);
-				buf = next_buf;
-				ns++;
-			} else if (rc < 0) {
-				die("read error");
-			} else {
-				// we didn't get full block - must be eof
-				memset(buf+over+rc, SFILL, STRSZ-over-rc);
-				ns++;
-				memset(ibuf+STRSZ*ns, SFILL, (STREAMS-ns)*STRSZ); // fill up all unused channels
-				break;
-			}
-		}
-		//////// run the batch
-		uint16_t rowsz;
-		detect(ibuf, obuf, nmatch, rowsz);
-		prn(ibuf, obuf, nmatch, rowsz);
+	FILE *fin, *fout;
+	if (argc > 1) {
+		fin = fopen(argv[1], "r");
+		if (!fin)
+			die("cannot open input file: %s\n", argv[1]);
+	} else {
+		fin = stdin;
+	}
+	if (argc > 2) {
+		fout = fopen(argv[2], "a");
+		if (!fin)
+			die("cannot open output file: %s\n", argv[2]);
+	} else {
+		fout = stdout;
+	}
+	ReadStage read(fin);
+	CudaH2DStage h2d(read);
+	DetectStage detect(h2d);
+	for (auto it:PipeOutput(detect)) {
+		DetectStage::TRESULT *r = (DetectStage::TRESULT*)it;
+		prn(fout, r->in.in.buf, r->match, r->nmatch, r->match_row_sz);
 	}
 }
