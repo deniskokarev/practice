@@ -1,4 +1,4 @@
-BINS = actcomp actmatch actfgrep uuidgrep uuidgsp
+BINS = actcomp actmatch actfgrep uuidgrep uuidgsp pfgrep
 
 CXXFLAGS = -g -Wall -O2 -pthread -std=c++11
 CFLAGS = -g -Wall -O2 -std=c99
@@ -27,6 +27,8 @@ uuidmatch.o: uuidmatch.h
 uuidgrep: uuidgrep.o uuidmatch.o
 
 uuidgsp: uuidgsp.o uuidmatch.o die.o
+
+pfgrep: act.o pfgrep.o die.o par.o
 
 test: test_uuidgrep test_act
 
