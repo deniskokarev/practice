@@ -31,10 +31,8 @@ int main(int argc, char **argv) {
 		eecnt[j]++;
 		e++;
 	}
-	int vcnt[n];
-	fill(vcnt, vcnt+n, 0);
-	int acnt[n];
-	fill(acnt, acnt+n, 0);
+	bool aa[n];
+	fill(aa, aa+n, true);
 	int cc = 0;
 	int seen[n];
 	fill(seen, seen+n, -1);
@@ -45,8 +43,7 @@ int main(int argc, char **argv) {
 			qq.push(i);
 			while (!qq.empty()) {
 				int top = qq.front();
-				vcnt[cc]++;
-				acnt[cc] += eecnt[top];
+				aa[cc] &= (eecnt[top]==2);
 				qq.pop();
 				for (E *e=ee[top]; e!=nullptr; e=e->next) {
 					if (seen[e->to] == -1) {
@@ -60,8 +57,7 @@ int main(int argc, char **argv) {
 	}
 	int ans = 0;
 	for (int i=0; i<cc; i++) {
-		//cerr << "cc=" << i << " vcnt=" << vcnt[i] << " acnt=" << acnt[i] << endl;
-		if (vcnt[i] > 2 && 2*vcnt[i] == acnt[i])
+		if (aa[i])
 			ans++;
 	}
 	cout << ans << endl;
