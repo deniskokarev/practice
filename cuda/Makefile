@@ -80,7 +80,7 @@ uuidfind: uuidfind.o uuidmatch.o die.o
 
 test_act: actcomp actmatch
 	./actcomp pat3.txt pat3.bin
-	echo "you must see 0 1 3 4 5 6"
+	echo "you must see 0 1 3 3 4 5 6"
 	echo "att.com" | ./actmatch pat3.bin
 
 clean:

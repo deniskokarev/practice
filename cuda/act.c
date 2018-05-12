@@ -43,7 +43,10 @@ int act_detach_mmap(const ACT *act) {
  * only when at root, it is safe to refresh/reattach the trie
  */
 unsigned act_next_char(const ACT_NODE *act, unsigned node, char ch) {
-	return act[node].next[(unsigned char)ch];
+	unsigned bmask = ch;
+	for (int i=0; i<8/ACT_PAGE_P2; i++,bmask >>= ACT_PAGE_P2)
+		node = act[node].next[bmask & ((1<<ACT_PAGE_P2)-1)];
+	return node;
 }
 
 /**
