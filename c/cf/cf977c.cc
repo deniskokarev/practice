@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 		} else if (cnt < k) {
 			f = m+1;
 		} else {
-			cout << m-1 << endl;
+			cout << m << endl;
 			goto end;
 		}
 	}
