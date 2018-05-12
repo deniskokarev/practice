@@ -10,18 +10,17 @@ int main(int argc, char **argv) {
 	for (auto &a:aa)
 		cin >> a;
 	sort(aa, aa+n);
-	int f=0, t=n;
+	int f=1, t=1e9+1;
 	while (f<t) {
 		int m=f+(t-f)/2;
-		auto p = upper_bound(aa, aa+n, m);
-		int cnt = p-aa;
+		int cnt = upper_bound(aa, aa+n, m)-aa;
 		//cerr << "m=" << m << " cnt= " << cnt << endl;
 		if (cnt > k) {
 			t = m;
 		} else if (cnt < k) {
 			f = m+1;
 		} else {
-			cout << m+1 << endl;
+			cout << m-1 << endl;
 			goto end;
 		}
 	}
