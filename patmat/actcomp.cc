@@ -130,7 +130,7 @@ static void die(const char *fmt, ...) {
 
 static void usage(char *cmd) {
 	printf("Compile Aho-Corasic matching automata\n");
-	printf("@author Denis Kokarev, at&t\n");
+	printf("@author Denis Kokarev\n");
 	printf("Usage:\n");
 	printf("\t%s <patterns.txt> <patterns.bin>\n", cmd);
 	printf("<patterns.txt> - input - each line has a pattern and 31-bit integer value separated by |\n");

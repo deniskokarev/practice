@@ -28,7 +28,7 @@ static void die(const char *fmt, ...) {
 
 static void usage(char *cmd) {
 	printf("Extract all UUIDs detected in the input stream\n");
-	printf("@author Denis Kokarev, at&t\n");
+	printf("@author Denis Kokarev\n");
 	printf("Usage:\n");
 	printf("\t%s <input.txt >uuid.txt\n", cmd);
 }
