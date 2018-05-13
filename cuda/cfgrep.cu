@@ -135,10 +135,6 @@ __device__ inline int cuda_act_next_match(const ACT_NODE *act, unsigned *result_
 	}
 }
 
-__device__ inline void cuda_abort() {
-	asm("trap;");
-}
-
 __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned *nmatch, const ACT_NODE *act, FGREP_STATE *states) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = gridDim.x * blockDim.x;
@@ -160,7 +156,7 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 	} else {
 		for (p=ibuf+col; pos<end_pos && *p!='\n'; p+=stride,pos++);
 		if (pos == end_pos)
-			cuda_abort(); //die("Lines cannot be longer than %d", int(STRSZ));
+			return; //die("Lines cannot be longer than %d", int(STRSZ));
 		pos++;
 		p += stride;
 		state = FGREP_STATE {ACT_ROOT, int16_t(pos)};
@@ -175,7 +171,7 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 				p += stride;
 			}
 			if (pos == next_end_pos)
-				cuda_abort(); //die("Lines cannot be longer than %d", int(STRSZ));
+				return; //die("Lines cannot be longer than %d", int(STRSZ));
 			*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
 			nm++;
 			m += stride;
