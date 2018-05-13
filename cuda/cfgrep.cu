@@ -135,10 +135,26 @@ __device__ inline int cuda_act_next_match(const ACT_NODE *act, unsigned *result_
 	}
 }
 
+__device__ inline void append_match(const char *ibuf, int col, MATCH *m, int &nm, int &pos, const char *&p, int stride, int end_pos, int next_end_pos, FGREP_STATE &state) {
+	while (*p != '\n' && pos < end_pos) {
+		pos++;
+		p += stride;
+	}
+	if (pos == end_pos) {
+		p = ibuf+col+1;
+		while (*p != '\n' && pos < next_end_pos) {
+			pos++;
+			p += stride;
+		}
+	}
+	*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
+	nm++;
+}
+
 __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned *nmatch, const ACT_NODE *act, FGREP_STATE *states) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = gridDim.x * blockDim.x;
-	FGREP_STATE &state = states[col];
+	FGREP_STATE state;
 	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
 	if (col == 0)
 		state = states[STREAMS-1];
@@ -154,9 +170,17 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 		p = ibuf;
 		state = states[STREAMS-1];
 	} else {
-		for (p=ibuf+col; pos<end_pos && *p!='\n'; p+=stride,pos++);
-		if (pos == end_pos)
+		p = ibuf+col;
+		while (pos < end_pos) {
+			if (*p == '\n')
+				break;
+			pos++;
+			p += stride;
+		}
+		if (pos == end_pos) {
 			nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
+			pos = next_end_pos;
+		}
 		pos++;
 		p += stride;
 		state = FGREP_STATE {ACT_ROOT, int16_t(pos)};
@@ -166,48 +190,38 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 		unsigned result_node = state.node;
 		int unused;
 		if (cuda_act_next_match(act, &result_node, &unused)) {
-			while (pos < end_pos && *p != '\n') {
+			while (*p != '\n' && pos < end_pos) {
 				pos++;
 				p += stride;
 			}
 			if (pos == end_pos) {
 				p = ibuf+col+1;
-				while (pos < next_end_pos && *p != '\n') {
+				while (*p != '\n' && pos < next_end_pos) {
 					pos++;
 					p += stride;
 				}
+				if (pos == next_end_pos) {
+					nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
+					break;
+				}
 			}
-			if (pos == next_end_pos)
-				nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
 			*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
 			nm++;
 			m += stride;
-			p += stride;
-			pos++;
-			if (pos == end_pos)
-				p = ibuf+col+1;
-			state.lbeg = pos;
-			state.node = ACT_ROOT;
-			if (pos > end_pos)
-				break;
-		} else {
-			p += stride;
-			pos++;
-			if (pos == end_pos)
-				p = ibuf+col+1;
-			if (*p == '\n') {
-				if (pos > end_pos) {
-					break;
-				} else {
-					p += stride;
-					pos++;
-					state.lbeg = pos;
-					state.node = ACT_ROOT;
-				}
-			}
 		}
+		if (*p == '\n') {
+			state.node = ACT_ROOT;
+			state.lbeg = pos+1;
+			if (pos >= end_pos)
+				break;
+		}
+		pos++;
+		p += stride;
+		if (pos == end_pos)
+			p = ibuf+col+1;
 	}
 	state.lbeg -= STRSZ;
+	states[col] = state;
 	nmatch[col] = nm;
 }
 
