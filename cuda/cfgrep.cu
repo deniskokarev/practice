@@ -145,7 +145,7 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 	else
 		state = FGREP_STATE {ACT_ROOT, 0};
 	MATCH *m = match+col;
-	unsigned nm = 0;
+	unsigned nm = 0;		// number of matches > STRSZ works as error indicator
 	int pos = 0;
 	int end_pos = min(ibufsz-STRSZ*col, STRSZ);
 	int next_end_pos = min(ibufsz-STRSZ*col, 2*STRSZ);
@@ -156,7 +156,7 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 	} else {
 		for (p=ibuf+col; pos<end_pos && *p!='\n'; p+=stride,pos++);
 		if (pos == end_pos)
-			return; //die("Lines cannot be longer than %d", int(STRSZ));
+			nm = STRSZ+1; //die("Lines cannot be longer than %d", int(STRSZ));
 		pos++;
 		p += stride;
 		state = FGREP_STATE {ACT_ROOT, int16_t(pos)};
@@ -166,12 +166,19 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 		unsigned result_node = state.node;
 		int unused;
 		if (cuda_act_next_match(act, &result_node, &unused)) {
-			while (pos < next_end_pos && *p != '\n') {
+			while (pos < end_pos && *p != '\n') {
 				pos++;
 				p += stride;
 			}
+			if (pos == end_pos) {
+				p = ibuf+col+1;
+				while (pos < next_end_pos && *p != '\n') {
+					pos++;
+					p += stride;
+				}
+			}
 			if (pos == next_end_pos)
-				return; //die("Lines cannot be longer than %d", int(STRSZ));
+				nm = STRSZ+1; //die("Lines cannot be longer than %d", int(STRSZ));
 			*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
 			nm++;
 			m += stride;
@@ -240,6 +247,8 @@ public:
 		checkCuda(cudaStreamSynchronize(stream));
 		unsigned nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
+			if (nmx > STRSZ)
+				die("Lines cannot be longer than %d", int(STRSZ));
 			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
 			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
 			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
