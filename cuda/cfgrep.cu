@@ -156,7 +156,7 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 	} else {
 		for (p=ibuf+col; pos<end_pos && *p!='\n'; p+=stride,pos++);
 		if (pos == end_pos)
-			nm = STRSZ+1; //die("Lines cannot be longer than %d", int(STRSZ));
+			nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
 		pos++;
 		p += stride;
 		state = FGREP_STATE {ACT_ROOT, int16_t(pos)};
@@ -178,12 +178,14 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 				}
 			}
 			if (pos == next_end_pos)
-				nm = STRSZ+1; //die("Lines cannot be longer than %d", int(STRSZ));
+				nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
 			*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
 			nm++;
 			m += stride;
 			p += stride;
 			pos++;
+			if (pos == end_pos)
+				p = ibuf+col+1;
 			state.lbeg = pos;
 			state.node = ACT_ROOT;
 			if (pos > end_pos)
@@ -191,6 +193,8 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 		} else {
 			p += stride;
 			pos++;
+			if (pos == end_pos)
+				p = ibuf+col+1;
 			if (*p == '\n') {
 				if (pos > end_pos) {
 					break;
@@ -204,7 +208,6 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 		}
 	}
 	state.lbeg -= STRSZ;
-	states[col] = state;
 	nmatch[col] = nm;
 }
 
