@@ -34,6 +34,7 @@ void ParallelExec::run_thread(ParallelExec *th, int n) {
 
 void ParallelExec::run(int n) {
 	int local_tick = 0;
+	int local_active_cnt;
 	while (true) {
 		// wait for new data from producer
 		{
@@ -41,8 +42,9 @@ void ParallelExec::run(int n) {
 			while (tick == local_tick)
 				cv_begin.wait(lck);
 			local_tick = tick;
+			local_active_cnt = active_cnt;
 		}
-		if (active_cnt > 0) {
+		if (local_active_cnt > 0) {
 			// process this batch and notify producer
 			exec_slice(n);
 			{

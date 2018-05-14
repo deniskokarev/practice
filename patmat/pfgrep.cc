@@ -182,7 +182,7 @@ void prn(const char *ibuf, const MATCH *match, const unsigned *nmatch, const uns
 static void usage(char *cmd) {
 	printf("Match the input strings with actcomp precompiled automata,\n");
 	printf("works similar to fgrep\n");
-	printf("@author Denis Kokarev, at&t\n");
+	printf("@author Denis Kokarev\n");
 	printf("Usage:\n");
 	printf("\t%s patterns.bin <input.txt >filtered.txt\n", cmd);
 	printf("patterns.bin - precompiled patterns.txt file, see `actcomp -h`\n");

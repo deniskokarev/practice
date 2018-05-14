@@ -1,4 +1,4 @@
-BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep cuuidgsp uuidgsp uuidfind
+BINS = a acuda memtrans bandwidthtest match actcomp actmatch actfgrep cuuidgsp uuidgsp uuidfind cfgrep
 INCGT = ../c/googletest/googletest/include
 LIBGT = ../c/libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ../c/libgt/googlemock/gtest/libgtest_main.a
@@ -78,9 +78,11 @@ uuidgsp: uuidgsp.o uuidmatch.o die.o par.o
 
 uuidfind: uuidfind.o uuidmatch.o die.o
 
+cfgrep: act.o cfgrep.o die.o par.o
+
 test_act: actcomp actmatch
 	./actcomp pat3.txt pat3.bin
-	echo "you must see 0 1 3 4 5 6"
+	echo "you must see 0 1 3 3 4 5 6"
 	echo "att.com" | ./actmatch pat3.bin
 
 clean:
