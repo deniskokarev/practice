@@ -1,32 +1,54 @@
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 /* CodeForces CF915C problem */
+using namespace std;
 
 int main(int argc, char **argv) {
-	std::string a, b;
-	std::cin >> a >> b;
-	std::sort(a.begin(), a.end(), std::greater<char>());
-	std::string o(a);
-	if (b.length() == a.length()) {
-		int i=0;
-		while (i<b.size()) {
-			for (int j=0; j<a.length(); j++) {
-				if (a[j] == b[i]) {
-					o[i++] = a[j];
-					a[j] = '\127';
-					break;
-				} else if (a[j] < b[i]) {
-					o[i++] = a[j];
-					a[j] = '\127';
-					goto end;
-				}
+	int64_t a, b;
+	cin >> a >> b;
+	int64_t dd[18];
+	int64_t p10[18];
+	int len=0;
+	int64_t p=1;
+	while (a>0) {
+		dd[len] = a%10;
+		a /= 10;
+		p10[len] = p;
+		p *= 10;
+		len++;
+	}
+	sort(dd, dd+len, std::greater<int64_t>());
+	int hp = len-1;
+	int64_t ans = -1;
+	for (int lp=0; lp<hp; lp++) {
+		if (dd[lp] != 0) {
+			int64_t dd2[18];
+			copy(dd, dd+len, dd2);
+			swap(dd2[lp], dd2[hp]);
+			sort(dd2, dd2+hp, std::greater<int64_t>());
+			int64_t res = inner_product(dd2, dd2+len, p10, 0);
+			if (res <= b) {
+				copy(dd2, dd2+len, dd);
+				ans = res;
+				break;
 			}
 		}
-	end:
-	    for(int j=0; j<a.size(); j++)
-			if (a[j] != '\127')
-				o[i++] = a[j];
 	}
-	std::cout << o << std::endl;
+	for (hp=len-2; hp>=0; hp--) {
+		for (int lp=0; lp<hp; lp++) {
+			int64_t dd2[18];
+			copy(dd, dd+len, dd2);
+			swap(dd2[lp], dd2[hp]);
+			sort(dd2, dd2+hp, std::greater<int64_t>());
+			int64_t res = inner_product(dd2, dd2+len, p10, 0);
+			if (res <= b) {
+				copy(dd2, dd2+len, dd);
+				ans = res;
+				break;
+			}
+		}
+	}
+	cout << ans << endl;
 	return 0;
 }
