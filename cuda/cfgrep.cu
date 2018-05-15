@@ -104,6 +104,7 @@ public:
 struct FGREP_STATE {
 	unsigned node;
 	int16_t lbeg;	// position where last line started
+	uint16_t match;
 };
 
 /**
@@ -181,32 +182,27 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 		state = states[STREAMS-1];
 		c = ch_next(ch);
 	} else {
-		if ((c=ch_seek_nl(ch, STRSZ)) == '\n') {
-			state = FGREP_STATE {ACT_ROOT, int16_t(ch.pos)};
-			c = ch_next(ch);
-		} else {
-			state = FGREP_STATE {ACT_ROOT, 0};
+		if ((c=ch_seek_nl(ch, STRSZ)) != '\n') {
+			state = FGREP_STATE {ACT_ROOT, 0, 0};
 			c = -1;
 		}
 	}
 	while (c >= 0) {
-		state.node = cuda_act_next_char(act, state.node, c);
-		unsigned result_node = state.node;
-		int unused;
-		if (cuda_act_next_match(act, &result_node, &unused)) {
-			if ((c=ch_seek_nl(ch, STRSZ)) == '\n') {
+		if (c == '\n') {
+			if (state.match) {
 				*m = MATCH {state.lbeg, uint16_t(ch.pos-state.lbeg-1)};
-				assert(m->sz == 36); // DEBUG
 				nm++;
 				m += stride;
-			} else {
-				break;
 			}
-		}
-		if (c == '\n') {
-			state = FGREP_STATE {ACT_ROOT, int16_t(ch.pos)};
+			state = FGREP_STATE {ACT_ROOT, int16_t(ch.pos), 0};
 			if (ch.row > 0 && ch.col > col)
 				break;
+		}
+		if (!state.match) {
+			state.node = cuda_act_next_char(act, state.node, c);
+			unsigned result_node = state.node;
+			int unused;
+			state.match = cuda_act_next_match(act, &result_node, &unused);
 		}
 		c = ch_next(ch);
 	}
@@ -230,7 +226,7 @@ public:
 		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/MATCH_RATIO)*sizeof(*d_tobuf)));
 		checkCuda(cudaMalloc(&d_nmatch, STREAMS*sizeof(*d_nmatch)));
 		checkCuda(cudaMalloc(&d_state, STREAMS*sizeof(*d_state)));
-		FGREP_STATE first_state {ACT_ROOT, 0};
+		FGREP_STATE first_state {ACT_ROOT, 0, 0};
 		checkCuda(cudaMemcpy(&d_state[STREAMS-1], &first_state, sizeof(FGREP_STATE), cudaMemcpyHostToDevice));
 		checkCuda(cudaMalloc(&d_act, act->sz));
 		checkCuda(cudaMemcpy(d_act, act->nodes, act->sz, cudaMemcpyHostToDevice));
@@ -310,7 +306,6 @@ void prn(FILE *fout, const char *ibuf, const MATCH *match, const unsigned *nmatc
 		const MATCH *mm = match+match_row_sz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
-			assert(mm[i].sz == 36); // DEBUG
 			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, fout)) != (int)mm[i].sz)
 				die("Write error");
 			if (fputc('\n', fout) != '\n')
