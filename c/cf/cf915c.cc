@@ -7,8 +7,8 @@ using namespace std;
 int main(int argc, char **argv) {
 	int64_t a, b;
 	cin >> a >> b;
-	int64_t dd[18];
-	int64_t p10[18];
+	int64_t dd[20];
+	int64_t p10[20];
 	int len=0;
 	int64_t p=1;
 	while (a>0) {
@@ -23,11 +23,11 @@ int main(int argc, char **argv) {
 	int64_t ans = -1;
 	for (int lp=0; lp<hp; lp++) {
 		if (dd[lp] != 0) {
-			int64_t dd2[18];
+			int64_t dd2[20];
 			copy(dd, dd+len, dd2);
 			swap(dd2[lp], dd2[hp]);
 			sort(dd2, dd2+hp, std::greater<int64_t>());
-			int64_t res = inner_product(dd2, dd2+len, p10, 0);
+			int64_t res = inner_product(dd2, dd2+len, p10, int64_t(0));
 			if (res <= b) {
 				copy(dd2, dd2+len, dd);
 				ans = res;
@@ -37,11 +37,11 @@ int main(int argc, char **argv) {
 	}
 	for (hp=len-2; hp>=0; hp--) {
 		for (int lp=0; lp<hp; lp++) {
-			int64_t dd2[18];
+			int64_t dd2[20];
 			copy(dd, dd+len, dd2);
 			swap(dd2[lp], dd2[hp]);
 			sort(dd2, dd2+hp, std::greater<int64_t>());
-			int64_t res = inner_product(dd2, dd2+len, p10, 0);
+			int64_t res = inner_product(dd2, dd2+len, p10, int64_t(0));
 			if (res <= b) {
 				copy(dd2, dd2+len, dd);
 				ans = res;
