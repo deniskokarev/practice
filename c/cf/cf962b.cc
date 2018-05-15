@@ -1,39 +1,41 @@
-#include <iostream>
+#include <cstdio>
 /* CodeForces CF962B problem */
 using namespace std;
 
+enum {
+	A, B
+};
+
 int main(int argc, char **argv) {
-	int n, ab[2];
-	string s;
-	cin >> n >> ab[0] >> ab[1];
-	cin >> s;
-	int was = ab[0]+ab[1];
-	int last_idx = -1;
-	for (int i=0; i<s.length(); i++) {
+	int n, a, b;
+	scanf("%d%d%d", &n, &a, &b);
+	char s[200002];
+	s[0] = '*';
+	scanf("%200000s", s+1);
+	int was = a+b;
+	for (int i=1; i<=n; i++) {
 		if (s[i] == '.') {
-			if (last_idx == 0) {
-				if (ab[1] > 0) {
-					ab[1]--;
-					last_idx = 1;
+			if (s[i-1] == A) {
+				if (b > 0) {
+					b--;
+					s[i] = B;
 				}
-			} else if (last_idx == 1) {
-				if (ab[0] > 0) {
-					ab[0]--;
-					last_idx = 0;
+			} else if (s[i-1] == B) {
+				if (a > 0) {
+					a--;
+					s[i] = A;
 				}
 			} else {
-				if (ab[1] > ab[0]) {
-					ab[1]--;
-					last_idx = 1;
-				} else if (ab[0] > 0) {
-					ab[0]--;
-					last_idx = 0;
+				if (a > b) {
+					a--;
+					s[i] = A;
+				} else if (b > 0) {
+					b--;
+					s[i] = B;
 				}
 			}
-		} else {
-			last_idx = -1;
 		}
 	}
-	cout << was-ab[0]-ab[1] << endl;
+	printf("%d\n", was-a-b);
 	return 0;
 }
