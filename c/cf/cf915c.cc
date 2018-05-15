@@ -7,6 +7,7 @@ using namespace std;
 int main(int argc, char **argv) {
 	int64_t a, b;
 	cin >> a >> b;
+	int64_t ans = a;
 	int64_t dd[20];
 	int64_t p10[20];
 	int len=0;
@@ -20,7 +21,6 @@ int main(int argc, char **argv) {
 	}
 	sort(dd, dd+len, std::greater<int64_t>());
 	int hp = len-1;
-	int64_t ans = -1;
 	for (int lp=0; lp<hp; lp++) {
 		if (dd[lp] != 0) {
 			int64_t dd2[20];
