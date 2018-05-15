@@ -1,51 +1,37 @@
 #include <iostream>
-/* CodeForces CF692B problem */
+/* CodeForces CF962B problem */
 using namespace std;
 
 int main(int argc, char **argv) {
-	int n, a, b;
-	cin >> n >> a >> b;
+	int n, ab[2];
 	string s;
+	cin >> n >> ab[0] >> ab[1];
 	cin >> s;
-	int len = 0;
-	int fspace = 0;
-	int ans = 0;
+	int was = ab[0]+ab[1];
+	int last_idx = -1;
 	for (int i=0; i<s.length(); i++) {
-		if (s[i] == '*') {
-			if (a >= len) {
-				a -= len;
-				ans += len;
-			} else if (b >= len) {
-				b -= len;
-				ans += len;
+		if (s[i] == '.') {
+			if (last_idx == 0) {
+				if (ab[1] > 0) {
+					ab[1]--;
+					last_idx = 1;
+				}
+			} else if (last_idx == 1) {
+				if (ab[0] > 0) {
+					ab[0]--;
+					last_idx = 0;
+				}
+			} else if (ab[1] > 0) {
+				ab[1]--;
+				last_idx = 1;
 			} else {
-				fspace += len;
+				ab[0]--;
+				last_idx = 0;
 			}
-			len = 0;
 		} else {
-			len++;
+			last_idx = -1;
 		}
 	}
-	if (a >= len) {
-		a -= len;
-		ans += len;
-	} else if (b >= len) {
-		b -= len;
-		ans += len;
-	} else {
-		fspace += len;
-	}
-	if (fspace > 0) {
-		if (a>0) {
-			fspace -= a+1;
-			ans += a;
-			ans += min(b, max(fspace,0));
-		} else if (b>0) {
-			fspace -= b+1;
-			ans += b;
-			ans += min(a, max(fspace,0));
-		}
-	}
-	cout << ans << endl;
+	cout << was-ab[0]-ab[1] << endl;
 	return 0;
 }
