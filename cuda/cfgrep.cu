@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <getopt.h>
 #include <cuda_runtime.h>
+#include <assert.h>
 #include "transpose.cuh"
 #include "die.h"
 #include "par.hh"
@@ -135,90 +136,79 @@ __device__ inline int cuda_act_next_match(const ACT_NODE *act, unsigned *result_
 	}
 }
 
-__device__ inline void append_match(const char *ibuf, int col, MATCH *m, int &nm, int &pos, const char *&p, int stride, int end_pos, int next_end_pos, FGREP_STATE &state) {
-	while (*p != '\n' && pos < end_pos) {
-		pos++;
-		p += stride;
-	}
-	if (pos == end_pos) {
-		p = ibuf+col+1;
-		while (*p != '\n' && pos < next_end_pos) {
-			pos++;
-			p += stride;
+struct CHAR_BUF {
+	const char * const ibuf;
+	const int ibufsz;
+	int pos;
+	int row;
+	int col;
+	const int stride;
+};
+
+// *s++ in our transposed buffer
+__device__ inline short ch_next(CHAR_BUF &ch) {
+	if (ch.col*STRSZ+ch.row < ch.ibufsz) {
+		short c = ch.ibuf[ch.row*ch.stride+ch.col];
+		ch.pos++;
+		ch.row++;
+		if (ch.row == STRSZ) {
+			ch.col++;
+			ch.row = 0;
 		}
+		return c;
+	} else {
+		return -1;
 	}
-	*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
-	nm++;
+}
+
+__device__ inline short ch_seek_nl(CHAR_BUF &ch, unsigned limit) {
+	short c = -1;
+	while (limit && (c=ch_next(ch))>=0 && (c != '\n'))
+		limit--;
+	return c;
 }
 
 __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned *nmatch, const ACT_NODE *act, FGREP_STATE *states) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = gridDim.x * blockDim.x;
-	FGREP_STATE state;
-	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
-	if (col == 0)
-		state = states[STREAMS-1];
-	else
-		state = FGREP_STATE {ACT_ROOT, 0};
+	int stride = gridDim.x * blockDim.x; // STREAMS
 	MATCH *m = match+col;
 	unsigned nm = 0;		// number of matches > STRSZ works as error indicator
-	int pos = 0;
-	int end_pos = min(ibufsz-STRSZ*col, STRSZ);
-	int next_end_pos = min(ibufsz-STRSZ*col, 2*STRSZ);
-	const char *p;
+	FGREP_STATE state;
+	CHAR_BUF ch { ibuf, ibufsz, 0, 0, col, stride };
+	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
+	short c;
 	if (col == 0) {
-		p = ibuf;
 		state = states[STREAMS-1];
+		c = ch_next(ch);
 	} else {
-		p = ibuf+col;
-		while (pos < end_pos) {
-			if (*p == '\n')
-				break;
-			pos++;
-			p += stride;
+		if ((c=ch_seek_nl(ch, STRSZ)) == '\n') {
+			state = FGREP_STATE {ACT_ROOT, int16_t(ch.pos)};
+			c = ch_next(ch);
+		} else {
+			state = FGREP_STATE {ACT_ROOT, 0};
+			c = -1;
 		}
-		if (pos == end_pos) {
-			nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
-			pos = next_end_pos;
-		}
-		pos++;
-		p += stride;
-		state = FGREP_STATE {ACT_ROOT, int16_t(pos)};
 	}
-	while (pos < next_end_pos) {
-		state.node = cuda_act_next_char(act, state.node, *p);
+	while (c >= 0) {
+		state.node = cuda_act_next_char(act, state.node, c);
 		unsigned result_node = state.node;
 		int unused;
 		if (cuda_act_next_match(act, &result_node, &unused)) {
-			while (*p != '\n' && pos < end_pos) {
-				pos++;
-				p += stride;
+			if ((c=ch_seek_nl(ch, STRSZ)) == '\n') {
+				*m = MATCH {state.lbeg, uint16_t(ch.pos-state.lbeg-1)};
+				assert(m->sz == 36); // DEBUG
+				nm++;
+				m += stride;
+			} else {
+				break;
 			}
-			if (pos == end_pos) {
-				p = ibuf+col+1;
-				while (*p != '\n' && pos < next_end_pos) {
-					pos++;
-					p += stride;
-				}
-				if (pos == next_end_pos) {
-					nm = STRSZ+1; // to cause die("Lines cannot be longer than %d", int(STRSZ));
-					break;
-				}
-			}
-			*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
-			nm++;
-			m += stride;
 		}
-		if (*p == '\n') {
-			state.node = ACT_ROOT;
-			state.lbeg = pos+1;
-			if (pos >= end_pos)
+		if (c == '\n') {
+			state = FGREP_STATE {ACT_ROOT, int16_t(ch.pos)};
+			if (ch.row > 0 && ch.col > col)
 				break;
 		}
-		pos++;
-		p += stride;
-		if (pos == end_pos)
-			p = ibuf+col+1;
+		c = ch_next(ch);
 	}
 	state.lbeg -= STRSZ;
 	states[col] = state;
@@ -257,10 +247,13 @@ public:
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
 		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
 		transposeNoBankConflicts<<<dimGrid, dimBlock, 0, stream>>>(d_tibuf, d_ibuf);
+		//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 		checkCuda(cudaGetLastError());
 		cuda_fgrep<<<STREAMS/THREADS,THREADS,0,stream>>>(d_tobuf, d_tibuf, ibuf_sz, d_nmatch, d_act, d_state);
+		//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 		checkCuda(cudaGetLastError());
 		checkCuda(cudaMemcpyAsync(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost, stream));
+		//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 		checkCuda(cudaStreamSynchronize(stream));
 		unsigned nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
@@ -270,6 +263,7 @@ public:
 			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
 			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
 			transposeNoBankConflicts<<<dimGrid, dimBlock, 0, stream>>>(d_obuf, d_tobuf);
+			//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 			checkCuda(cudaGetLastError());
 			checkCuda(cudaMemcpyAsync(obuf, d_obuf, rowsz*STREAMS*sizeof(obuf[0]), cudaMemcpyDeviceToHost, stream));
 			checkCuda(cudaStreamSynchronize(stream));
@@ -316,6 +310,7 @@ void prn(FILE *fout, const char *ibuf, const MATCH *match, const unsigned *nmatc
 		const MATCH *mm = match+match_row_sz*stream;
 		const char *s = ibuf+STRSZ*stream;
 		for (unsigned i=0; i<sz; i++) {
+			assert(mm[i].sz == 36); // DEBUG
 			if ((fwrite(s+mm[i].pos, 1, mm[i].sz, fout)) != (int)mm[i].sz)
 				die("Write error");
 			if (fputc('\n', fout) != '\n')
