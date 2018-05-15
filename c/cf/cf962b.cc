@@ -21,12 +21,14 @@ int main(int argc, char **argv) {
 					ab[0]--;
 					last_idx = 0;
 				}
-			} else if (ab[1] > 0) {
-				ab[1]--;
-				last_idx = 1;
 			} else {
-				ab[0]--;
-				last_idx = 0;
+				if (ab[1] > ab[0]) {
+					ab[1]--;
+					last_idx = 1;
+				} else if (ab[0] > 0) {
+					ab[0]--;
+					last_idx = 0;
+				}
 			}
 		} else {
 			last_idx = -1;
