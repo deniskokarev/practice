@@ -144,17 +144,20 @@ struct CHAR_BUF {
 	int row;
 	int col;
 	const int stride;
+	const char *s;
 };
 
 // *s++ in our transposed buffer
 __device__ inline short ch_next(CHAR_BUF &ch) {
-	if (ch.col*STRSZ+ch.row < ch.ibufsz) {
-		short c = ch.ibuf[ch.row*ch.stride+ch.col];
+	if (ch.pos < ch.ibufsz) {
+		short c = *ch.s;
 		ch.pos++;
 		ch.row++;
+		ch.s += ch.stride;
 		if (ch.row == STRSZ) {
 			ch.col++;
 			ch.row = 0;
+			ch.s = ch.ibuf+ch.col;
 		}
 		return c;
 	} else {
@@ -175,7 +178,7 @@ __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned 
 	MATCH *m = match+col;
 	unsigned nm = 0;		// number of matches > STRSZ works as error indicator
 	FGREP_STATE state;
-	CHAR_BUF ch { ibuf, ibufsz, 0, 0, col, stride };
+	CHAR_BUF ch { ibuf, ibufsz-col*STRSZ, 0, 0, col, stride, ibuf+col };
 	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
 	short c;
 	if (col == 0) {
@@ -243,13 +246,10 @@ public:
 		dim3 dimGrid(STRSZ/TRANSPOSE_TILE_DIM, STREAMS/TRANSPOSE_TILE_DIM, 1);
 		dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
 		transposeNoBankConflicts<<<dimGrid, dimBlock, 0, stream>>>(d_tibuf, d_ibuf);
-		//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 		checkCuda(cudaGetLastError());
 		cuda_fgrep<<<STREAMS/THREADS,THREADS,0,stream>>>(d_tobuf, d_tibuf, ibuf_sz, d_nmatch, d_act, d_state);
-		//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 		checkCuda(cudaGetLastError());
 		checkCuda(cudaMemcpyAsync(nmatch, d_nmatch, sizeof(*nmatch)*STREAMS, cudaMemcpyDeviceToHost, stream));
-		//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 		checkCuda(cudaStreamSynchronize(stream));
 		unsigned nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
@@ -259,7 +259,6 @@ public:
 			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
 			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
 			transposeNoBankConflicts<<<dimGrid, dimBlock, 0, stream>>>(d_obuf, d_tobuf);
-			//checkCuda(cudaStreamSynchronize(stream)); // DEBUG
 			checkCuda(cudaGetLastError());
 			checkCuda(cudaMemcpyAsync(obuf, d_obuf, rowsz*STREAMS*sizeof(obuf[0]), cudaMemcpyDeviceToHost, stream));
 			checkCuda(cudaStreamSynchronize(stream));
