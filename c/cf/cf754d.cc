@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 	if (shrink > 0) {
 		int sel[n];
 		fill(sel, sel+n, 0);
-		select_coupons(n, shrink-1, cc, sel, cnt);
+		select_coupons(n, shrink-1, cc, sel, k);
 		for (int i=0; i<n; i++)
 			if (sel[i]>0)
 				cout << i+1 << ' ';
