@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <getopt.h>
 #include <cuda_runtime.h>
+#include <assert.h>
 #include "transpose.cuh"
 #include "die.h"
 #include "par.hh"
@@ -103,6 +104,7 @@ public:
 struct FGREP_STATE {
 	unsigned node;
 	int16_t lbeg;	// position where last line started
+	uint16_t match;
 };
 
 /**
@@ -135,66 +137,77 @@ __device__ inline int cuda_act_next_match(const ACT_NODE *act, unsigned *result_
 	}
 }
 
+struct CHAR_BUF {
+	const char * const ibuf;
+	const int ibufsz;
+	int pos;
+	int row;
+	int col;
+	const int stride;
+	const char *s;
+};
+
+// *s++ in our transposed buffer
+__device__ inline short ch_next(CHAR_BUF &ch) {
+	if (ch.pos < ch.ibufsz) {
+		short c = *ch.s;
+		ch.pos++;
+		ch.row++;
+		ch.s += ch.stride;
+		if (ch.row == STRSZ) {
+			ch.col++;
+			ch.row = 0;
+			ch.s = ch.ibuf+ch.col;
+		}
+		return c;
+	} else {
+		return -1;
+	}
+}
+
+__device__ inline short ch_seek_nl(CHAR_BUF &ch, unsigned limit) {
+	short c = -1;
+	while (limit && (c=ch_next(ch))>=0 && (c != '\n'))
+		limit--;
+	return c;
+}
+
 __global__ void cuda_fgrep(MATCH *match, const char *ibuf, int ibufsz, unsigned *nmatch, const ACT_NODE *act, FGREP_STATE *states) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = gridDim.x * blockDim.x;
-	FGREP_STATE &state = states[col];
-	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
-	if (col == 0)
-		state = states[STREAMS-1];
-	else
-		state = FGREP_STATE {ACT_ROOT, 0};
+	int stride = gridDim.x * blockDim.x; // STREAMS
 	MATCH *m = match+col;
-	unsigned nm = 0;
-	int pos = 0;
-	int end_pos = min(ibufsz-STRSZ*col, STRSZ);
-	int next_end_pos = min(ibufsz-STRSZ*col, 2*STRSZ);
-	const char *p;
+	unsigned nm = 0;		// number of matches > STRSZ works as error indicator
+	FGREP_STATE state;
+	CHAR_BUF ch { ibuf, ibufsz-col*STRSZ, 0, 0, col, stride, ibuf+col };
+	//__syncthreads(); // redundant, as the first thread will always run in an earlier block
+	short c;
 	if (col == 0) {
-		p = ibuf;
 		state = states[STREAMS-1];
+		c = ch_next(ch);
 	} else {
-		for (p=ibuf+col; pos<end_pos && *p!='\n'; p+=stride,pos++);
-		if (pos == end_pos)
-			return; //die("Lines cannot be longer than %d", int(STRSZ));
-		pos++;
-		p += stride;
-		state = FGREP_STATE {ACT_ROOT, int16_t(pos)};
-	}
-	while (pos < next_end_pos) {
-		state.node = cuda_act_next_char(act, state.node, *p);
-		unsigned result_node = state.node;
-		int unused;
-		if (cuda_act_next_match(act, &result_node, &unused)) {
-			while (pos < next_end_pos && *p != '\n') {
-				pos++;
-				p += stride;
-			}
-			if (pos == next_end_pos)
-				return; //die("Lines cannot be longer than %d", int(STRSZ));
-			*m = MATCH {state.lbeg, uint16_t(pos-state.lbeg)};
-			nm++;
-			m += stride;
-			p += stride;
-			pos++;
-			state.lbeg = pos;
-			state.node = ACT_ROOT;
-			if (pos > end_pos)
-				break;
-		} else {
-			p += stride;
-			pos++;
-			if (*p == '\n') {
-				if (pos > end_pos) {
-					break;
-				} else {
-					p += stride;
-					pos++;
-					state.lbeg = pos;
-					state.node = ACT_ROOT;
-				}
-			}
+		if ((c=ch_seek_nl(ch, STRSZ)) != '\n') {
+			state = FGREP_STATE {ACT_ROOT, 0, 0};
+			c = -1;
 		}
+	}
+	while (c >= 0) {
+		if (c == '\n') {
+			if (state.match) {
+				*m = MATCH {state.lbeg, uint16_t(ch.pos-state.lbeg-1)};
+				nm++;
+				m += stride;
+			}
+			state = FGREP_STATE {ACT_ROOT, int16_t(ch.pos), 0};
+			if (ch.row > 0 && ch.col > col)
+				break;
+		}
+		if (!state.match) {
+			state.node = cuda_act_next_char(act, state.node, c);
+			unsigned result_node = state.node;
+			int unused;
+			state.match = cuda_act_next_match(act, &result_node, &unused);
+		}
+		c = ch_next(ch);
 	}
 	state.lbeg -= STRSZ;
 	states[col] = state;
@@ -216,7 +229,7 @@ public:
 		checkCuda(cudaMalloc(&d_obuf, STREAMS*(STRSZ/MATCH_RATIO)*sizeof(*d_tobuf)));
 		checkCuda(cudaMalloc(&d_nmatch, STREAMS*sizeof(*d_nmatch)));
 		checkCuda(cudaMalloc(&d_state, STREAMS*sizeof(*d_state)));
-		FGREP_STATE first_state {ACT_ROOT, 0};
+		FGREP_STATE first_state {ACT_ROOT, 0, 0};
 		checkCuda(cudaMemcpy(&d_state[STREAMS-1], &first_state, sizeof(FGREP_STATE), cudaMemcpyHostToDevice));
 		checkCuda(cudaMalloc(&d_act, act->sz));
 		checkCuda(cudaMemcpy(d_act, act->nodes, act->sz, cudaMemcpyHostToDevice));
@@ -240,6 +253,8 @@ public:
 		checkCuda(cudaStreamSynchronize(stream));
 		unsigned nmx = rowsz = *std::max_element(nmatch, nmatch+STREAMS);
 		if (nmx > 0) {
+			if (nmx > STRSZ)
+				die("Lines cannot be longer than %d", int(STRSZ));
 			rowsz = (nmx+TRANSPOSE_TILE_DIM-1)/TRANSPOSE_TILE_DIM*TRANSPOSE_TILE_DIM;
 			dim3 dimGrid(STREAMS/TRANSPOSE_TILE_DIM, rowsz/TRANSPOSE_TILE_DIM, 1);
 			dim3 dimBlock(TRANSPOSE_TILE_DIM, TRANSPOSE_BLOCK_ROWS, 1);
