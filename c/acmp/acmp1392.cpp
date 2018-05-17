@@ -1,80 +1,100 @@
-#include <iostream>
-#include <algorithm>
-#include <set>
-#include <cassert>
+#include <cstdio>
+#include <cmath>
+#include <cstring>
+#include <climits>
 /* ACMP 1392 */
-using namespace std;
+#define min(A,B) 	((A<B)?A:B)
 
-struct E {
-	int to;
-	E *next;
+struct Q {
+	int from, to;
+	int min_flow;
 };
 
-enum {
-	T_W = 0,
-	T_C,
-};
-
-struct N {
-	int id;
-	int type;
-	int ecnt;
-	E *ee;
-	bool sel;
-	bool operator<(const N &b) const {
-		return ecnt < b.ecnt || (ecnt == b.ecnt && id < b.id);
+/**
+ * BFS for shortest path from src to drn and identify the "thinnest" edge
+ * on the way. Populate the path
+ * @param[in] ff[sz][sz] - graph with flow capacities
+ * @param[in] sz - number of nodes
+ * @param[in] src - source node
+ * @param[in] dst - drain node
+ * @param[out] path[sz] - trace path in parent-of fashion
+ * @param[out] *min_flow - smallest edge on the path
+ * @return - true when path was found - otherwise false
+ */
+static int bfs_shortest_path(const int *ff, int sz, int src, int drn, int *path, int *min_flow) {
+	memset(path, 0xff, sz*sizeof(*path)); // fill(path, path+sz, -1)
+	int sz_l2 = int(ceil(log2(sz+1)));
+	int qsz = 1<<sz_l2;     // sz rounded up to nearest power of 2
+	Q qq[qsz];              // queue right on stack
+	int qsz_mask = qsz-1;   // use bitmask for quicker modulo
+	int qh = 0, qt = 0;     // head and tail of the queue
+	Q q = {src, src, INT_MAX};
+	qq[qt++] = q;
+	path[src] = src;
+	while (qh != qt && qq[qh].to != drn) {
+		for (int v=0; v<sz; v++) {
+			int ff_idx = qq[qh].to*sz+v;
+			if (ff[ff_idx]>0 && path[v]==-1) {
+				q.from = qq[qh].to;
+				q.to = v;
+				q.min_flow = min(qq[qh].min_flow, ff[ff_idx]);
+				path[q.to] = q.from;
+				qq[qt++] = q;
+				qt &= qsz_mask;
+			}
+		}
+		qh++;
+		qh &= qsz_mask;
 	}
-	bool operator==(const N &b) const {
-		return id == b.id;
+	*min_flow = qq[qh].min_flow;
+	return (qq[qh].to == drn);
+}
+
+/**
+ * find max flow from src into drn in the graph in O(V*V*FLOW)
+ * @param[in,out] ff[sz][sz] - graph
+ * @param[in] sz - graph size
+ * @param[in] src - source node
+ * @param[in] drn - drain node
+ * @return maximum possible flow
+ * ff[sz][sz] will reflect the said maximum flow subtracted
+ */
+int maxflow(int *ff, int sz, int src, int drn) {
+	int path[sz];
+	int df;
+	int flow = 0;
+	while (bfs_shortest_path(ff, sz, src, drn, path, &df)) {
+		flow += df;
+		for (int v=drn,vp=path[v]; v!=src; v=vp,vp=path[v]) {
+			ff[vp*sz+v] -= df; // ff[vp][v] -= df;
+			ff[v*sz+vp] += df; // ff[v][vp] += df;
+		}
 	}
-};
+	return flow;
+}
 
 int main(int argc, char **argv) {
 	int n, k;
-	cin >> n >> k;
-	E eeall[n*k*2], *e = eeall;
-	N nn[n*2];
-	fill(nn, nn+n, N {0, T_W, 0, nullptr, false});
-	fill(nn+2, nn+2*n, N {0, T_C, 0, nullptr, false});
+	scanf("%d %d", &n, &k);
+	int oo[n+n+2][n+n+2];
+	memset(oo, 0, sizeof(oo));
+	int src = n+n, drn = n+n+1;
 	for (int i=0; i<n*k; i++) {
 		int f, t;
-		cin >> f >> t;
+		scanf("%d%d", &f, &t);
 		f--, t--;
-		nn[f].id = f;
-		nn[f].type = T_W;
-		nn[f].ecnt++;
-		e->to = t+n;
-		e->next = nn[f].ee;
-		nn[f].ee = e++;
-		nn[t+n].id = t+n;
-		nn[t+n].type = T_C;
-		nn[t+n].ecnt++;
-		e->to = f;
-		e->next = nn[t+n].ee;
-		nn[t+n].ee = e++;
+		t += n;
+		oo[f][t] = 1;
+		oo[src][f] = 1;
 	}
-	// greedy solution
-	set<N> q;
-	for (auto &n:nn)
-		q.insert(n);
-	while (!q.empty()) {
-		N top = *q.begin();
-		E *mnto = nullptr;
-		for (E *e=top.ee; e; e=e->next)
-			if (!nn[e->to].sel)
-				mnto = e;
-		assert(mnto != nullptr);
-		for (E *e=top.ee; e; e=e->next)
-			if (!nn[e->to].sel && nn[e->to].ecnt < nn[mnto->to].ecnt)
-				mnto = e;
-		if (top.type == T_W)
-			cout << top.id+1 << " " << nn[mnto->to].id-n+1 << endl;
-		else
-			cout << nn[mnto->to].id-n+1 << " " << top.id+1 << endl;
-		nn[top.id].sel = true;
-		nn[mnto->to].sel = true;
-		q.erase(top);
-		q.erase(nn[mnto->to]);
-	}
+	for (int j=n; j<n+n; j++)
+		oo[j][drn] = 1;
+	int ff[n+n+2][n+n+2];
+	memcpy(ff, oo, sizeof(ff));
+	maxflow((int*)ff, n+n+2, src, drn);
+	for (int i=0; i<n; i++)
+		for (int j=n; j<n+n; j++)
+			if (oo[i][j] == 1 && ff[i][j] == 0)
+				printf("%d %d\n", i+1, j-n+1);
 	return 0;
 }
