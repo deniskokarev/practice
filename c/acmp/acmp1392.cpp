@@ -2,12 +2,13 @@
 #include <cmath>
 #include <cstring>
 #include <climits>
+#include <cassert>
 /* ACMP 1392 */
 #define min(A,B) 	((A<B)?A:B)
 
 struct Q {
-	int from, to;
-	int min_flow;
+	short to;
+	short min_flow;
 };
 
 /**
@@ -21,26 +22,26 @@ struct Q {
  * @param[out] *min_flow - smallest edge on the path
  * @return - true when path was found - otherwise false
  */
-static int bfs_shortest_path(const int *ff, int sz, int src, int drn, int *path, int *min_flow) {
+static int bfs_shortest_path(const char *ff, int sz, short src, short drn, short *path, int *min_flow) {
 	memset(path, 0xff, sz*sizeof(*path)); // fill(path, path+sz, -1)
 	int sz_l2 = int(ceil(log2(sz+1)));
 	int qsz = 1<<sz_l2;     // sz rounded up to nearest power of 2
 	Q qq[qsz];              // queue right on stack
 	int qsz_mask = qsz-1;   // use bitmask for quicker modulo
 	int qh = 0, qt = 0;     // head and tail of the queue
-	Q q = {src, src, INT_MAX};
+	Q q = {src, SHRT_MAX};
 	qq[qt++] = q;
 	path[src] = src;
 	while (qh != qt && qq[qh].to != drn) {
 		for (int v=0; v<sz; v++) {
 			int ff_idx = qq[qh].to*sz+v;
 			if (ff[ff_idx]>0 && path[v]==-1) {
-				q.from = qq[qh].to;
 				q.to = v;
 				q.min_flow = min(qq[qh].min_flow, ff[ff_idx]);
-				path[q.to] = q.from;
+				path[q.to] = qq[qh].to;
 				qq[qt++] = q;
 				qt &= qsz_mask;
+				assert(qt != qh);
 			}
 		}
 		qh++;
@@ -59,8 +60,8 @@ static int bfs_shortest_path(const int *ff, int sz, int src, int drn, int *path,
  * @return maximum possible flow
  * ff[sz][sz] will reflect the said maximum flow subtracted
  */
-int maxflow(int *ff, int sz, int src, int drn) {
-	int path[sz];
+int maxflow(char *ff, int sz, short src, short drn) {
+	short path[sz];
 	int df;
 	int flow = 0;
 	while (bfs_shortest_path(ff, sz, src, drn, path, &df)) {
@@ -76,9 +77,9 @@ int maxflow(int *ff, int sz, int src, int drn) {
 int main(int argc, char **argv) {
 	int n, k;
 	scanf("%d %d", &n, &k);
-	int oo[n+n+2][n+n+2];
+	char oo[n+n+2][n+n+2];
 	memset(oo, 0, sizeof(oo));
-	int src = n+n, drn = n+n+1;
+	short src = n+n, drn = n+n+1;
 	for (int i=0; i<n*k; i++) {
 		int f, t;
 		scanf("%d%d", &f, &t);
@@ -86,15 +87,14 @@ int main(int argc, char **argv) {
 		t += n;
 		oo[f][t] = 1;
 		oo[src][f] = 1;
+		oo[t][drn] = 1;
 	}
-	for (int j=n; j<n+n; j++)
-		oo[j][drn] = 1;
-	int ff[n+n+2][n+n+2];
+	char ff[n+n+2][n+n+2];
 	memcpy(ff, oo, sizeof(ff));
-	maxflow((int*)ff, n+n+2, src, drn);
+	maxflow((char*)ff, n+n+2, src, drn);
 	for (int i=0; i<n; i++)
 		for (int j=n; j<n+n; j++)
-			if (oo[i][j] == 1 && ff[i][j] == 0)
+			if (oo[i][j] ^ ff[i][j])
 				printf("%d %d\n", i+1, j-n+1);
 	return 0;
 }
