@@ -1,51 +1,41 @@
-#include <iostream>
-/* CodeForces CF692B problem */
+#include <cstdio>
+/* CodeForces CF962B problem */
 using namespace std;
+
+enum {
+	A, B
+};
 
 int main(int argc, char **argv) {
 	int n, a, b;
-	cin >> n >> a >> b;
-	string s;
-	cin >> s;
-	int len = 0;
-	int fspace = 0;
-	int ans = 0;
-	for (int i=0; i<s.length(); i++) {
-		if (s[i] == '*') {
-			if (a >= len) {
-				a -= len;
-				ans += len;
-			} else if (b >= len) {
-				b -= len;
-				ans += len;
+	scanf("%d%d%d", &n, &a, &b);
+	char s[200002];
+	s[0] = '*';
+	scanf("%200000s", s+1);
+	int was = a+b;
+	for (int i=1; i<=n; i++) {
+		if (s[i] == '.') {
+			if (s[i-1] == A) {
+				if (b > 0) {
+					b--;
+					s[i] = B;
+				}
+			} else if (s[i-1] == B) {
+				if (a > 0) {
+					a--;
+					s[i] = A;
+				}
 			} else {
-				fspace += len;
+				if (a > b) {
+					a--;
+					s[i] = A;
+				} else if (b > 0) {
+					b--;
+					s[i] = B;
+				}
 			}
-			len = 0;
-		} else {
-			len++;
 		}
 	}
-	if (a >= len) {
-		a -= len;
-		ans += len;
-	} else if (b >= len) {
-		b -= len;
-		ans += len;
-	} else {
-		fspace += len;
-	}
-	if (fspace > 0) {
-		if (a>0) {
-			fspace -= a+1;
-			ans += a;
-			ans += min(b, max(fspace,0));
-		} else if (b>0) {
-			fspace -= b+1;
-			ans += b;
-			ans += min(a, max(fspace,0));
-		}
-	}
-	cout << ans << endl;
+	printf("%d\n", was-a-b);
 	return 0;
 }
