@@ -106,7 +106,6 @@ int main(int argc, char **argv) {
         add_edge((E*)mm, dim, src, i+1);
     for (int qi=n; qi<n+n; qi++)
         add_edge((E*)mm, dim, qi+1, drn);
-
     int flow = maxflow((E*)mm, dim, src, drn);
 	assert(flow == n);
 	for (int f=1; f<=n; f++) {
