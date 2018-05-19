@@ -6,9 +6,11 @@
 
 using namespace std;
 
+// for mixed-fashion sparse graph representation
 struct E {
 	int cost;
 	int flow;
+	int next;
 };
 
 // for ford algorithm
@@ -30,13 +32,12 @@ constexpr int DINF = INT_MAX/2;
  * @return - true when path was found - otherwise false
  */
 static int ford_path(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
-	fill(path.begin(), path.end(), -1);
-	vector<D> dd(sz, {DINF, -1, DINF});
-	dd[src] = D {0, src, DINF};
+	vector<D> dd(sz, {DINF, -1, INT_MAX});
+	dd[src] = D {0, src, INT_MAX};
 	path[src] = src;
 	for (int v=0; v<sz; v++) {
 		for (int i=0; i<sz; i++) {
-			for (int j=0; j<sz; j++) {
+			for (int j=ff[i][0].next; j; j=ff[i][j].next) {
 				if (ff[i][j].flow > 0) {
 					int nw = dd[i].w+ff[i][j].cost;
 					if (dd[j].w > nw) {
@@ -50,7 +51,7 @@ static int ford_path(const vector<vector<E>> &ff, int sz, int src, int drn, vect
 		}
 	}
 	min_flow = dd[drn].min_flow;
-	return path[drn] != -1;
+	return dd[drn].f != -1;
 }
 
 /**
@@ -76,27 +77,35 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	return flow;
 }
 
+void add_edge(vector<vector<E>> &ff, int f, int t, int cost) {
+	ff[f][t] = E {cost, 1, ff[f][0].next};
+	ff[f][0].next = t;
+	ff[t][f] = E {-cost, 0, ff[t][0].next};
+	ff[t][0].next = f;
+} 
+
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
-	vector<vector<E>> ff(n+n+2, vector<E>(n+n+2, E{0,0}));
-	int src = n+n, drn = n+n+1;
-	for (int i=0; i<n; i++) {
-		ff[src][i] = E {0, 1};
-		for (int j=n; j<n+n; j++) {
-			scanf("%d", &ff[i][j].cost);
-			ff[j][i].cost = -ff[i][j].cost;
-			ff[i][j].flow = 1;
+	int dim = n+n+2+1;
+	vector<vector<E>> ff(dim, vector<E>(dim, E{0,0,0}));
+	int src = n+n+1, drn = n+n+2;
+	for (int i=1; i<=n; i++) {
+		add_edge(ff, src, i, 0);
+		for (int j=n+1; j<=n+n; j++) {
+			int cost;
+			scanf("%d", &cost);
+			add_edge(ff, i, j, cost);
 		}
 	}
-	for (int j=n; j<n+n; j++)
-		ff[j][drn] = E {0, 1};
+	for (int j=n+1; j<=n+n; j++)
+		add_edge(ff, j, drn, 0);
 	vector<vector<E>> ff_save(ff);
-	int flow = maxflow_mincost(ff, n+n+2, src, drn);
+	int flow = maxflow_mincost(ff, dim, src, drn);
 	assert(flow == n);
 	int cost = 0;
-	for (int i=0; i<n; i++)
-		for (int j=n; j<n+n; j++)
+	for (int i=1; i<=n; i++)
+		for (int j=ff[i][0].next; j; j=ff[i][j].next)
 			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
 				cost += ff[i][j].cost;
 	printf("%d\n", cost);
