@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <algorithm>
 #include <vector>
-#include <queue>
 #include <cassert>
 /* ACMP 1394 */
 
@@ -12,17 +11,15 @@ struct E {
 	int flow;
 };
 
-struct Q {
-	int cost;
-	int to;
-	int min_flow;
-	bool operator<(const Q &b) const {
-		return cost > b.cost; // for min heap
-	}
+// for ford algorithm
+struct D {
+	int w, f, min_flow;
 };
 
+constexpr int DINF = INT_MAX/2;
+
 /**
- * Use Dijkstra for shortest path over cost from src to drn and identify the "thinnest" edge
+ * Ford shortest path over cost from src to drn and identify the "thinnest" edge
  * on the way. Populate the path
  * @param[in] ff[sz][sz] - graph matrix with flow and cost capacities
  * @param[in] sz - number of nodes
@@ -32,30 +29,32 @@ struct Q {
  * @param[out] *min_flow - smallest edge on the path
  * @return - true when path was found - otherwise false
  */
-static int dijkstra_path(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
+static int ford_path(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
 	fill(path.begin(), path.end(), -1);
-	priority_queue<Q> queue;
-	queue.push(Q{0,src,INT_MAX});
+	vector<D> dd(sz, {DINF, -1, DINF});
+	dd[src] = D {0, src, DINF};
 	path[src] = src;
-	while (!queue.empty()) {
-		Q top = queue.top();
-		if (top.to == drn) {
-			min_flow = top.min_flow;
-			break;
-		}
-		queue.pop();
-		for (int v=0; v<sz; v++) {
-			if (ff[top.to][v].flow>0 && path[v]==-1) {
-				path[v] = top.to;
-				queue.push(Q{top.cost+ff[top.to][v].cost, v, min(top.min_flow, ff[top.to][v].flow)});
+	for (int v=0; v<sz; v++) {
+		for (int i=0; i<sz; i++) {
+			for (int j=0; j<sz; j++) {
+				if (ff[i][j].flow > 0) {
+					int nw = dd[i].w+ff[i][j].cost;
+					if (dd[j].w > nw) {
+						dd[j].w = nw;
+						dd[j].f = i;
+						dd[j].min_flow = min(dd[j].min_flow, min(dd[i].min_flow, ff[i][j].flow));
+						path[j] = i;
+					}
+				}
 			}
 		}
 	}
-	return (!queue.empty());
+	min_flow = dd[drn].min_flow;
+	return path[drn] != -1;
 }
- 
+
 /**
- * find max flow from src into drn in the graph in O(V*V*FLOW)
+ * find max flow from src into drn in the graph in O(V*E*FLOW)
  * @param[in,out] ff[sz][sz] - graph
  * @param[in] sz - graph size
  * @param[in] src - source node
@@ -67,7 +66,7 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	vector<int> path(sz);
 	int df;
 	int flow = 0;
-	while (dijkstra_path(ff, sz, src, drn, path, df)) {
+	while (ford_path(ff, sz, src, drn, path, df)) {
 		flow += df;
 		for (int v=drn,vp=path[v]; v!=src; v=vp,vp=path[v]) {
 			ff[vp][v].flow -= df;
@@ -77,9 +76,6 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	return flow;
 }
 
-// use as potential for dijkstra
-constexpr int MXCOST = 20000;
-
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
@@ -88,11 +84,8 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) {
 		ff[src][i] = E {0, 1};
 		for (int j=n; j<n+n; j++) {
-			int cost;
-			scanf("%d", &cost);
-			assert(cost <= MXCOST);
-			ff[i][j].cost = MXCOST+cost;
-			ff[j][i].cost = MXCOST-cost;
+			scanf("%d", &ff[i][j].cost);
+			ff[j][i].cost = -ff[i][j].cost;
 			ff[i][j].flow = 1;
 		}
 	}
@@ -105,7 +98,7 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++)
 		for (int j=n; j<n+n; j++)
 			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
-				cost += ff[i][j].cost-MXCOST;
+				cost += ff[i][j].cost;
 	printf("%d\n", cost);
 	return 0;
 }
