@@ -77,6 +77,9 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	return flow;
 }
 
+// use as potential for dijkstra
+constexpr int MXCOST = 20000;
+
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
@@ -85,7 +88,11 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) {
 		ff[src][i] = E {0, 1};
 		for (int j=n; j<n+n; j++) {
-			scanf("%d", &ff[i][j].cost);
+			int cost;
+			scanf("%d", &cost);
+			assert(cost <= MXCOST);
+			ff[i][j].cost = MXCOST+cost;
+			ff[j][i].cost = MXCOST-cost;
 			ff[i][j].flow = 1;
 		}
 	}
@@ -97,8 +104,8 @@ int main(int argc, char **argv) {
 	int cost = 0;
 	for (int i=0; i<n; i++)
 		for (int j=n; j<n+n; j++)
-			if (ff[i][j].flow != ff_save[i][j].flow)
-				cost += ff[i][j].cost;
+			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
+				cost += ff[i][j].cost-MXCOST;
 	printf("%d\n", cost);
 	return 0;
 }
