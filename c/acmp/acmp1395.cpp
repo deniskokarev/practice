@@ -4,21 +4,20 @@
 #include <cassert>
 #include <queue>
 /* ACMP 1395 */
-
+ 
 using namespace std;
-
-// for mixed-fashion sparse graph representation
+ 
+// graph edge
 struct E {
 	int cost;
 	int flow;
-	int next;
 };
-
+ 
 // to find path
 struct D {
 	int cost, min_flow;
 };
-
+ 
 /**
  * Ford min path over cost from src to drn and identify the "thinnest" edge
  * on the way. Populate the path
@@ -34,9 +33,9 @@ static int ford_path(const vector<vector<E>> &ff, int sz, int src, int drn, vect
 	vector<D> dd(sz, D {INT_MAX/2, INT_MAX});
 	path[src] = src;
 	dd[src] = D {0, INT_MAX};
-	for (int step=0; step<sz; step++) {
+	for (int step=1; step<sz; step++) {
 		for (int v=0; v<sz; v++) {
-			for (int to=ff[v][0].next; to; to=ff[v][to].next) {
+			for (int to=0; to<sz; to++) {
 				if (ff[v][to].flow > 0 && dd[to].cost > dd[v].cost + ff[v][to].cost) {
 					dd[to].cost = dd[v].cost + ff[v][to].cost;
 					dd[to].min_flow = min(dd[to].min_flow, min(dd[v].min_flow, ff[v][to].flow));
@@ -48,7 +47,7 @@ static int ford_path(const vector<vector<E>> &ff, int sz, int src, int drn, vect
 	min_flow = dd[drn].min_flow;
 	return (min_flow != INT_MAX);
 }
-
+ 
 /**
  * find max flow from src into drn in the graph in O(V*E*FLOW)
  * @param[in,out] ff[sz][sz] - graph
@@ -71,41 +70,39 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	}
 	return flow;
 }
-
+ 
 void add_edge(vector<vector<E>> &ff, int f, int t) {
 	if (ff[f][t].flow == 0) {
-		ff[f][t] = E {0, 1, ff[f][0].next};
-		ff[f][0].next = t;
-		ff[t][f] = E {0, 0, ff[t][0].next};
-		ff[t][0].next = f;
+		ff[f][t] = E {0, 1};
+		ff[t][f] = E {0, 0};
 	}
 }
-
+ 
 void inc_edge(vector<vector<E>> &ff, int f, int t) {
 	add_edge(ff, f, t);
 	ff[f][t].cost--;
 	ff[t][f].cost++;
 } 
-
+ 
 int main(int argc, char **argv) {
 	const char i2let[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	int let2i[256]{-1};
 	for (int i=0; i<sizeof(i2let); i++)
 		let2i[unsigned(i2let[i])] = i;
-	int ln, k;
-	scanf("%d%d", &ln, &k);
-	assert(k<53);
-	char sf[1000001];
-	char st[1000001];
-	scanf("%1000000s", sf);
-	scanf("%1000000s", st);
-	int dim = k+k+2+1;
-	vector<vector<E>> ff(dim, vector<E>(dim, E{0,0,0}));
-	int src = k+k+1, drn = k+k+2;
-	for (int i=0; i<ln; i++) {
-		int f = let2i[unsigned(sf[i])]+1;
-		int t = let2i[unsigned(st[i])]+1;
-		assert(f != 0 && t != 0);
+	int n, k;
+	scanf("%d%d", &n, &k);
+	assert(k>0 && k<53);
+	char sf[2000001];
+	char st[2000001];
+	scanf("%2000000s", sf);
+	scanf("%2000000s", st);
+	int dim = k+k+2;
+	vector<vector<E>> ff(dim, vector<E>(dim, E{0,0}));
+	int src = k+k, drn = k+k+1;
+	for (int i=0; i<n; i++) {
+		int f = let2i[unsigned(sf[i])];
+		int t = let2i[unsigned(st[i])];
+		assert(f != -1 && t != -1);
 		t += k;
 		inc_edge(ff, f, t);
 		add_edge(ff, src, f);
@@ -114,14 +111,14 @@ int main(int argc, char **argv) {
 	vector<vector<E>> ff_save(ff);
 	maxflow_mincost(ff, dim, src, drn);
 	int cost = 0;
-	for (int i=1; i<=k; i++)
-		for (int j=ff[i][0].next; j; j=ff[i][j].next)
+	for (int i=0; i<k; i++)
+		for (int j=k; j<k+k; j++)
 			cost += ff_save[i][j].cost * (ff_save[i][j].flow - ff[i][j].flow);
 	printf("%d\n", -cost);
-	for (int i=1; i<=k; i++)
-		for (int j=ff[i][0].next; j; j=ff[i][j].next)
+	for (int i=0; i<k; i++)
+		for (int j=k; j<k+k; j++)
 			if (ff_save[i][j].flow > ff[i][j].flow)
-				printf("%c", i2let[j-k-1]);
+				printf("%c", i2let[j-k]);
 	printf("\n");
 	return 0;
 }
