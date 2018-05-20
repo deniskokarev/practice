@@ -20,7 +20,7 @@ struct D {
 };
 
 /**
- * Ford max path over cost from src to drn and identify the "thinnest" edge
+ * Ford min path over cost from src to drn and identify the "thinnest" edge
  * on the way. Populate the path
  * @param[in] ff[sz][sz] - graph matrix with flow and cost capacities
  * @param[in] sz - number of nodes
@@ -30,13 +30,14 @@ struct D {
  * @param[out] *min_flow - smallest edge on the path
  * @return - true when path was found - otherwise false
  */
-static int ford_path_max(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
-	vector<D> dd(sz, D {INT_MIN, INT_MAX});
+static int ford_path(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
+	vector<D> dd(sz, D {INT_MAX/2, INT_MAX});
+	path[src] = src;
 	dd[src] = D {0, INT_MAX};
 	for (int step=0; step<sz; step++) {
 		for (int v=0; v<sz; v++) {
 			for (int to=ff[v][0].next; to; to=ff[v][to].next) {
-				if (ff[v][to].flow > 0 && dd[to].cost < dd[v].cost + ff[v][to].cost) {
+				if (ff[v][to].flow > 0 && dd[to].cost > dd[v].cost + ff[v][to].cost) {
 					dd[to].cost = dd[v].cost + ff[v][to].cost;
 					dd[to].min_flow = min(dd[to].min_flow, min(dd[v].min_flow, ff[v][to].flow));
 					path[to] = v;
@@ -61,7 +62,7 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	vector<int> path(sz);
 	int df;
 	int flow = 0;
-	while (ford_path_max(ff, sz, src, drn, path, df)) {
+	while (ford_path(ff, sz, src, drn, path, df)) {
 		flow += df;
 		for (int v=drn,vp=path[v]; v!=src; v=vp,vp=path[v]) {
 			ff[vp][v].flow -= df;
@@ -82,8 +83,8 @@ void add_edge(vector<vector<E>> &ff, int f, int t) {
 
 void inc_edge(vector<vector<E>> &ff, int f, int t) {
 	add_edge(ff, f, t);
-	ff[f][t].cost++;
-	ff[t][f].cost--;
+	ff[f][t].cost--;
+	ff[t][f].cost++;
 } 
 
 int main(int argc, char **argv) {
@@ -116,7 +117,7 @@ int main(int argc, char **argv) {
 	for (int i=1; i<=k; i++)
 		for (int j=ff[i][0].next; j; j=ff[i][j].next)
 			cost += ff_save[i][j].cost * (ff_save[i][j].flow - ff[i][j].flow);
-	printf("%d\n", cost);
+	printf("%d\n", -cost);
 	for (int i=1; i<=k; i++)
 		for (int j=ff[i][0].next; j; j=ff[i][j].next)
 			if (ff_save[i][j].flow > ff[i][j].flow)
