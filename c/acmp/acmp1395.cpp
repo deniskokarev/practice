@@ -16,7 +16,7 @@ struct E {
 
 // to find path
 struct D {
-	int w, f, min_flow;
+	int cost, flow, min_flow;
 };
 
 // NB! Ford is too slow for this task
@@ -43,22 +43,22 @@ static int levit_path_max(const vector<vector<E>> &ff, int sz, int src, int drn,
 		q.pop_front();
 		id[v] = 1;
 		for (int to=ff[v][0].next; to; to=ff[v][to].next) {
-			int mf = min(d[to].min_flow, min(d[v].min_flow, ff[v][to].flow));
-			if (ff[v][to].flow > 0 && (d[to].w == INT_MIN || d[to].w * d[to].min_flow < (d[v].w + ff[v][to].cost)*mf)) {
-				d[to].w = d[v].w + ff[v][to].cost;
+			if (ff[v][to].flow > 0 && d[to].cost < d[v].cost + ff[v][to].cost) {
+				d[to].cost = d[v].cost + ff[v][to].cost;
+				int mf = min(d[to].min_flow, min(d[v].min_flow, ff[v][to].flow));
 				d[to].min_flow = mf;
 				if (id[to] == 0)
 					q.push_back(to);
 				else if (id[to] == 1)
 					q.push_front(to);
-				d[to].f = v;
+				d[to].flow = v;
 				path[to] = v;
 				id[to] = 1;
 			}
 		}
 	}
 	min_flow = d[drn].min_flow;
-	return (d[drn].f != -1);
+	return (d[drn].flow != -1);
 }
 
 /**
@@ -100,19 +100,25 @@ void inc_edge(vector<vector<E>> &ff, int f, int t) {
 } 
 
 int main(int argc, char **argv) {
-	int ln, ign;
-	scanf("%d%d", &ln, &ign);
+	const char i2let[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	int let2i[256]{-1};
+	for (int i=0; i<sizeof(i2let); i++)
+		let2i[unsigned(i2let[i])] = i;
+	int ln, k;
+	scanf("%d%d", &ln, &k);
+	assert(k<53);
 	char sf[1000001];
 	char st[1000001];
-	scanf("%1000001s", sf);
-	scanf("%1000001s", st);
-	int n = 127; // ascii7
-	int dim = n+n+2+1;
+	scanf("%1000000s", sf);
+	scanf("%1000000s", st);
+	int dim = k+k+2+1;
 	vector<vector<E>> ff(dim, vector<E>(dim, E{0,0,0}));
-	int src = n+n+1, drn = n+n+2;
+	int src = k+k+1, drn = k+k+2;
 	for (int i=0; i<ln; i++) {
-		int f = sf[i];
-		int t = st[i]+n;
+		int f = let2i[unsigned(sf[i])]+1;
+		int t = let2i[unsigned(st[i])]+1;
+		assert(f != 0 && t != 0);
+		t += k;
 		inc_edge(ff, f, t);
 		add_edge(ff, src, f);
 		add_edge(ff, t, drn);
@@ -120,23 +126,14 @@ int main(int argc, char **argv) {
 	vector<vector<E>> ff_save(ff);
 	maxflow_mincost(ff, dim, src, drn);
 	int cost = 0;
-	for (int i='a'; i<='z'; i++)
+	for (int i=1; i<=k; i++)
 		for (int j=ff[i][0].next; j; j=ff[i][j].next)
-			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
-				cost += ff_save[i][j].cost;
-	for (int i='A'; i<='Z'; i++)
-		for (int j=ff[i][0].next; j; j=ff[i][j].next)
-			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
-				cost += ff_save[i][j].cost;
+			cost += ff_save[i][j].cost * (ff_save[i][j].flow - ff[i][j].flow);
 	printf("%d\n", cost);
-	for (int i='a'; i<='z'; i++)
+	for (int i=1; i<=k; i++)
 		for (int j=ff[i][0].next; j; j=ff[i][j].next)
-			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
-				printf("%c", j-n);
-	for (int i='A'; i<='Z'; i++)
-		for (int j=ff[i][0].next; j; j=ff[i][j].next)
-			if (ff_save[i][j].flow == 1 && ff[i][j].flow == 0)
-				printf("%c", j-n);
+			if (ff_save[i][j].flow > ff[i][j].flow)
+				printf("%c", i2let[j-k-1]);
 	printf("\n");
 	return 0;
 }
