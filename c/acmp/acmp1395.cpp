@@ -4,7 +4,7 @@
 #include <cassert>
 #include <queue>
 /* ACMP 1395 */
-/* solution from Fedor Menshikov breaks on test 11 too */
+/* solution from Fedor Menshikov */
 
 int charToInt(char c) {
 	if ('a'<=c && c<='z')
@@ -16,9 +16,9 @@ int charToInt(char c) {
 }
 
 char intToChar(int x) {
-	if (0 <= x && x <= 26)
+	if (0 <= x && x < 26)
 		return 'a'+x;
-	else if (27<=x && x <= 52)
+	else if (26<=x && x < 53)
 		return 'A'+(x-26);
 	else
 		assert(false && "intToChar err");
