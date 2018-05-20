@@ -19,8 +19,6 @@ struct D {
 	int w, f, min_flow;
 };
 
-constexpr int DINF = INT_MAX/2;
-
 // NB! Ford is too slow for this task
 /**
  * Levit shortest path over cost from src to drn and identify the "thinnest" edge
@@ -35,8 +33,8 @@ constexpr int DINF = INT_MAX/2;
  * @return - true when path was found - otherwise false
  */
 static int levit_path_max(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
-	vector<D> d(sz, D{-DINF,-1,DINF});
-	d[src] = D{0,src,DINF};
+	vector<D> d(sz, D{INT_MIN,-1,INT_MAX});
+	d[src] = D{0,src,INT_MAX};
 	vector<int> id(sz);
 	deque<int> q;
 	q.push_back(src);
@@ -45,9 +43,10 @@ static int levit_path_max(const vector<vector<E>> &ff, int sz, int src, int drn,
 		q.pop_front();
 		id[v] = 1;
 		for (int to=ff[v][0].next; to; to=ff[v][to].next) {
-			if (ff[v][to].flow > 0 && d[to].w < d[v].w + ff[v][to].cost) {
+			int mf = min(d[to].min_flow, min(d[v].min_flow, ff[v][to].flow));
+			if (ff[v][to].flow > 0 && (d[to].w == INT_MIN || d[to].w * d[to].min_flow < (d[v].w + ff[v][to].cost)*mf)) {
 				d[to].w = d[v].w + ff[v][to].cost;
-				d[to].min_flow = min(d[to].min_flow, min(d[v].min_flow, ff[v][to].flow));
+				d[to].min_flow = mf;
 				if (id[to] == 0)
 					q.push_back(to);
 				else if (id[to] == 1)
@@ -63,40 +62,6 @@ static int levit_path_max(const vector<vector<E>> &ff, int sz, int src, int drn,
 }
 
 /**
- * Ford shortest path over cost from src to drn and identify the "thinnest" edge
- * on the way. Populate the path
- * @param[in] ff[sz][sz] - graph matrix with flow and cost capacities
- * @param[in] sz - number of nodes
- * @param[in] src - source node
- * @param[in] dst - drain node
- * @param[out] path[sz] - trace path in parent-of fashion
- * @param[out] *min_flow - smallest edge on the path
- * @return - true when path was found - otherwise false
- */
-static int ford_path_max(const vector<vector<E>> &ff, int sz, int src, int drn, vector<int> &path, int &min_flow) {
-    vector<D> dd(sz, {-DINF, -1, INT_MAX});
-    dd[src] = D {0, src, INT_MAX};
-    path[src] = src;
-    for (int v=0; v<sz; v++) {
-        for (int i=0; i<sz; i++) {
-            for (int j=ff[i][0].next; j; j=ff[i][j].next) {
-                if (ff[i][j].flow > 0) {
-                    int nw = dd[i].w+ff[i][j].cost;
-                    if (dd[j].w < nw) {
-                        dd[j].w = nw;
-                        dd[j].f = i;
-                        dd[j].min_flow = min(dd[j].min_flow, min(dd[i].min_flow, ff[i][j].flow));
-                        path[j] = i;
-                    }
-                }
-            }
-        }
-    }
-    min_flow = dd[drn].min_flow;
-    return dd[drn].f != -1;
-}
-
-/**
  * find max flow from src into drn in the graph in O(V*E*FLOW)
  * @param[in,out] ff[sz][sz] - graph
  * @param[in] sz - graph size
@@ -109,7 +74,7 @@ int maxflow_mincost(vector<vector<E>> &ff, int sz, int src, int drn) {
 	vector<int> path(sz);
 	int df;
 	int flow = 0;
-	while (ford_path_max(ff, sz, src, drn, path, df)) {
+	while (levit_path_max(ff, sz, src, drn, path, df)) {
 		flow += df;
 		for (int v=drn,vp=path[v]; v!=src; v=vp,vp=path[v]) {
 			ff[vp][v].flow -= df;
@@ -139,8 +104,8 @@ int main(int argc, char **argv) {
 	scanf("%d%d", &ln, &ign);
 	char sf[1000001];
 	char st[1000001];
-	scanf("%1000000s", sf);
-	scanf("%1000000s", st);
+	scanf("%1000001s", sf);
+	scanf("%1000001s", st);
 	int n = 127; // ascii7
 	int dim = n+n+2+1;
 	vector<vector<E>> ff(dim, vector<E>(dim, E{0,0,0}));
