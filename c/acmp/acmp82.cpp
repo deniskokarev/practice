@@ -21,10 +21,10 @@ int main(int argc, char **argv) {
 	while (m--) {
 		scanf("%d", &a);
 		assert(0 <= a && a <= MX);
-		cnt[a]++;
+		cnt[a] |= 2;
 	}
 	for (int i=0; i<=MX; i++)
-		if (cnt[i]>1)
+		if (cnt[i] == 3)
 			printf("%d ", i);
 	printf("\n");
 	return 0;
