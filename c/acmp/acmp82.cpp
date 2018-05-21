@@ -1,6 +1,5 @@
-#include <cstdio>
+#include <stdio.h>
 #include <cstring>
-#include <algorithm>
 #include <cassert>
 /* ACMP 82 */
 using namespace std;
