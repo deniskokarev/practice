@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 	int n;
 	while (cin >> n) {
 		mn = min(mn, n);
-		mx = max(mn, n);
+		mx = max(mx, n);
 	}
 	cout << mx-mn << endl;
 	return 0;
