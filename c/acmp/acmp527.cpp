@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 			uint64_t temp = l;
 			l = h % l;
 			h = temp;
-			if (h == d && (c == l || (c <= a && (c+l)%h == 0))) {
+			if (d == h && (c == l || (c+l)%h == 0)) {
 				ans = true;
 				break;
 			}
