@@ -11,11 +11,17 @@ int main(int argc, char **argv) {
 		cin >> p;
 	sort(pp, pp+n/2);
 	int f = 1;
-	int ans = 0;
+	int ans_b = 0;
 	for (auto &p:pp) {
-		ans += abs(p-f);
+		ans_b += abs(p-f);
 		f += 2;
 	}
-	cout << ans << endl;
+	f = 2;
+	int ans_w = 0;
+	for (auto &p:pp) {
+		ans_w += abs(p-f);
+		f += 2;
+	}
+	cout << min(ans_b, ans_w) << endl;
 	return 0;
 }
