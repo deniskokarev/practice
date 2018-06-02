@@ -16,8 +16,12 @@ int main(int argc, char **argv) {
 	int p = upper_bound(aa, aa+m+1, aa[0]+l)-aa;
 	if (p>=n) {
 		int64_t ans = 0;
-		for (int i=0; i<p && n--; i++)
+		int i = 0;
+		while (i<=p-n && n) {
 			ans += aa[i];
+			for (int j=0; j<k && i<=p-n; j++,i++);
+			n--;
+		}
 		cout << ans << endl;
 	} else {
 		cout << 0 << endl;
