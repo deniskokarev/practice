@@ -6,17 +6,19 @@ int64_t width(int64_t c, int64_t n, int64_t H, int64_t &s) {
 	if (c>=0) {
 		int64_t h = H+c;
 		s = h*h - H*(H-1)/2;
-		//cerr << "c=" << c << " s=" << s << " w=" << 2*h-H << endl;
-		if (s >= n)
+		if (s >= n) {
+			cerr << "c=" << c << " s=" << s << " w=" << 2*h-H << endl;
 			return 2*h-H;
+		}
 	} else {
 		if (c >= -H) {
 			int64_t h = H+c;
 			if (h>0) {
 				s = h*(h+1)/2;
-				//cerr << "c=" << c << " s=" << s << " w=" << h << endl;
-				if (s >= n)
+				if (s >= n) {
+					cerr << "c=" << c << " s=" << s << " w=" << h << endl;
 					return h;
+				}
 			}
 		}
 	}
@@ -26,6 +28,8 @@ int64_t width(int64_t c, int64_t n, int64_t H, int64_t &s) {
 int main(int argc, char **argv) {
 	int64_t n, H;
 	cin >> n >> H;
+	if (H > INT_MAX)
+		H = INT_MAX;
 	int64_t s;
 	// upper bound search of pile center
 	int64_t cf=INT_MIN, ct=INT_MAX;
