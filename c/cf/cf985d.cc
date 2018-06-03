@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 			ct = cm;
 	}
 	int64_t w = width(cf, n, H, s);
-	if (cf > 0 && n >= s-(w-cf))
+	if (cf > 0 && n <= s-(w-cf))
 		w--;
 	cout <<  w << endl;
 	return 0;
