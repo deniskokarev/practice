@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 	int dd[32] {0};
 	int l = base3(n, dd);
 	int i;
-	for (i=0; i<l; i++) {
+	for (i=0; i<l-1; i++) {
 		if (dd[i] < 1) {
 			dd[i] += 3;
 			dd[i+1]--;
