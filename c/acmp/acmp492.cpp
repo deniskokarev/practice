@@ -2,23 +2,23 @@
 #include <cmath>
 /* ACMP 492 problem */
 using namespace std;
-
+ 
 long double dist2(long double x, long double y, long double scale) {
 	long double d2 = (x-x*scale)*(x-x*scale) + (y-y*scale)*(y-y*scale);
 	return d2;
 }
-
+ 
 int main(int argc, char **argv) {
-	double x0, y0;
+	long double x0, y0;
 	cin >> x0 >> y0;
-	double vx, vy;
+	long double vx, vy;
 	cin >> vx >> vy;
-	double v, t, d;
+	long double v, t, d;
 	cin >> v >> t >> d;
 	long double x1 = x0 + vx*t;
 	long double y1 = y0 + vy*t;
-	long double eps = 1e-18;
-	long double sf = -1e9, st = 1;
+	long double eps = 1e-17;
+	long double sf = -1e10, st = 1+eps;
 	while (sf+eps < st) {
 		long double sm = (sf+st)/2;
 		if (dist2(x1, y1, sm) > d*d)
@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
 			st = sm;
 	}
 	//cerr << sf << endl;
-	long double dist = sqrtl(sf*sf*x1*x1+sf*sf*y1*y1);
-	if (v*t >= dist)
+	long double d2 = (x1*x1+y1*y1)*sf*sf;
+	if (v*v*t*t >= d2)
 		cout << "YES" << endl;
 	else
 		cout << "NO" << endl;
