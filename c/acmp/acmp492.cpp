@@ -16,9 +16,11 @@ int main(int argc, char **argv) {
 	int64_t dsm2 = d-v*t;
 	dsm2 *= dsm2;
 	int64_t dt2 = x1*x1+y1*y1;
-	if (dsp2 < dt2 || dsm2 > dt2)
-		cout << "NO" << endl;
+	bool ans;
+	if (dt2 >= d*d)
+		ans = (dsp2 >= dt2);
 	else
-		cout << "YES" << endl;
+		ans = (dsm2 <= dt2);
+	cout << (ans?"YES":"NO") << endl;
 	return 0;
 }
