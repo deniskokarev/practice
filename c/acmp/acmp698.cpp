@@ -97,6 +97,7 @@ int maxflow(E *ff, int sz, int src, int drn) {
 	return flow;
 }
  
+// !!!NB: graph nodes must be 1-based
 void add_edge(E *mm, int dim, int f, int t) {
 	if (mm[f*dim+t].cost == 0) {
 		mm[f*dim+t] = E {1, mm[f*dim].next};
@@ -112,29 +113,30 @@ int main(int argc, char **argv) {
 	cin >> n >> m >> r;
 	char trump = r[0];
 	// using maxflow approach
-	C cc[n+m];
-	for (int i=0; i<n; i++) {
+	// !!!NB: graph nodes must be 1-based
+	C cc[n+m+1];
+	for (int i=1; i<=n; i++) {
 		string s;
 		cin >> s;
 		cc[i] = parse_card(s);
 	}
-	for (int i=n; i<n+m; i++) {
+	for (int i=n+1; i<=n+m; i++) {
 		string s;
 		cin >> s;
 		cc[i] = parse_card(s);
 	}
-	int dim = n+m+2;
+	int dim = n+m+2+1;
 	E mm[dim][dim];
 	memset(mm, 0, sizeof(mm));
-	for (int i=0; i<n; i++)
-		for (int j=n; j<n+m; j++)
+	for (int i=1; i<=n; i++)
+		for (int j=n+1; j<=n+m; j++)
 			if (cc[i].greater(cc[j], trump))
 				add_edge((E*)mm, dim, i, j);
-	int src = n+m;
+	int src = n+m+1;
 	int drn = src+1;
-	for (int i=0; i<n; i++)
+	for (int i=1; i<=n; i++)
 		add_edge((E*)mm, dim, src, i);
-	for (int j=n; j<n+m; j++)
+	for (int j=n+1; j<=n+m; j++)
 		add_edge((E*)mm, dim, j, drn);
 	int flow = maxflow((E*)mm, dim, src, drn);
 	//cerr << "flow:" << flow << endl;
