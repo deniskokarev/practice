@@ -7,7 +7,7 @@ using namespace std;
 
 struct P {
 	int x, y;
-	int64_t cross(const P &b) const {
+	int cross(const P &b) const {
 		return x*b.y - y*b.x;
 	}
 };
@@ -26,7 +26,6 @@ int main(int argc, char **argv) {
 		P vb = P {p2.x-p.x, p2.y-p.y};
 		int64_t s2_2 = va.cross(vb);
 		s2_2 *= s2_2;
-		s2_2 *= 4;
 		int64_t s1_2 = (p2.x-p1.x)*(p2.x-p1.x) + (p2.y-p1.y)*(p2.y-p1.y);
 		s1_2 *= r*r;
 		ans[i] = (s1_2 >= s2_2);
