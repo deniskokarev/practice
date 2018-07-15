@@ -6,7 +6,7 @@ char get_let(unsigned n, int step, unsigned *len) {
 	if (n == 0) {
 		return 'a'+step;
 	} else {
-		if (n>len[step])
+		if (n>len[step]/2)
 			return get_let(n-len[step]/2-1, step-1, len);
 		else
 			return get_let(n-1, step-1, len);
