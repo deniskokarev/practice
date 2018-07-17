@@ -25,21 +25,26 @@ int main(int argc, char **argv) {
 		if (r.v > 0)
 			r.atv = r.t * vvvv + dv/r.v;
 		else
-			r.atv = UINT_MAX;
+			r.atv = ULLONG_MAX;
 	sort(rr, rr+4, [](const R &a, const R &b){return a.atv < b.atv;});
 	int cnt = 1;
+	int killed = (rr[0].atv != ULLONG_MAX);
 	uint64_t tv = t * vvvv;
 	for (int i=1; i<4; i++) {
 		int a = min((rr[i].angle+4-rr[i-1].angle)%4, (rr[i-1].angle+4-rr[i].angle)%4);
-		if (rr[i].atv == UINT_MAX || rr[i-1].atv + a*tv <= rr[i].atv)
+		if (rr[i].atv == ULLONG_MAX) {
 			cnt++;
-		else
+		} else if (rr[i].atv == ULLONG_MAX || rr[i-1].atv + a*tv <= rr[i].atv) {
+			cnt++;
+			killed++;
+		} else {
 			break;
+		}
 	}
 	//cerr << cnt << endl;
 	if (cnt == 4)
 		cout << "ALIVE" << endl;
 	else
-		cout << cnt << endl;
+		cout << killed << endl;
 	return 0;
 }
