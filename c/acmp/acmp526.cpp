@@ -4,18 +4,22 @@ using namespace std;
 
 int main(int argc, char **argv) {
 	string a;
-	unsigned n;
+	uint64_t n;
 	cin >> a >> n;
-	int b;
+	unsigned b;
 	//cerr << a << " = " << n << endl;
 	for (b=2;b<37;b++) {
-		int m = 0;
-		for (int r=1,p=a.size()-1; p>=0; p--,r*=b) {
-			int d = (a[p]>='0' && a[p]<='9')?a[p]-'0':a[p]-'A'+10;
+		uint64_t m = 0;
+		uint64_t r = 1;
+		for (int p=a.size()-1; p>=0; p--) {
+			unsigned d = (a[p]>='A')?a[p]-'A'+10:a[p]-'0';
 			if (d >= b)
 				goto nxt;
 			m += r*d;
-			if (m > 10e7)
+			if (m > INT_MAX)
+				goto nxt;
+			r *= b;
+			if (r > INT_MAX)
 				goto nxt;
 		}
 		if (m == n)
