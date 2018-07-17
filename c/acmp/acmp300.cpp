@@ -32,9 +32,11 @@ int main(int argc, char **argv) {
 	uint64_t tv = t * vvvv;
 	for (int i=1; i<4; i++) {
 		int a = min((rr[i].angle+4-rr[i-1].angle)%4, (rr[i-1].angle+4-rr[i].angle)%4);
-		if (rr[i].atv == ULLONG_MAX) {
+		if (rr[i-1].atv == ULLONG_MAX || rr[i].atv == ULLONG_MAX) {
 			cnt++;
-		} else if (rr[i].atv == ULLONG_MAX || rr[i-1].atv + a*tv <= rr[i].atv) {
+		} else if (tv == 0 && rr[i-1].atv == rr[i].atv) {
+			break;
+		} else if (rr[i-1].atv + a*tv <= rr[i].atv) {
 			cnt++;
 			killed++;
 		} else {
