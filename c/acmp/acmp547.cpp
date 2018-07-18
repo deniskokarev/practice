@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	int a1, a2;
 	if (n == 0) {
 		a1 = step-1;
-		a2 = step-1;
+		a2 = 1;
 	} else {
 		a1 = ff[n]-1;
 		a2 = step-ff[n];
