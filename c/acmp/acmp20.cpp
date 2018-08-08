@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 	int aa[n];
 	for (auto &a:aa)
 		scanf("%d", &a);
-	int mx = 0;
+	int mx = 1;
 	for (auto sign:{-1, 1}) {
 		int l = 1;
 		for (int i=1,op=sign; i<n; i++,op*=-1) {
