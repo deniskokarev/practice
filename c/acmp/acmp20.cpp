@@ -1,4 +1,4 @@
-#include <cstdio>
+#include <stdio.h>
 #include <algorithm>
 /* ACMP 20 */
 using namespace std;
