@@ -11,19 +11,13 @@ int main(int argc, char **argv) {
 		scanf("%d", &a);
 	int mx = 0;
 	for (auto sign:{-1, 1}) {
-		for (auto ofs:{1, 2}) {
-			int l = 0;
-			for (int i=ofs,op=sign; i<n; i++,op*=-1) {
-				if (aa[i-1]*op < aa[i]*op) {
-					if (l == 0)
-						l = 2;
-					else
-						l++;
-					mx = max(mx, l);
-				} else {
-					l = 0;
-				}
-			}
+		int l = 1;
+		for (int i=1,op=sign; i<n; i++,op*=-1) {
+			if (aa[i-1]*op < aa[i]*op)
+				l++;
+			else
+				l = 1;
+			mx = max(mx, l);
 		}
 	}
 	printf("%d\n", mx);
