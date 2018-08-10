@@ -1,4 +1,5 @@
 /* ACMP 139 */
+#include <cstdint>
 #include <cstdio>
 #include <algorithm>
 
