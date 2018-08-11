@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 	}
 	j -= dir;
 	i += dir;
-	for (int w=0; w<n; w++,dir*=-1) {
+	for (int w=0; w<n-1; w++,dir*=-1) {
 		while (i<n && j<n) {
 			mm[i][j] = t++;
 			i += dir;
