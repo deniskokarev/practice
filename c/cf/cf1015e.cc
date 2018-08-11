@@ -1,21 +1,25 @@
-#include <iostream>
+#include <cstdio>
 #include <cstring>
 /* CodeForces CF1015E problem */
-using namespace std;
+
+typedef struct D {
+	int x;
+	int l, r, u, d;
+} D;
+
+#define min(A,B) ((A<B)?A:B)
+#define max(A,B) ((A>B)?A:B)
 
 int main(int argc, char **argv) {
 	int n, m;
-	cin >> n >> m;
-	struct D {
-		int x;
-		int l, r, u, d;
-	} dd[n+2][m+2], ff[n+2][m+2], aa[n+2][m+2];
+	scanf("%d%d", &n, &m);
+	D dd[n+2][m+2], ff[n+2][m+2], aa[n+2][m+2];
 	memset(dd, 0, sizeof(dd));
 	memset(ff, 0, sizeof(ff));
 	memset(aa, 0, sizeof(aa));
 	for (int i=1;i<=n;i++) {
-		string s;
-		cin >> s;
+		char s[m+1];
+		scanf(" %s", s);
 		for (int j=1;j<=m;j++)
 			dd[i][j].x = (s[j-1]=='*');
 	}
@@ -50,7 +54,7 @@ int main(int argc, char **argv) {
 		for (int i=1;i<=n;i++)
 			for (int k=ff[i][j].d; k>0; k--,i++,k=max(k,ff[i][j].d))
 				ff[i][j].x=1;
-	int ans = true;
+	int ans = 1;
 	int ans_sz = 0;
 	for (int i=1;i<=n;i++) {
 		for (int j=1;j<=m;j++) {
@@ -59,13 +63,13 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (ans) {
-		cout << ans_sz << endl;
+		printf("%d\n", ans_sz);
 		for (int i=1;i<n;i++)
 			for (int j=1;j<m;j++)
 				if (aa[i][j].x != 0)
-					cout << i << ' ' << j << ' ' << aa[i][j].l << '\n';
+					printf("%d %d %d\n", i, j, aa[i][j].l);
 	} else {
-		cout << -1 << endl;
+		printf("-1\n");
 	}
 	return 0;
 }
