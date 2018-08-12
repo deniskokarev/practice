@@ -1,14 +1,12 @@
 #include <iostream>
-#include <vector>
 /* CodeForces CF1015D problem */
 using namespace std;
 
 int main(int argc, char **argv) {
 	int64_t n, k, s;
 	cin >> n >> k >> s;
-	vector<int> ans;
-	int q = s/k;
-	int r = s%k;
+	int64_t q = s/k;
+	int64_t r = s%k;
 	if (s<k||q+(r>0)>=n) {
 		cout << "NO" << endl;
 	} else {
