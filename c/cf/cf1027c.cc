@@ -1,5 +1,4 @@
-#include <iostream>
-#include <vector>
+#include <stdio.h>
 #include <algorithm>
 /* CodeForces CF1027C problem */
 using namespace std;
@@ -12,39 +11,39 @@ struct Q {
 	}
 };
 
+int cnt[10000+1]; // max len is guaranteed to be <=10^4
+int ll[1000000+1];
+int ss[1000000+1]; // squares
+int rr[1000000+1]; // rectangles
+
 int main(int argc, char **argv) {
 	int t;
-	cin >> t;
-	vector<int> cnt(10000+1);
-	vector<int> ll(1000000+1);
-	vector<int> ss(1000000+1);
-	vector<int> rr(1000000+1);
+	scanf("%d", &t);
 	while (t--) {
 		int n;
-		cin >> n;
+		scanf("%d", &n);
 		for (int i=0; i<n; i++) {
-			cin >> ll[i];
+			scanf("%d", &ll[i]);
 			cnt[ll[i]]++;
 		}
 		int ssz = 0;
 		int rsz = 0;
 		for (int i=0; i<n; i++) {
-			if (cnt[ll[i]] > 3) {
+			if (cnt[ll[i]] >= 4) {
 				ss[ssz++] = ll[i];
-			} else if (cnt[ll[i]] > 1) {
+			} else if (cnt[ll[i]] >= 2) {
 				rr[rsz++] = ll[i];
 			}
 			cnt[ll[i]] = 0;
 		}
-		sort(ss.begin(), ss.begin()+ssz);
-		sort(rr.begin(), rr.begin()+rsz);
-		// select best req from ss sticks
 		if (ssz > 0) {
-			cout << ss[ssz-1] << ' ' << ss[ssz-1] << ' ' << ss[ssz-1] << ' ' << ss[ssz-1] << '\n';
+			// select any square
+			printf("%d %d %d %d\n", ss[0], ss[0], ss[0], ss[0]);
 		} else {
-			// no squares - find the best rect
+			// no squares - find the best rect (it's guaranteed to exist)
 			Q mn_q(1e9, 1);
-			int mn_i, mn_j;
+			int mn_i;
+			sort(rr, rr+rsz);
 			for (int i=rsz-1; i>0; i--) {
 				uint64_t n = rr[i]*2 + rr[i-1]*2;
 				n *= n;
@@ -54,10 +53,9 @@ int main(int argc, char **argv) {
 				if (q < mn_q) {
 					mn_q = q;
 					mn_i = i;
-					mn_j = i-1;
 				}
 			}
-			cout << rr[mn_i] << ' ' << rr[mn_i] << ' ' << rr[mn_j] << ' ' << rr[mn_j] << '\n';
+			printf("%d %d %d %d\n", rr[mn_i], rr[mn_i], rr[mn_i-1], rr[mn_i-1]);
 		}
 	}
 	return 0;
