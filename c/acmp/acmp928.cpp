@@ -11,7 +11,24 @@ double xx[MAXSZ];
 double yy[MAXSZ];
 double diag[MAXSZ][MAXSZ]; // precomputed diagonals
 
-// improved cubic solution
+double mn_len_for_x_trees(int x, int n, int m) {
+	double mnl = 1e10;
+	for (int i1=x-2,j1=0; i1>=0 && j1<m; i1--,j1++) {
+		if (i1<n) {
+			double l1 = xx[i1] + yy[j1];
+			for (int i2=i1,j2=j1-(x-2); i2>=0 && j2<=j1; i2--, j2++) {
+				if (j2>=0) {
+					double l2 = xx[i2] + yy[j2];
+					double l = l1-l2+diag[i1][j1]+diag[i2][j2];
+					mnl = std::min(mnl, l);
+				}
+			}
+		}
+	}
+	return mnl;
+}
+
+// Fedor M solution O(n*m*log(l))
 int main(int argc, char **argv) {
 	double l, w;
 	cin >> l >> w;
@@ -31,33 +48,20 @@ int main(int argc, char **argv) {
 			diag[i][j] = sqrt(w*w + d*d);
 		}
 	}
-	int mx = 0;
-	for (int i=0; i<n; i++) { // for each x
-		for (int j=0; j<m; j++) { // for each y
-			double dl = l-diag[i][j];
-			if (dl < diag[i][j]) // when even 2 points won't fit (l<2*diag[i][j])
-				continue;
-			int i1; // find rightmost point on x alley using upper_bound binary search
-			int f=i, t=n;
-			while (f<t) {
-				int m = f+(t-f)/2;
-				if (dl >= (xx[m]-xx[i]) + diag[m][j])
-					f = m+1;
-				else
-					t = m;
-			}
-			i1 = f-1;
-			int j1 = j; // rightmost point on y alley
-			// sligind pointers i1 and j1 in opposite directions
-			while (i1 >= i && j1 < m) {
-				while (j1 < m && l >= diag[i][j]+diag[i1][j1]+(xx[i1]-xx[i])+(yy[j1]-yy[j])) {
-					mx = max(mx, i1-i+j1-j+2);
-					j1++;
-				}
-				i1--;
-			}
+	double bl = mn_len_for_x_trees(2, n, m);
+	if (bl <= l) {
+		int f=2, t=n+m+1;
+		while (f<t) {
+			int x=f+(t-f)/2;
+			bl = mn_len_for_x_trees(x, n, m);
+			if (bl >= l)
+				t = x;
+			else
+				f = x+1;
 		}
+		cout << min(n+m, f) << endl;
+	} else {
+		cout << 0 << endl;
 	}
-	cout << mx << endl;
 	return 0;
 }
