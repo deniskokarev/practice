@@ -17,6 +17,7 @@ struct V {
 	int ne;
 	int parent;
 	int depth;
+	int ord;
 };
 
 int dfs_dep(vector<V> &vv, const vector<E> &ee, int root, int depth) {
@@ -48,13 +49,29 @@ int main(int argc, char **argv) {
 		scanf("%d", &b);
 		b--;
 	}
-	int d = dfs_dep(vv, ee, 0, 0);
+	int mxd = dfs_dep(vv, ee, 0, 0);
+	int d = mxd;
 	bool ans = true;
+	int pord = 1;
+	int ord = 0;
 	for (int j=n-1; j>=0; j--) {
 		int i = bb[j];
+		if (vv[i].depth == d) {
+			if (!vv[vv[i].parent].ord) {
+				vv[vv[i].parent].ord = pord++;
+			} else if (vv[vv[i].parent].ord != pord-1) {
+				ans = false;
+				break;
+			}
+		} else if (vv[i].depth != d-1) {
+			ans = false;
+			break;
+		}
 		ans &= (vv[i].ne == 0);
 		ans &= (d >= vv[i].depth);
+		ans &= (ord <= vv[i].ord);
 		d = vv[i].depth;
+		ord = vv[i].ord;
 		vv[vv[i].parent].ne--;
 	}
 	printf("%s\n", (ans?"Yes":"No"));
