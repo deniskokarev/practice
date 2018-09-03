@@ -1,44 +1,62 @@
 #include <iostream>
 #include <vector>
+#include <list>
+#include <algorithm>
 /* CodeForces CF1025D problem */
 using namespace std;
 
 /**
- * GCD(a, b) - greatest common divisor
+ * Naive prime number factorization in O(sqrt(N))
+ * @param n - number greater than that you want to factorize
+ * @param p[] - preallocated recipient array where the of ordered
+ *   prime numbers of n will be placed
+ * 	p.length >= 64
+ * @return number of populated primes in p[]
  */
-uint64_t gcd(uint64_t a, uint64_t b) {
-	while (b > 0) {
-		uint64_t temp = b;
-		b = a % b;
-		a = temp;
+int primeFactors(unsigned n, unsigned p[]) {
+	int np = 0;
+	for (unsigned i = 2; i <= n / i; i++) {
+		while (n % i == 0) {
+			p[np++] = i;
+			n /= i;
+		}
 	}
-	return a;
-}
-
-bool can_bst(const vector<unsigned> &aa, const vector<vector<bool>> &mm, int f, int t, int r) {
-	if (t-f == 0) {
-		return true;
-	} else {
-		for (int i=f; i<t; i++)
-			if (mm[r][i] && can_bst(aa, mm, f, i, i) && can_bst(aa, mm, i+1, t, i))
-				return true;
-	}
-	return false;
+	if (n > 1)
+		p[np++] = n;
+	return np;
 }
 
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	vector<unsigned> aa(n);
-	for (auto &a:aa)
+	list<vector<unsigned>> aa;
+	for (int i=0; i<n; i++) {
+		unsigned a;
 		cin >> a;
-	vector<vector<bool>> mm(n+1, vector<bool>(n+1));
-	for (int i=0; i<n; i++)
-		for (int j=i+1; j<n; j++)
-			mm[i][j] = mm[j][i] = (gcd(aa[i], aa[j])>1);
-	for (int i=0; i<n; i++)
-		mm[i][n] = mm[n][i] = true;
-	bool ans = can_bst(aa, mm, 0, n, n);
+		unsigned f[64];
+		size_t sz = primeFactors(a, f);
+		sz = unique(f, f+sz)-f;
+		aa.push_back(vector<unsigned>(sz));
+		copy(f, f+sz, aa.back().begin());
+	}
+	for (int i=0; i<n; i++) {
+		auto it = aa.begin();
+		auto nit = next(it);
+		while (nit != aa.end()) {
+			unsigned is[it->size()+nit->size()];
+			auto isz = set_intersection(it->begin(), it->end(), nit->begin(), nit->end(), is)-is;
+			if (isz > 0) {
+				unsigned u[it->size()+nit->size()];
+				auto usz = set_union(it->begin(), it->end(), nit->begin(), nit->end(), u)-u;;
+				nit->resize(usz);
+				copy(u, u+usz, nit->begin());
+				aa.erase(it);
+			}
+			it = nit;
+			nit = next(it);
+		}
+	}
+	bool ans = (aa.size() == 1);
 	cout << (ans?"Yes":"No") << endl;
 	return 0;
 }
