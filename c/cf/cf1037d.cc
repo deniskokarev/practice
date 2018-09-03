@@ -1,79 +1,62 @@
 #define __STDC_FORMAT_MACROS // for PRId64 in mingw
 #include <cstdio>
 #include <cinttypes>
-#include <climits>
-#include <cassert>
 #include <vector>
+#include <algorithm>
 /* CodeForces CF1037D problem */
 using namespace std;
 
-struct E {
-	int f, t;
-	int nx;
-};
+using G = vector<vector<int>>;
 
-struct V {
-	int e;
-	int ne;
-	int parent;
-	int depth;
-	int ord;
-};
+void dfs_mktree(const G &g, G &tree, int root, vector<bool> &seen) {
+	seen[root] = true;
+	for (auto t:g[root]) {
+		if (!seen[t]) {
+			tree[root].push_back(t);
+			dfs_mktree(g, tree, t, seen);
+		}
+	}
+}
 
-int dfs_dep(vector<V> &vv, const vector<E> &ee, int root, int depth) {
-	int mxd = depth;
-	vv[root].depth = depth;
-	for (int ei=vv[root].e; ei; ei=ee[ei].nx)
-		mxd = max(mxd, dfs_dep(vv, ee, ee[ei].t, depth+1));
-	return mxd;
+void bfs_tree(const G &tree, int root, vector<int> &bfs) {
+	int qh = 0, qt = 0;
+	bfs[qt++] = root;
+	while (qh < qt) {
+		int r = bfs[qh++];
+		for (auto t:tree[r])
+			bfs[qt++] = t;
+	}
 }
 
 int main(int argc, char **argv) {
 	int n;
 	scanf("%d", &n);
-	vector<E> ee(n);
-	int ei = 1;
-	vector<V> vv(n);
+	G g(n, vector<int>());
 	for (int i=0; i<n-1; i++) {
-		E &e = ee[ei];
-		scanf("%d%d", &e.f, &e.t);
-		e.f--, e.t--;
-		e.nx = vv[e.f].e;
-		assert(vv[e.t].parent == 0);
-		vv[e.t].parent = e.f;
-		vv[e.f].ne++;
-		vv[e.f].e = ei++;
+		int f, t;
+		scanf("%d%d", &f, &t);
+		f--, t--;
+		g[f].push_back(t);
+		g[t].push_back(f);
 	}
+	G tree(n, vector<int>());
+	vector<bool> seen(n);
+	dfs_mktree(g, tree, 0, seen);
 	vector<int> bb(n);
-	for (auto &b:bb) {
+	vector<int> vord(n);
+	for (int o=0; o<n; o++) {
+		int &b = bb[o];
 		scanf("%d", &b);
 		b--;
+		vord[b] = o;
 	}
-	int mxd = dfs_dep(vv, ee, 0, 0);
-	int d = mxd;
+	for (int i=0; i<n; i++)
+		sort(tree[i].begin(), tree[i].end(), [&vord](int a, int b){return (vord[a]<vord[b]);});
+	vector<int> bfs(n);
+	bfs_tree(tree, 0, bfs);
 	bool ans = true;
-	int pord = 1;
-	int ord = 0;
-	for (int j=n-1; j>=0; j--) {
-		int i = bb[j];
-		if (vv[i].depth == d) {
-			if (!vv[vv[i].parent].ord) {
-				vv[vv[i].parent].ord = pord++;
-			} else if (vv[vv[i].parent].ord != pord-1) {
-				ans = false;
-				break;
-			}
-		} else if (vv[i].depth != d-1) {
-			ans = false;
-			break;
-		}
-		ans &= (vv[i].ne == 0);
-		ans &= (d >= vv[i].depth);
-		ans &= (ord <= vv[i].ord);
-		d = vv[i].depth;
-		ord = vv[i].ord;
-		vv[vv[i].parent].ne--;
-	}
+	for (int i=0; i<n; i++)
+		ans &= (bb[i] == bfs[i]);
 	printf("%s\n", (ans?"Yes":"No"));
 	return 0;
 }
