@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <cinttypes>
 #include <climits>
-#include <cassert>
 #include <set>
 /* CodeForces CF1028D problem */
 using namespace std;
@@ -10,41 +9,35 @@ using namespace std;
 constexpr unsigned mod = 1e9+7;
 
 int main(int argc, char **argv) {
-	set<uint64_t> mm;
+	set<unsigned> mm;
 	int n;
 	scanf("%d", &n);
-	uint64_t s = UINT64_MAX;
-	uint64_t b = 0;
+	unsigned s = UINT_MAX;
+	unsigned b = 0;
 	uint64_t ans = 1;
 	mm.insert(s);
 	mm.insert(b);
 	for (int i=0; i<n; i++) {
 		char op[32];
-		uint64_t p;
-		scanf(" %s%" PRId64, op, &p);
+		unsigned p;
+		scanf(" %s%u", op, &p);
 		if (op[1] == 'D') {
 			// ADD
 			mm.insert(p);
 		} else {
 			// ACCEPT
-			if (p > b) {
-				if (p < s) {
-					ans *= 2;
-					ans %= mod;
-					auto it = mm.lower_bound(p);
-					assert(it != mm.end());
-					s = *next(it);
-					b = *prev(it);
-					mm.erase(it);
-				} else if (p > s) {
-					ans = 0;
-				}
-			} else if (p < b) {
+			if (p < b || s < p)
 				ans = 0;
+			if (b < p && p < s) {
+				ans *= 2;
+				ans %= mod;
 			}
+			auto it = mm.lower_bound(p);
+			s = *next(it);
+			b = *prev(it);
+			mm.erase(it);
 		}
 	}
-	
 	auto it_s = mm.lower_bound(s);
 	int left = 0;
 	for (auto it = mm.upper_bound(b); it!=it_s; ++it,++left);
@@ -52,6 +45,6 @@ int main(int argc, char **argv) {
 		ans *= left+1;
 		ans %= mod;
 	}
-	printf("%" PRId64 "\n", ans);
+	printf("%" PRIu64 "\n", ans);
 	return 0;
 }
