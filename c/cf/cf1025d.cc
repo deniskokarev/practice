@@ -16,22 +16,30 @@ unsigned gcd(unsigned a, unsigned b) {
 	return a;
 }
 
-bool is_l(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l);
+static bool is_l(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l);
 
-bool is_r(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l) {
+static bool is_r(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l) {
 	if (r2l[l][r] == -1) {
 		r2l[l][r] = 0;
-		for (int i=l; i<r; i++)
-			r2l[l][r] |= (is_r(aa, gg, l, i, l2r, r2l) && is_l(aa, gg, i, r-1, l2r, r2l) && gg[r][i]);
+		for (int i=l; i<r; i++) {
+			if (is_r(aa, gg, l, i, l2r, r2l) && is_l(aa, gg, i, r-1, l2r, r2l) && gg[r][i]) {
+				r2l[l][r] = 1;
+				break;
+			}
+		}
 	}
 	return r2l[l][r];
 }
 
-bool is_l(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l) {
+static bool is_l(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l) {
 	if (l2r[l][r] == -1) {
 		l2r[l][r] = 0;
-		for (int i=l+1; i<=r; i++)
-			l2r[l][r] |= (is_r(aa, gg, l+1, i, l2r, r2l) && is_l(aa, gg, i, r, l2r, r2l) && gg[l][i]);
+		for (int i=l+1; i<=r; i++) {
+			if (is_r(aa, gg, l+1, i, l2r, r2l) && is_l(aa, gg, i, r, l2r, r2l) && gg[l][i]) {
+				l2r[l][r] = 1;
+				break;
+			}
+		}
 	}
 	return l2r[l][r];
 }
@@ -54,8 +62,12 @@ int main(int argc, char **argv) {
 			if (f>=t)
 				l2r[f][t] = r2l[f][t] = 1;
 	bool ans = false;
-	for (int i=1; i<=n; i++)
-		ans |= (is_r(aa, gg, 1, i, l2r, r2l) && is_l(aa, gg, i, n, l2r, r2l));
+	for (int i=1; i<=n; i++) {
+		if (is_r(aa, gg, 1, i, l2r, r2l) && is_l(aa, gg, i, n, l2r, r2l)) {
+			ans = true;
+			break;
+		}
+	}
 	cout << (ans?"Yes":"No") << endl;
 	return 0;
 }
