@@ -1,62 +1,61 @@
 #include <iostream>
 #include <vector>
-#include <list>
 #include <algorithm>
 /* CodeForces CF1025D problem */
 using namespace std;
 
 /**
- * Naive prime number factorization in O(sqrt(N))
- * @param n - number greater than that you want to factorize
- * @param p[] - preallocated recipient array where the of ordered
- *   prime numbers of n will be placed
- * 	p.length >= 64
- * @return number of populated primes in p[]
+ * GCD(a, b) - greatest common divisor
  */
-int primeFactors(unsigned n, unsigned p[]) {
-	int np = 0;
-	for (unsigned i = 2; i <= n / i; i++) {
-		while (n % i == 0) {
-			p[np++] = i;
-			n /= i;
-		}
+unsigned gcd(unsigned a, unsigned b) {
+	while (b > 0) {
+		unsigned temp = b;
+		b = a % b;
+		a = temp;
 	}
-	if (n > 1)
-		p[np++] = n;
-	return np;
+	return a;
 }
+
+bool is_l(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l);
+
+bool is_r(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l) {
+	if (r2l[l][r] == -1) {
+		r2l[l][r] = 0;
+		for (int i=l; i<r; i++)
+			r2l[l][r] |= (is_r(aa, gg, l, i, l2r, r2l) && is_l(aa, gg, i, r-1, l2r, r2l) && gg[r][i]);
+	}
+	return r2l[l][r];
+}
+
+bool is_l(const vector<unsigned> &aa, const vector<vector<bool>> &gg, int l, int r, vector<vector<char>> &l2r, vector<vector<char>> &r2l) {
+	if (l2r[l][r] == -1) {
+		l2r[l][r] = 0;
+		for (int i=l+1; i<=r; i++)
+			l2r[l][r] |= (is_r(aa, gg, l+1, i, l2r, r2l) && is_l(aa, gg, i, r, l2r, r2l) && gg[l][i]);
+	}
+	return l2r[l][r];
+}
+
 
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	list<vector<unsigned>> aa;
-	for (int i=0; i<n; i++) {
-		unsigned a;
-		cin >> a;
-		unsigned f[64];
-		size_t sz = primeFactors(a, f);
-		sz = unique(f, f+sz)-f;
-		aa.push_back(vector<unsigned>(sz));
-		copy(f, f+sz, aa.back().begin());
-	}
-	for (int i=0; i<n; i++) {
-		auto it = aa.begin();
-		auto nit = next(it);
-		while (nit != aa.end()) {
-			unsigned is[it->size()+nit->size()];
-			auto isz = set_intersection(it->begin(), it->end(), nit->begin(), nit->end(), is)-is;
-			if (isz > 0) {
-				unsigned u[it->size()+nit->size()];
-				auto usz = set_union(it->begin(), it->end(), nit->begin(), nit->end(), u)-u;;
-				nit->resize(usz);
-				copy(u, u+usz, nit->begin());
-				aa.erase(it);
-			}
-			it = nit;
-			nit = next(it);
-		}
-	}
-	bool ans = (aa.size() == 1);
+	vector<unsigned> aa(n+2);
+	for (int i=1; i<=n; i++)
+		cin >> aa[i];
+	vector<vector<bool>> gg(n+2, vector<bool>(n+2, false));
+	for (int i=1; i<=n; i++)
+		for (int j=i; j<=n; j++)
+			gg[i][j] = gg[j][i] = (gcd(aa[i],aa[j])>1);
+	vector<vector<char>> l2r(n+2, vector<char>(n+2, -1));
+	vector<vector<char>> r2l(n+2, vector<char>(n+2, -1));
+	for (int f=0; f<=n+1; f++)
+		for (int t=0; t<=n+1; t++)
+			if (f>=t)
+				l2r[f][t] = r2l[f][t] = 1;
+	bool ans = false;
+	for (int i=1; i<=n; i++)
+		ans |= (is_r(aa, gg, 1, i, l2r, r2l) && is_l(aa, gg, i, n, l2r, r2l));
 	cout << (ans?"Yes":"No") << endl;
 	return 0;
 }
