@@ -17,14 +17,15 @@ int main(int argc, char **argv) {
 			cnt++;
 			cout << f << " " << m << endl;
 			cin >> s;
-			if (s == "Yes")
+			if (s == "Yes") {
+				f = max(1, f-k);
 				t = min(n+1, m+k);
-			else
+			} else {
 				f = max(1, m-k+1);
+				t = min(n+1, t+k);
+			}
 		}
 		cnt++;
-		f = max(1, f-k);
-		t = min(n+1, t+k);
 		if (t>f) {
 			unsigned pos = f+(rnd()%(t-f));
 			cout << pos << " " << pos << endl;
@@ -33,6 +34,8 @@ int main(int argc, char **argv) {
 		}
 		cin >> s;
 		ans = (s == "Yes");
+		f = max(1, f-k);
+		t = min(n+1, t+k);
 	}
 	return 0;
 }
