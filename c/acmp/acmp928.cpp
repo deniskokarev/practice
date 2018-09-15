@@ -74,10 +74,12 @@ int main(int argc, char **argv) {
 			for (int y=0; y<m; y++) {
 				int rem = mid+x+y;
 				int sf = x, st = min(mid-y-1, n);
-				if (rem < n+m && st > sf)
+				//cerr << "points:" << mid << " x:" << x << " y:" << y << " sf:" << sf << " st:" << st << endl;
+				if (rem < n+m+2 && st > sf)
 					mnl = min(mnl, sqmin(npter[rem], sqnpter[rem], sf, st)-lentb[x][y]+2*diag[x][y]);
 			}
 		}
+		//cerr << "points: " << mid << " mnl:" << mnl << endl;
 		if (mnl > l)
 			t = mid;
 		else
