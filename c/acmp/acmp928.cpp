@@ -1,67 +1,88 @@
-/* ACMP 928 */
 #include <iostream>
+#include <vector>
 #include <cmath>
-#include <cassert>
-
+/* ACMP 928 */
 using namespace std;
 
-constexpr int MAXSZ = 2000;
+constexpr double INF = 1e10;
+constexpr int BSZ = 32;
 
-double xx[MAXSZ];
-double yy[MAXSZ];
-double diag[MAXSZ][MAXSZ]; // precomputed diagonals
-
-double mn_len_for_x_trees(int x, int n, int m) {
-	double mnl = 1e10;
-	for (int i1=x-2,j1=0; i1>=0 && j1<m; i1--,j1++) {
-		if (i1<n) {
-			double l1 = xx[i1] + yy[j1];
-			for (int i2=i1,j2=j1-(x-2); i2>=0 && j2<=j1; i2--, j2++) {
-				if (j2>=0) {
-					double l2 = xx[i2] + yy[j2];
-					double l = l1-l2+diag[i1][j1]+diag[i2][j2];
-					mnl = std::min(mnl, l);
-				}
-			}
-		}
-	}
-	return mnl;
+// sqrt-bucketed min search on the range [f, t)
+// v - values
+// smv - min values over sqrt buckets of v 
+static double sqmin(const vector<double> &v, const vector<double> &smv, int f, int t) {
+	double mn = INF;
+#if 0
+	int fb = (f+BSZ-1)/BSZ;
+	for (int i=f; i<fb*BSZ && i<t; i++)
+		mn = min(mn, v[i]);
+	int b;
+	for (b=fb; (b+1)*BSZ<t; b++)
+		mn = min(mn, smv[b]);
+	for (int i=b*BSZ; i<t; i++)
+		mn = min(mn, v[i]);
+#else
+	for (int i=f; i<t; i++)
+		mn = min(mn, v[i]);
+#endif
+	return mn;
 }
 
-// Fedor M solution O(n*m*log(l))
 int main(int argc, char **argv) {
-	double l, w;
+	int l, w;
 	cin >> l >> w;
 	int n;
 	cin >> n;
-	assert(n<=MAXSZ);
-	for (int i=0; i<n; i++)
-		cin >> xx[i];
+	vector<int> xx(n); // top
+	for (auto &x:xx)
+		cin >> x;
 	int m;
 	cin >> m;
-	assert(m<=MAXSZ);
-	for (int j=0; j<m; j++)
-		cin >> yy[j];
-	for (int i=0; i<n; i++) {
-		for (int j=0; j<m; j++) {
-			auto d = xx[i]-yy[j];
-			diag[i][j] = sqrt(w*w + d*d);
+	vector<int> yy(m); // bottom
+	for (auto &y:yy)
+		cin >> y;
+	// npter[npoints][top] - lengthes required to cover npoints from the left,
+	// where we have top points on top
+	// these lenghtes are generally unordered
+	vector<vector<double>> npter(n+m+2, vector<double>(n, INF));
+	vector<vector<double>> lentb(n, vector<double>(m));
+	vector<vector<double>> diag(n, vector<double>(m));
+	for (int x=0; x<n; x++) {
+		for (int y=0; y<m; y++) {
+			double d = xx[x] - yy[y];
+			diag[x][y] = sqrt(d*d+w*w);
+			lentb[x][y] = w + xx[x] + yy[y] + diag[x][y];
+			npter[x+y+2][x] = lentb[x][y];
 		}
 	}
-	double bl = mn_len_for_x_trees(2, n, m);
-	if (bl <= l) {
-		int f=2, t=n+m+1;
-		while (f<t) {
-			int x=f+(t-f)/2;
-			bl = mn_len_for_x_trees(x, n, m);
-			if (bl >= l)
-				t = x;
-			else
-				f = x+1;
+	// sqnpter[npoints][i] - min sqrt buckets of lengthes needed to cover npoints from the left
+	// const int bsz = sqrt(n+m)+1;
+	vector<vector<double>> sqnpter(npter.size());
+	for (int i=0; i<npter.size(); i++) {
+		sqnpter[i] = vector<double>((npter[i].size()+BSZ-1)/BSZ, INF);
+		for (int j=0; j<npter[i].size(); j++) {
+			auto &s = sqnpter[i][j/BSZ];
+			s = min(s, npter[i][j]);
 		}
-		cout << min(n+m, f) << endl;
-	} else {
-		cout << 0 << endl;
 	}
+	// upper bound search for number of points (trees)
+	int f = 1, t = n+m+1;
+	while (f<t) {
+		int mid = f+(t-f)/2;
+		double mnl = INF;
+		for (int x=0; x<n; x++) {
+			for (int y=0; y<m; y++) {
+				int rem = mid+x+y;
+				int sf = x, st = min(mid-y-1, n);
+				if (rem < n+m && st > sf)
+					mnl = min(mnl, sqmin(npter[rem], sqnpter[rem], sf, st)-lentb[x][y]+2*diag[x][y]);
+			}
+		}
+		if (mnl > l)
+			t = mid;
+		else
+			f = mid+1;
+	}
+	cout << f-1 << endl;
 	return 0;
 }
