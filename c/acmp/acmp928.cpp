@@ -15,6 +15,22 @@ struct Npter {
 	const vector<vector<double>> &diag;
 	const vector<double> &xx;
 	const vector<double> &yy;
+	vector<vector<double>> sqnpter;
+	Npter(int n, int m, const vector<vector<double>> &diag, const vector<double> &xx, const vector<double> &yy):
+		diag(diag),
+		xx(xx),
+		yy(yy),
+		sqnpter(n+m+1, vector<double>((n+BSZ-1)/BSZ, INF))
+	{
+		// sqnpter[npoints][i] - min sqrt buckets of lengthes needed to cover npoints from the left
+		// const int bsz = sqrt(n+m)+1;
+		for (int i=0; i<n+m+1; i++) {
+			for (int j=0; j<n; j++) {
+				auto &s = sqnpter[i][j/BSZ];
+				s = min(s, operator()(i, j));
+			}
+		}
+	}
 	double operator()(int npoints, int x) const {
 		int y = npoints-2-x;
 		if (x < xx.size() && y >= 0 && y < yy.size())
@@ -22,23 +38,23 @@ struct Npter {
 		else
 			return INF;
 	}
+	// sqrt-bucketed min search on the range [f, t)
+	// v - values
+	// smv - min values over sqrt buckets of v 
+	double sqmin(int npoints, int f, int t) const {
+		double mn = INF;
+		int fb = (f+BSZ-1)/BSZ;
+		for (int i=f; i<fb*BSZ && i<t; i++)
+			mn = min(mn, operator()(npoints, i));
+		int b;
+		for (b=fb; (b+1)*BSZ<t; b++)
+			mn = min(mn, sqnpter[npoints][b]);
+		for (int i=b*BSZ; i<t; i++)
+			mn = min(mn, operator()(npoints, i));
+		return mn;
+	}
 };
 
-// sqrt-bucketed min search on the range [f, t)
-// v - values
-// smv - min values over sqrt buckets of v 
-static double sqmin(const Npter &npter, const vector<double> &smv, int npoints, int f, int t) {
-	double mn = INF;
-	int fb = (f+BSZ-1)/BSZ;
-	for (int i=f; i<fb*BSZ && i<t; i++)
-		mn = min(mn, npter(npoints, i));
-	int b;
-	for (b=fb; (b+1)*BSZ<t; b++)
-		mn = min(mn, smv[b]);
-	for (int i=b*BSZ; i<t; i++)
-		mn = min(mn, npter(npoints, i));
-	return mn;
-}
 
 int main(int argc, char **argv) {
 	double l, w;
@@ -58,16 +74,7 @@ int main(int argc, char **argv) {
 		for (int y=0; y<m; y++)
 			diag[x][y] = calc_diag(xx[x], yy[y], w);
 	// npter[npoints][top] - lengthes required to cover npoints from the left,
-	Npter npter {diag, xx, yy};
-	// sqnpter[npoints][i] - min sqrt buckets of lengthes needed to cover npoints from the left
-	// const int bsz = sqrt(n+m)+1;
-	vector<vector<double>> sqnpter(n+m+1, vector<double>((n+BSZ-1)/BSZ, INF));
-	for (int i=0; i<n+m+1; i++) {
-		for (int j=0; j<n; j++) {
-			auto &s = sqnpter[i][j/BSZ];
-			s = min(s, npter(i, j));
-		}
-	}
+	Npter npter(n, m, diag, xx, yy);
 	// upper bound search for number of points (trees)
 	int f = 1, t = n+m+1;
 	while (f<t) {
@@ -78,7 +85,7 @@ int main(int argc, char **argv) {
 				int npoints = mid+x+y; // need to find best left-aligned trapezoid of npoint points
 				int sf = x, st = min(sf + mid - 1, n);
 				if (npoints < n+m+1)
-					mnl = min(mnl, sqmin(npter, sqnpter[npoints], npoints, sf, st)-xx[x]-yy[y]+diag[x][y]);
+					mnl = min(mnl, npter.sqmin(npoints, sf, st)-xx[x]-yy[y]+diag[x][y]);
 			}
 		}
 		if (mnl > l)
