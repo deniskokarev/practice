@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 		for (int x=0; x<n; x++) {
 			for (int y=0; y<m; y++) { // x (top) and y (bottom) is our left side
 				int npoints = mid+x+y; // need to find best left-aligned trapezoid of npoint points
-				int sf = x, st = max(sf+1, min(mid, n));
+				int sf = x, st = min(sf + mid - 1, n);
 				cerr << "points:" << mid << " x:" << x << " y:" << y << " sf:" << sf << " st:" << st << endl;
 				if (npoints < n+m+1)
 					mnl = min(mnl, sqmin(npter[npoints], sqnpter[npoints], sf, st)-lentb[x][y]+2*diag[x][y]);
