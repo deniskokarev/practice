@@ -7,12 +7,15 @@ using namespace std;
 constexpr double INF = 1e9;
 constexpr int BSZ = 32;
 
+static double diag(double x, double y, double w) {
+	return sqrt((x-y)*(x-y)+w*w);
+}
+
 // sqrt-bucketed min search on the range [f, t)
 // v - values
 // smv - min values over sqrt buckets of v 
 static double sqmin(const vector<double> &v, const vector<double> &smv, int f, int t) {
 	double mn = INF;
-#if 0
 	int fb = (f+BSZ-1)/BSZ;
 	for (int i=f; i<fb*BSZ && i<t; i++)
 		mn = min(mn, v[i]);
@@ -21,10 +24,6 @@ static double sqmin(const vector<double> &v, const vector<double> &smv, int f, i
 		mn = min(mn, smv[b]);
 	for (int i=b*BSZ; i<t; i++)
 		mn = min(mn, v[i]);
-#else
-	for (int i=f; i<t; i++)
-		mn = min(mn, v[i]);
-#endif
 	return mn;
 }
 
@@ -44,15 +43,13 @@ int main(int argc, char **argv) {
 	// npter[npoints][top] - lengthes required to cover npoints from the left,
 	// where we have top points on top
 	// these lenghtes are generally unordered
-	vector<vector<double>> npter(n+m+1, vector<double>(n, INF));
-	vector<vector<double>> lentb(n, vector<double>(m));
-	vector<vector<double>> diag(n, vector<double>(m));
+	vector<vector<double>> npter(n+m+1);
+	for (int i=0; i<n+m+1; i++)
+		npter[i] = vector<double>(min(i, n), INF);
 	for (int x=0; x<n; x++) {
 		for (int y=0; y<m; y++) {
-			double d = xx[x] - yy[y];
-			diag[x][y] = sqrt(d*d+w*w);
-			lentb[x][y] = xx[x] + yy[y] + diag[x][y];
-			npter[x+y+2][x] = lentb[x][y];
+			npter[x+y+2].reserve(x+1);
+			npter[x+y+2][x] = xx[x] + yy[y] + diag(xx[x], yy[y], w);
 		}
 	}
 	// sqnpter[npoints][i] - min sqrt buckets of lengthes needed to cover npoints from the left
@@ -74,12 +71,10 @@ int main(int argc, char **argv) {
 			for (int y=0; y<m; y++) { // x (top) and y (bottom) is our left side
 				int npoints = mid+x+y; // need to find best left-aligned trapezoid of npoint points
 				int sf = x, st = min(sf + mid - 1, n);
-				cerr << "points:" << mid << " x:" << x << " y:" << y << " sf:" << sf << " st:" << st << endl;
 				if (npoints < n+m+1)
-					mnl = min(mnl, sqmin(npter[npoints], sqnpter[npoints], sf, st)-lentb[x][y]+2*diag[x][y]);
+					mnl = min(mnl, sqmin(npter[npoints], sqnpter[npoints], sf, st)-xx[x]-yy[y]+diag(xx[x], yy[y], w));
 			}
 		}
-		cerr << "points: " << mid << " mnl:" << mnl << endl;
 		if (mnl > l)
 			t = mid;
 		else
