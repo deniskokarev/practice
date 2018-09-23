@@ -19,18 +19,18 @@ static vector<R> build_all_rem() {
 	rem.push_back(R{0, {0, 0, 0}, 0});
 	for (int i=0; i<MXP2; i++) {
 		int64_t vi = 1LL<<i;
-		rem.push_back(R{vi, {vi, 0, 0}, vi});
+		rem.push_back(R{vi, {0, 0, vi}, vi});
 	}
 	for (int i=0; i<MXP2; i++) {
-		for (int j=0; j<MXP2; j++) {
+		for (int j=i; j<MXP2; j++) {
 			int64_t vi = 1LL<<i;
 			int64_t vj = 1LL<<j;
-			rem.push_back(R{vi+vj, {vi, vj, 0}, vi|vj});
+			rem.push_back(R{vi+vj, {0, vi, vj}, vi|vj});
 		}
 	}
 	for (int i=0; i<MXP2; i++) {
-		for (int j=0; j<MXP2; j++) {
-			for (int k=0; k<MXP2; k++) {
+		for (int j=i; j<MXP2; j++) {
+			for (int k=j; k<MXP2; k++) {
 				int64_t vi = 1LL<<i;
 				int64_t vj = 1LL<<j;
 				int64_t vk = 1LL<<k;
@@ -39,10 +39,6 @@ static vector<R> build_all_rem() {
 		}
 	}
 	return rem;
-}
-
-static bool iseven(int64_t n) {
-	return (n&1) == 0;
 }
 
 int main(int argc, char **argv) {
@@ -58,15 +54,9 @@ int main(int argc, char **argv) {
 			auto &r = rem[i];
 			if (n == r.rem && mxq == 0) {
 				fnd = i;
-			} else {
-				if ((n-r.rem) % 3 != 0)
-					continue;
+			} else if (n > r.rem && (n-r.rem) % 3 == 0) {
 				int64_t q = (n-r.rem)/3;
-				if (!iseven(q))
-					continue;
-				if ((q & r.msk))
-					continue;
-				if (q > mxq) {
+				if ((q&r.msk) == 0 && q > mxq) {
 					fnd = i;
 					mxq = q;
 				}
