@@ -42,7 +42,7 @@ static R solve(const T &tree, int root, int tgt) {
 		} else {
 			return R {false, 0};
 		}
-	} else { // (tree[root].first.to > 0 && tree[root].second.to > 0)
+	} else { // (tree[root].l > 0 && tree[root].r > 0)
 		auto lc = solve(tree, tree[root].l, tgt);
 		auto rc = solve(tree, tree[root].r, tgt);
 		if (lc.fnd) {
@@ -50,6 +50,7 @@ static R solve(const T &tree, int root, int tgt) {
 				int d = tree[root].rw - tree[root].lw;
 				if (d<0) {
 					d *= -1;
+					d = min(d, lc.cnt-1);
 					lc.cnt -= d;
 				}
 				return R {true, d+(lc.cnt-1)*2+1};
@@ -61,6 +62,7 @@ static R solve(const T &tree, int root, int tgt) {
 				int d = tree[root].lw - tree[root].rw;
 				if (d<0) {
 					d *= -1;
+					d = min(d, rc.cnt);
 					rc.cnt -= d;
 				}
 				return R {true, d+rc.cnt*2};
