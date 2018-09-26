@@ -1,67 +1,98 @@
-/* ACMP 928 */
 #include <iostream>
+#include <vector>
 #include <cmath>
-#include <cassert>
-
+/* ACMP 928 */
 using namespace std;
 
-constexpr int MAXSZ = 2000;
+constexpr double INF = 1e9;
+constexpr int BSZ = 32;
 
-double xx[MAXSZ];
-double yy[MAXSZ];
-double diag[MAXSZ][MAXSZ]; // precomputed diagonals
+static double calc_diag(double x, double y, double w) {
+	return sqrt((x-y)*(x-y)+w*w);
+}
 
-double mn_len_for_x_trees(int x, int n, int m) {
-	double mnl = 1e10;
-	for (int i1=x-2,j1=0; i1>=0 && j1<m; i1--,j1++) {
-		if (i1<n) {
-			double l1 = xx[i1] + yy[j1];
-			for (int i2=i1,j2=j1-(x-2); i2>=0 && j2<=j1; i2--, j2++) {
-				if (j2>=0) {
-					double l2 = xx[i2] + yy[j2];
-					double l = l1-l2+diag[i1][j1]+diag[i2][j2];
-					mnl = std::min(mnl, l);
-				}
+struct Npter {
+	const vector<vector<double>> &diag;
+	const vector<double> &xx;
+	const vector<double> &yy;
+	vector<vector<double>> sqnpter;
+	Npter(int n, int m, const vector<vector<double>> &diag, const vector<double> &xx, const vector<double> &yy):
+		diag(diag),
+		xx(xx),
+		yy(yy),
+		sqnpter(n+m+1, vector<double>((n+BSZ-1)/BSZ, INF))
+	{
+		// sqnpter[npoints][i] - min sqrt buckets of lengthes needed to cover npoints from the left
+		// const int bsz = sqrt(n+m)+1;
+		for (int i=0; i<n+m+1; i++) {
+			for (int j=0; j<n; j++) {
+				auto &s = sqnpter[i][j/BSZ];
+				s = min(s, operator()(i, j));
 			}
 		}
 	}
-	return mnl;
-}
+	double operator()(int npoints, int x) const {
+		int y = npoints-2-x;
+		if (x < xx.size() && y >= 0 && y < yy.size())
+			return xx[x] + yy[y] + diag[x][y];
+		else
+			return INF;
+	}
+	// sqrt-bucketed min search on the range [f, t)
+	// v - values
+	// smv - min values over sqrt buckets of v 
+	double sqmin(int npoints, int f, int t) const {
+		double mn = INF;
+		int fb = (f+BSZ-1)/BSZ;
+		for (int i=f; i<fb*BSZ && i<t; i++)
+			mn = min(mn, operator()(npoints, i));
+		int b;
+		for (b=fb; (b+1)*BSZ<t; b++)
+			mn = min(mn, sqnpter[npoints][b]);
+		for (int i=b*BSZ; i<t; i++)
+			mn = min(mn, operator()(npoints, i));
+		return mn;
+	}
+};
 
-// Fedor M solution O(n*m*log(l))
+
 int main(int argc, char **argv) {
 	double l, w;
 	cin >> l >> w;
 	int n;
 	cin >> n;
-	assert(n<=MAXSZ);
-	for (int i=0; i<n; i++)
-		cin >> xx[i];
+	vector<double> xx(n); // top
+	for (auto &x:xx)
+		cin >> x;
 	int m;
 	cin >> m;
-	assert(m<=MAXSZ);
-	for (int j=0; j<m; j++)
-		cin >> yy[j];
-	for (int i=0; i<n; i++) {
-		for (int j=0; j<m; j++) {
-			auto d = xx[i]-yy[j];
-			diag[i][j] = sqrt(w*w + d*d);
+	vector<double> yy(m); // bottom
+	for (auto &y:yy)
+		cin >> y;
+	vector<vector<double>> diag(n, vector<double>(m));
+	for (int x=0; x<n; x++)
+		for (int y=0; y<m; y++)
+			diag[x][y] = calc_diag(xx[x], yy[y], w);
+	// npter[npoints][top] - lengthes required to cover npoints from the left,
+	Npter npter(n, m, diag, xx, yy);
+	// upper bound search for number of points (trees)
+	int f = 1, t = n+m+1;
+	while (f<t) {
+		int mid = f+(t-f)/2; // try to cover this many points
+		double mnl = INF;
+		for (int x=0; x<n; x++) {
+			for (int y=0; y<m; y++) { // x (top) and y (bottom) is our left side
+				int npoints = mid+x+y; // need to find best left-aligned trapezoid of npoint points
+				int sf = x, st = min(sf + mid - 1, n);
+				if (npoints < n+m+1)
+					mnl = min(mnl, npter.sqmin(npoints, sf, st)-xx[x]-yy[y]+diag[x][y]);
+			}
 		}
+		if (mnl > l)
+			t = mid;
+		else
+			f = mid+1;
 	}
-	double bl = mn_len_for_x_trees(2, n, m);
-	if (bl <= l) {
-		int f=2, t=n+m+1;
-		while (f<t) {
-			int x=f+(t-f)/2;
-			bl = mn_len_for_x_trees(x, n, m);
-			if (bl >= l)
-				t = x;
-			else
-				f = x+1;
-		}
-		cout << min(n+m, f) << endl;
-	} else {
-		cout << 0 << endl;
-	}
+	cout << f-1 << endl;
 	return 0;
 }
