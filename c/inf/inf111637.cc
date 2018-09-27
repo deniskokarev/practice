@@ -6,13 +6,14 @@ using namespace std;
 
 struct P {
 	int h;
+	int nxt;
 };
 
 int main(int argc, char **argv) {
 	int n;
 	cin >> n;
-	vector<P> pp(n, P {0}); // planets
-	int ff[n];				// fuel types
+	vector<P> pp(n, P {0, -1}); // planets
+	vector<int> ff(n);				// fuel types
 	for (auto &f:ff)
 		cin >> f;
 	map<int,int> f2p;  // fuel type -> planet pos
@@ -21,25 +22,17 @@ int main(int argc, char **argv) {
 	for (int i=n-2; i>=0; i--) {
 		if (f2p[ff[i]] != 0) {
 			int h = pp[f2p[ff[i]]].h+1;
-			pp[i] = P {h};
+			pp[i] = P {h, f2p[ff[i]]};
 			for (int j=i+1; j<up; j++) {
-				pp[j] = P {h};
-				f2p[ff[j]] = j;
+				pp[j] = P {h, -1};
+				f2p[ff[j]] = i;
 			}
 			up = i;
 		}
 	}
-	if (pp[0].h > 0) {
-		cout << pp[0].h << endl;
-		for (int i=0,fnd=pp[0].h; i<n-1; i++) {
-			if (pp[i].h == fnd) {
-				cout << i+1 << ' ';
-				fnd--;
-			}
-		}
-		cout << endl;
-	} else {
-		cout << 0 << endl;
-	}
+	cout << pp[0].h << endl;
+	for (int i=0,pi=0; i<pp[0].h; i++,pi=pp[pi].nxt)
+		cout << pi+1 << ' ';
+	cout << endl;
 	return 0;
 }
