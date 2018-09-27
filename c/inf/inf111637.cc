@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
 		if (f2p[ff[i]] != 0) {
 			int h = pp[f2p[ff[i]]].h+1;
 			pp[i] = P {h, f2p[ff[i]]};
+			f2p[ff[i]] = i;
 			for (int j=i+1; j<up; j++) {
 				pp[j] = P {h, -1};
 				f2p[ff[j]] = i;
