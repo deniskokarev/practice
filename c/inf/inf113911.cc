@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include <vector>
 /* ROI 2018A */
 using namespace std;
@@ -17,13 +17,13 @@ struct P {
 
 int main(int argc, char **argv) {
 	int n, m, q;
-	cin >> n >> m >> q;
+	scanf("%d%d%d", &n, &m, &q);
 	vector<P> x_top(n, P {-1, 0, 0, false});
 	vector<P> y_top(m, P {-1, 0, 0, false});
 	for (int x=0; x<n; x++) {
 		for (int y=0; y<m; y++) {
 			P a {-1, x, y, false};
-			cin >> a.a;
+			scanf("%d", &a.a);
 			x_top[x] = max(x_top[x], a);
 			y_top[y] = max(y_top[y], a);
 		}
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 	}
 	while (q--) {
 		P a;
-		cin >> a.x >> a.y >> a.a;
+		scanf("%d%d%d", &a.x, &a.y, &a.a);
 		a.x--, a.y--;
 		P was_x_top = x_top[a.x];
 		P was_y_top = y_top[a.y];
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 		}
 		if (was_x_top == was_y_top)
 			ans++;
-		cout << ans << '\n';
+		printf("%d\n", ans);
 	}
 	return 0;
 }
