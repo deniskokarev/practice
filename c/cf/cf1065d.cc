@@ -77,25 +77,19 @@ int main(int argc, char **argv) {
 			ll[v-1] = P {j, i};
 		}
 	}
-	array<array<pair<int, int>, P_SZ>, P_SZ> opt;
+	array<pair<int, int>, P_SZ> opt;
 	for (int i=1; i<n*n; i++) {
-		array<array<pair<int, int>, P_SZ>, P_SZ> nopt {{
-			{{{INF, 0}, {INF, 0}, {INF, 0}}},
-			{{{INF, 0}, {INF, 0}, {INF, 0}}},
-			{{{INF, 0}, {INF, 0}, {INF, 0}}}
-		}};
+		array<pair<int, int>, P_SZ> nopt {{{INF, 0}, {INF, 0}, {INF, 0}}};
 		for (int m=0; m<3; m++)
 			for (int pf=0; pf<P_SZ; pf++)
 				for (int pt=0; pt<P_SZ; pt++)
-					for (int pi=0; pi<P_SZ; pi++)
-						if (fmay_move[pi][m](ll[i-1], ll[i]))
-							nopt[pf][pi] = min(nopt[pf][pi], make_pair(opt[pf][pt].first+m+1+(pt!=pi), opt[pf][pt].second + (pt!=pi)));
+					if (fmay_move[pt][m](ll[i-1], ll[i]))
+						nopt[pt] = min(nopt[pt], make_pair(opt[pf].first+m+1+(pf!=pt), opt[pf].second + (pf!=pt)));
 		opt = nopt;
 	}
 	pair<int,int> ans = {INF, INF};
-	for (int pf=0; pf<P_SZ; pf++)
-		for (int pt=0; pt<P_SZ; pt++)
-			ans = min(ans, opt[pf][pt]);
+	for (int p=0; p<P_SZ; p++)
+		ans = min(ans, opt[p]);
 	printf("%d %d\n", ans.first, ans.second);
 	return 0;
 }
