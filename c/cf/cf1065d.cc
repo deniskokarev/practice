@@ -22,11 +22,19 @@ static bool may_knight1(const P &p1, const P &p2) {
 }
 
 static bool may_knight2(const P &p1, const P &p2) {
-	return false;
 	for (auto &m1:kmoves)
 		for (auto &m2:kmoves)
 			if (p1.x+m1.x+m2.x == p2.x && p1.y+m1.y+m2.y == p2.y)
 				return true;
+	return false;
+}
+
+static bool may_knight3(const P &p1, const P &p2) {
+	for (auto &m1:kmoves)
+		for (auto &m2:kmoves)
+			for (auto &m3:kmoves)
+				if (p1.x+m1.x+m2.x+m3.x == p2.x && p1.y+m1.y+m2.y+m3.y == p2.y)
+					return true;
 	return false;
 }
 
@@ -50,10 +58,10 @@ enum {
 	P_N, P_B, P_R, P_SZ
 };
 
-static const MAY_MOVE fmay_move[P_SZ][2] = {
-	{may_knight1, may_knight2},
-	{may_bishop1, may_bishop2},
-	{may_rook1, may_rook2}
+static const MAY_MOVE fmay_move[P_SZ][3] = {
+	{may_knight1, may_knight2, may_knight3},
+	{may_bishop1, may_bishop2, may_bishop2},
+	{may_rook1, may_rook2, may_rook2}
 };
 
 constexpr int INF = INT_MAX/2;
@@ -76,7 +84,7 @@ int main(int argc, char **argv) {
 			{{{INF, 0}, {INF, 0}, {INF, 0}}},
 			{{{INF, 0}, {INF, 0}, {INF, 0}}}
 		}};
-		for (int m=0; m<2; m++)
+		for (int m=0; m<3; m++)
 			for (int pf=0; pf<P_SZ; pf++)
 				for (int pt=0; pt<P_SZ; pt++)
 					for (int pi=0; pi<P_SZ; pi++)
