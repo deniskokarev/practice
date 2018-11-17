@@ -2,48 +2,43 @@
 /* CodeForces CF830C problem */
 using namespace std;
 
-int64_t rem(int64_t *aa, int n, int64_t d) {
-	int64_t r = 0;
+bool fit(const int64_t *aa, int n, int64_t d, int64_t c) {
+	int64_t tot = 0;
 	for (int i=0; i<n; i++)
-		r += (aa[i]+d-1)/d;
-	return d*r;
+		tot += (aa[i]+d-1)/d;
+	return (c >= tot*d);
 }
 
 int main(int argc, char **argv) {
-	int n;
-	int64_t k;
-	int64_t sum = 0;
+	int64_t n, k;
 	cin >> n >> k;
+	int64_t sm = 0;
 	int64_t aa[n];
 	for (auto &a:aa) {
 		cin >> a;
-		sum += a;
+		sm += a;
 	}
-#if 0
-	int64_t pv = -1;
-	for (int d=1; d<100; d++) {
-		int64_t r = rem(aa, n, d); 
-		//cerr << r << endl;
-		if (r<pv)
-			cerr << "wow!: " << d-1 << "->" << pv << ", " << d << "->" << r << endl;
-		pv = r;
+	int64_t c = k+sm;
+	int64_t f=100000, t=1e9+1;
+	while (f<t) {
+		int64_t m = f+(t-f)/2;
+		if (fit(aa, n, m, c))
+			f = m+1;
+		else
+			t = m;
 	}
-#else	
-	int64_t e = 1000000000LL+1; // 10^9
-	int64_t b = 1;
-	int64_t m = b;
-	while (b<e) {
-		m = b+(e-b)/2;
-		if (k >= rem(aa, n, m)-sum) {
-			b = m+1;
-		} else {
-			e = m;
+	// below sqrt(1e9) need to go sequentially 
+	int64_t d = f-1;
+	if (!fit(aa, n, d, c)) {
+		while (d>0) {
+			int64_t tot = 0;
+			for (auto a:aa)
+				tot += (a+d-1)/d;
+			if (fit(aa, n, d, c))
+				break;
+			d--;
 		}
 	}
-	if (k >= rem(aa, n, m)-sum)
-		cout << m << endl;
-	else
-		cout << m-1 << endl;
-#endif
+	cout << d << endl;
 	return 0;
 }
