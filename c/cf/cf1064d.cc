@@ -14,13 +14,6 @@ struct Q {
 	int x, y;
 };
 
-struct QCMP {
-	int x, y;
-	bool operator()(const Q &a, const Q &b) {
-		return min(x-a.x, y-a.y) > min(x-b.x, y-b.y);
-	}
-};
-
 int main(int argc, char **argv) {
 	int n, m;
 	scanf("%d%d", &n, &m);
@@ -28,39 +21,78 @@ int main(int argc, char **argv) {
 	scanf("%d%d", &s.r, &s.c);
 	int x, y;
 	scanf("%d%d", &x, &y);
-	char bb[n+2][m+2];
-	memset(bb, '*', sizeof(bb));
+	char bbx[n+2][m+2];
+	memset(bbx, '*', sizeof(bbx));
 	for (int i=1; i<=n; i++) {
-		scanf("%s", bb[i]+1);
-		bb[i][m+1] = '*';
+		scanf("%s", bbx[i]+1);
+		bbx[i][m+1] = '*';
 	}
-	priority_queue<Q, std::vector<Q>, QCMP> qq(QCMP {x, y});
-	qq.push(Q{s, 0, 0});
-	bb[s.r][s.c] = 'X';
+	char bby[n+2][m+2];
+	memcpy(bby, bbx, sizeof(bbx));
+	Q bb[n+2][m+2];
+	memset(bb, 0, sizeof(bb));
+	queue<P> qq;
+	qq.push(s);
+	bbx[s.r][s.c] = '+';
 	while (!qq.empty()) {
-		Q top = qq.top();
+		P p = qq.front();
 		qq.pop();
-		if (bb[top.p.r+1][top.p.c] == '.') {
-			bb[top.p.r+1][top.p.c] = 'X';
-			qq.push(Q { P {top.p.r+1, top.p.c}, top.x, top.y});
+		if (bbx[p.r+1][p.c] == '.') {
+			bbx[p.r+1][p.c] = '+';
+			bb[p.r+1][p.c] = bb[p.r][p.c];
+			qq.push(P {p.r+1, p.c});
 		}
-		if (bb[top.p.r-1][top.p.c] == '.') {
-			bb[top.p.r-1][top.p.c] = 'X';
-			qq.push(Q { P {top.p.r-1, top.p.c}, top.x, top.y});
+		if (bbx[p.r-1][p.c] == '.') {
+			bbx[p.r-1][p.c] = '+';
+			bb[p.r-1][p.c] = bb[p.r][p.c];
+			qq.push(P {p.r-1, p.c});
 		}
-		if (top.y < y && bb[top.p.r][top.p.c+1] == '.') {
-			bb[top.p.r][top.p.c+1] = 'X';
-			qq.push(Q { P {top.p.r, top.p.c+1}, top.x, top.y+1});
+		if (bb[p.r][p.c].x < x && bbx[p.r][p.c-1] == '.') {
+			bbx[p.r][p.c-1] = '+';
+			bb[p.r][p.c-1] = bb[p.r][p.c];
+			bb[p.r][p.c-1].x++;
+			qq.push(P {p.r, p.c-1});
 		}
-		if (top.x < x && bb[top.p.r][top.p.c-1] == '.') {
-			bb[top.p.r][top.p.c-1] = 'X';
-			qq.push(Q { P {top.p.r, top.p.c-1}, top.x+1, top.y});
+		if (bbx[p.r][p.c+1] == '.') {
+			bbx[p.r][p.c+1] = '+';
+			bb[p.r][p.c+1] = bb[p.r][p.c];
+			bb[p.r][p.c+1].y++;
+			qq.push(P {p.r, p.c+1});
+		}
+	}
+	memset(bb, 0, sizeof(bb));
+	qq.push(s);
+	bby[s.r][s.c] = '+';
+	while (!qq.empty()) {
+		P p = qq.front();
+		qq.pop();
+		if (bby[p.r+1][p.c] == '.') {
+			bby[p.r+1][p.c] = '+';
+			bb[p.r+1][p.c] = bb[p.r][p.c];
+			qq.push(P {p.r+1, p.c});
+		}
+		if (bby[p.r-1][p.c] == '.') {
+			bby[p.r-1][p.c] = '+';
+			bb[p.r-1][p.c] = bb[p.r][p.c];
+			qq.push(P {p.r-1, p.c});
+		}
+		if (bby[p.r][p.c-1] == '.') {
+			bby[p.r][p.c-1] = '+';
+			bb[p.r][p.c-1] = bb[p.r][p.c];
+			bb[p.r][p.c-1].x++;
+			qq.push(P {p.r, p.c-1});
+		}
+		if (bb[p.r][p.c].y < y && bby[p.r][p.c+1] == '.') {
+			bby[p.r][p.c+1] = '+';
+			bb[p.r][p.c+1] = bb[p.r][p.c];
+			bb[p.r][p.c+1].y++;
+			qq.push(P {p.r, p.c+1});
 		}
 	}
 	int ans = 0;
 	for (int i=1; i<=n; i++)
 		for (int j=1; j<=m; j++)
-			ans += (bb[i][j] == 'X');
+			ans += (bbx[i][j] == '+' && bby[i][j] == '+');
 	printf("%d\n", ans);
 	return 0;
 }
