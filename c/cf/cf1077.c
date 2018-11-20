@@ -21,14 +21,13 @@ int main(int argc, char **argv) {
 	for (auto a:aa) {
 		int64_t r = sum-a.first;
 		if (r % 2 == 0) {
-			auto lb = lower_bound(aa.begin(), aa.end(), make_pair(r/2-1, n+1));
-			auto ub = upper_bound(aa.begin(), aa.end(), make_pair(r/2, n+1));
-			while (lb < ub) {
-				if (lb->second != a.second) {
+			auto fnd = lower_bound(aa.begin(), aa.end(), make_pair(r/2-1, n+1));
+			while (fnd != aa.end() && fnd->first*2 == r) {
+				if (fnd->second != a.second) {
 					ans[ans_sz++] = a.second;
 					break;
 				}
-				lb++;
+				fnd++;
 			}
 		}
 	}
