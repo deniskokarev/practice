@@ -17,8 +17,6 @@ int main(int argc, char **argv) {
 		cin >> d;
 		if (d*(d-4) < 0) {
 			cout << "N\n";
-		} else if (d == 0) {
-			cout << "Y 0 0\n";
 		} else {
 			long double a = get_a(d);
 			long double b = d-a;
