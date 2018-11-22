@@ -5,7 +5,7 @@
 using namespace std;
 
 constexpr int MXF = 1000;
-constexpr int64_t MOD = 1e9+7;
+constexpr int MOD = 1e9+7;
 
 int main(int argc, char **argv) {
 	int n;
@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 	if (n < 2) {
 		printf("1\n");
 	} else {
-		vector<int64_t> ff(1000000+2);
+		vector<int> ff(1000000+2);
 		int i = n-1;
 		for (int f=1; f<=MXF; f++)
 			if (aa[i] % f == 0)
