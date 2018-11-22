@@ -5,7 +5,7 @@
 using namespace std;
 
 constexpr int MXF = 1000;
-constexpr int MOD = 1e9+7;
+constexpr int64_t MOD = 1e9+7;
 
 int main(int argc, char **argv) {
 	int n;
@@ -16,17 +16,26 @@ int main(int argc, char **argv) {
 	if (n < 2) {
 		printf("1\n");
 	} else {
-		vector<vector<int>> ff(2, vector<int>(MXF+2));
+		vector<int64_t> ff(1000000+2);
 		int i = n-1;
 		for (int f=1; f<=MXF; f++)
-			ff[i&1][f] = (aa[i] % f == 0);
-		for (int i=n-2; i>=0; i--)
-			for (int f=MXF; f>0; f--)
-				if (aa[i] % f == 0)
-					ff[i&1][f] = (1 + ff[(i+1)&1][f+1] + ff[(i+1)&1][f]) % MOD;
-				else
-					ff[i&1][f] = ff[(i+1)&1][f];
-		printf("%d\n", ff[0][1]);
+			if (aa[i] % f == 0)
+				ff[f] = ff[aa[i]/f] = 1;
+		vector<pair<int,int>> nv(2002);
+		for (int i=n-2; i>=0; i--) {
+			int f;
+			int nvsz = 0;
+			for (f=1; f*f<=aa[i]; f++) {
+				if (aa[i] % f == 0) {
+					int q = aa[i] / f;
+					nv[nvsz++] = make_pair(f, (1 + ff[f+1] + ff[f]) % MOD);
+					nv[nvsz++] = make_pair(q, (1 + ff[q+1] + ff[q]) % MOD);
+				}
+			}
+			for (int i=0; i<nvsz; i++)
+				ff[nv[i].first] = nv[i].second;
+		}
+		printf("%d\n", int(ff[1]));
 	}
 	return 0;
 }
