@@ -9,7 +9,12 @@ int main(int argc, char **argv) {
 	int r = n-k-1;
 	int hi = (r+k-1)/k+1;
 	int lo = r/k+1;
-	printf("%d\n", hi+lo);
+	int ans;
+	if (n-hi-1 == (k-1)*lo)
+		ans = hi+lo;
+	else
+		ans = hi+hi;
+	printf("%d\n", ans);
 	int l;
 	for (l=0; l<lo; l++)
 		for (int i=1; i<=k; i++)
