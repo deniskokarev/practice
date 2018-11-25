@@ -13,7 +13,7 @@ struct E {
 };
 
 struct Q {
-	int sw;
+	int64_t sw;
 	E *e;
 	bool operator<(const Q &b) const {
 		return sw > b.sw; // for max heap
