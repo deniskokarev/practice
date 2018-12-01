@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.8)
+project(practice_c)
+
+set(CMAKE_CXX_STANDARD 14)
+
+include_directories(.)
+include_directories(alg)
+include_directories(draft)
+ADD_SUBDIRECTORY (googletest)
+enable_testing()
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+add_executable(ilog_test alg/ilog_test.cc alg/ilog.c)
+target_link_libraries(ilog_test gtest gtest_main)
+
+add_executable(par_test alg/par_test.cc alg/par.cc)
+target_link_libraries(par_test gtest gtest_main)
+
+add_executable(heap_test alg/heap_test.cc)
+target_link_libraries(heap_test gtest gtest_main)
+
+add_executable(a
+        a.cc)
+add_executable(b
+        b.cc)
+add_executable(c
+        c.cc)
+add_executable(d
+        d.cc)
+add_executable(e
+        e.cc)
+add_executable(f
+        f.cc)
+
+
