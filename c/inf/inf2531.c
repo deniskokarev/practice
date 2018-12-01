@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 		int i = int(lower_bound(ss, ss+n, key, S_FCMP()) - ss);
 		while (i<n && ss[i].f == x)
 			qq.push(&ss[i++]);
-		while (qq.top()->t < x)
+		while (!qq.empty() && qq.top()->t < x)
 			qq.pop();
 		for (int l=0; l<k && !qq.empty(); l++) {
 			S *e = qq.top();
