@@ -19,6 +19,10 @@ target_link_libraries(par_test gtest gtest_main)
 add_executable(heap_test alg/heap_test.cc)
 target_link_libraries(heap_test gtest gtest_main)
 
+add_test(NAME ilog_test COMMAND ilog_test)
+add_test(NAME par_test COMMAND par_test)
+add_test(NAME heap_test COMMAND heap_test)
+
 add_executable(a
         a.cc)
 add_executable(b
