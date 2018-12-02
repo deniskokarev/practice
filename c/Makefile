@@ -62,6 +62,12 @@ alg/par_test.o: alg/par.hh
 alg/par_test: alg/par_test.o alg/par.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
+alg/binomial_test.o: alg/binomial_test.cc alg/binomial.hh
+	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c alg/binomial_test.cc
+
+alg/binomial_test: alg/binomial_test.o alg/comb.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
+
 draft/knapsack.o: draft/knapsack.hh
 draft/knapsack_test: draft/knapsack_test.o draft/knapsack.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
@@ -76,11 +82,12 @@ draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 
-test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./alg/par_test ./draft/knapsack_test ./draft/matmul_test
+test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./alg/par_test ./alg/binomial_test ./draft/knapsack_test ./draft/matmul_test
 	./alg/comb_test
 	./alg/ilog_test
 	./alg/heap_test
 	./alg/par_test
+	./alg/binomial_test
 	./draft/knapsack_test
 	./draft/matmul_test
 
