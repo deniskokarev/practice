@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <limits.h>
 /* ROI 2010 A problem */
 using namespace std;
@@ -29,14 +30,21 @@ int main(int argc, char **argv) {
 	uint64_t n;
 	cin >> n;
 	int64_t a = isqrt(n/6);
-	A ans[4] = {
-		A {a+1, a+1, a+1},
-		A {a+1, a+1, a},
-		A {a+1, a, a},
-		A {a, a, a}
-	};
+	const int D = 100;
+	int choose = 1;
+	for (int i=1; i<=3; i++) {
+		choose *= D + 3 - i;
+		choose /= i;
+	}
+	A ans[choose];
+	int ai = 0;
+	for (int i=0; i<D; i++)
+		for (int j=i; j<D; j++)
+			for (int k=j; k<D; k++)
+				ans[ai++] = A {a+i, a+j, a+k};
+	sort(ans, ans+choose, [](const A &a, const A &b){return a.volume() > b.volume();});
 	for (auto &a:ans) {
-		if (a.area()<=n) {
+		if (a.area() <= n) {
 			cout << a.volume() << endl;
 			cout << a.a << ' ' << a.b << ' ' << a.c << endl;
 			break;
