@@ -16,7 +16,7 @@ int64_t isqrt(int64_t s) {
 	return f-1;
 }
 
-struct A {
+struct Brick {
 	int64_t a, b, c;
 	int64_t area() const {
 		return a*b*2 + b*c*2 + c*a*2;
@@ -26,23 +26,42 @@ struct A {
 	}
 };
 
+/**
+ * Constant binomial coefficients computation
+ */
+namespace binomial {
+	template <int N, int K> struct Binomial {
+		static constexpr uint64_t value = Binomial<N-1, K-1>::value + Binomial<N-1, K>::value;
+	};
+	template <int N> struct Binomial<N, N> {
+		static constexpr uint64_t value = 1;
+	};
+	template <int N> struct Binomial<N, 0> {
+		static constexpr uint64_t value = 1;
+	};
+	template <int N, int K> constexpr uint64_t choose() {
+		return binomial::Binomial<N, K>::value;
+	}
+}
+
+/** constexpr macro to be used at compile time */
+#define CHOOSE(N, K) binomial::choose<N, K>()
+
 int main(int argc, char **argv) {
 	uint64_t n;
 	cin >> n;
 	int64_t a = isqrt(n/6);
-	const int D = 100;
-	int choose = 1;
-	for (int i=1; i<=3; i++) {
-		choose *= D + 3 - i;
-		choose /= i;
-	}
-	A ans[choose];
+	// trying bricks with [a-D..a+D] side variations
+	constexpr int DF = -3;
+	constexpr int DT = +3;
+	constexpr int SZ = CHOOSE(DT-DF+3-1, 3);
+	Brick ans[SZ];
 	int ai = 0;
-	for (int i=0; i<D; i++)
-		for (int j=i; j<D; j++)
-			for (int k=j; k<D; k++)
-				ans[ai++] = A {a+i, a+j, a+k};
-	sort(ans, ans+choose, [](const A &a, const A &b){return a.volume() > b.volume();});
+	for (int i=DF; i<DT; i++)
+		for (int j=i; j<DT; j++)
+			for (int k=j; k<DT; k++)
+				ans[ai++] = Brick {max(a+i, 0LL), max(a+j, 0LL), max(a+k, 0LL)};
+	sort(ans, ans+SZ, [](const Brick &a, const Brick &b){return a.volume() > b.volume();});
 	for (auto &a:ans) {
 		if (a.area() <= n) {
 			cout << a.volume() << endl;
