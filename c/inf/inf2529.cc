@@ -30,37 +30,35 @@ struct Brick {
  * Constant binomial coefficients computation
  */
 namespace binomial {
-	template <int N, int K> struct Binomial {
-		static constexpr uint64_t value = Binomial<N-1, K-1>::value + Binomial<N-1, K>::value;
+	template <unsigned N, unsigned K, unsigned C> struct Binomial {
+		static constexpr uint64_t value = Binomial<N, K, C-1>::value * (N-K+C) / C;
 	};
-	template <int N> struct Binomial<N, N> {
-		static constexpr uint64_t value = 1;
+	template <unsigned N, unsigned K> struct Binomial<N, K, 1> {
+		static constexpr uint64_t value = N - K + 1;
 	};
-	template <int N> struct Binomial<N, 0> {
-		static constexpr uint64_t value = 1;
-	};
-	template <int N, int K> constexpr uint64_t choose() {
-		return binomial::Binomial<N, K>::value;
+	template <unsigned N, unsigned K> constexpr uint64_t choose() {
+		return binomial::Binomial<N, K, K>::value;
 	}
 }
 
 /** constexpr macro to be used at compile time */
 #define CHOOSE(N, K) binomial::choose<N, K>()
 
+constexpr int DF = -100;
+constexpr int DT = +100;
+constexpr int SZ = CHOOSE(DT-DF+3-1, 3);
+Brick ans[SZ];
+
 int main(int argc, char **argv) {
-	uint64_t n;
+	int64_t n;
 	cin >> n;
-	int64_t a = isqrt(n/6);
+	int64_t l = isqrt(n/6);
 	// trying bricks with [a-D..a+D] side variations
-	constexpr int DF = -3;
-	constexpr int DT = +3;
-	constexpr int SZ = CHOOSE(DT-DF+3-1, 3);
-	Brick ans[SZ];
 	int ai = 0;
 	for (int i=DF; i<DT; i++)
 		for (int j=i; j<DT; j++)
 			for (int k=j; k<DT; k++)
-				ans[ai++] = Brick {max(a+i, 0LL), max(a+j, 0LL), max(a+k, 0LL)};
+				ans[ai++] = Brick {max(l+i, int64_t(0)), max(l+j, int64_t(0)), max(l+k, int64_t(0))};
 	sort(ans, ans+SZ, [](const Brick &a, const Brick &b){return a.volume() > b.volume();});
 	for (auto &a:ans) {
 		if (a.area() <= n) {
