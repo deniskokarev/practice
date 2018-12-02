@@ -15,23 +15,32 @@ int64_t isqrt(int64_t s) {
 	return f-1;
 }
 
+struct A {
+	int64_t a, b, c;
+	int64_t area() const {
+		return a*b*2 + b*c*2 + c*a*2;
+	}
+	int64_t volume() const {
+		return a*b*c;
+	}
+};
+
 int main(int argc, char **argv) {
 	uint64_t n;
 	cin >> n;
 	int64_t a = isqrt(n/6);
-	// try +1
-	int64_t s1 = a*a*2+a*(a+1)*4;
-	// try +2
-	int64_t s2 = (a+1)*(a+1)*2+a*(a+1)*4;
-	if (s2 <= n) {
-		cout << (a+1)*(a+1)*a << endl;
-		cout << (a+1) << ' ' << (a+1) << ' ' << a << endl;
-	} else if (s1 <= n) {
-		cout << (a+1)*a*a << endl;
-		cout << (a+1) << ' ' << a << ' ' << a << endl;
-	} else {
-		cout << a*a*a << endl;
-		cout << a << ' ' << a << ' ' << a << endl;
+	A ans[4] = {
+		A {a+1, a+1, a+1},
+		A {a+1, a+1, a},
+		A {a+1, a, a},
+		A {a, a, a}
+	};
+	for (auto &a:ans) {
+		if (a.area()<=n) {
+			cout << a.volume() << endl;
+			cout << a.a << ' ' << a.b << ' ' << a.c << endl;
+			break;
+		}
 	}
 	return 0;
 }
