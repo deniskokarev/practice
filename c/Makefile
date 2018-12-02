@@ -3,6 +3,7 @@ BINS = a b c d e f \
 	alg/ilog_test \
 	alg/heap_test \
 	alg/par_test \
+	alg/binomial_test \
 	draft/knapsack_test \
 	draft/matmul_test \
 	draft/lcs_test \
