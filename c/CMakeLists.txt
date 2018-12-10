@@ -39,3 +39,7 @@ add_executable(c c.cc)
 add_executable(d d.cc)
 add_executable(e e.cc)
 add_executable(f f.cc)
+
+add_executable(tc tc.cc)
+target_link_libraries(tc gtest gtest_main)
+add_test(NAME tc COMMAND tc)
