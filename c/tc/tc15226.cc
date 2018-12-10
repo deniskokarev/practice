@@ -4,69 +4,71 @@
 
 using namespace std;
 
-struct ResistorFactory {
+class ResistorFactory {
 	static constexpr long long ONE = 1000000000LL;
+	int pp[64];
+	long double vv[64];
+	vector<int> init_res;
 	static int add_par(vector<int> &res, int i, int j) {
 		res.push_back(i);
 		res.push_back(j);
 		res.push_back(1);
-		return res.size()/3;
+		return int(res.size()/3);
 	}
 	static int add_seq(vector<int> &res, int i, int j) {
 		res.push_back(i);
 		res.push_back(j);
 		res.push_back(0);
-		return res.size()/3;
+		return int(res.size()/3);
 	}
-	static vector<int> construct(long long n) {
-		long double nld = n;
-		int pp[64];
-		long double vv[64];
-		vector<int> res;
+public:
+	static long double play(const vector<int> &prog) {
+		int sz = int(prog.size() / 3);
+		long double rr[sz+1];
+		rr[0] = ONE;
+		for (int i=0; i < sz; i++) {
+			switch (prog[i*3+2]) {
+				case 1:
+					rr[i+1] = rr[prog[i*3]] * rr[prog[i*3+1]] / (rr[prog[i*3]] + rr[prog[i*3+1]]);
+					break;
+				default:
+					rr[i+1] = rr[prog[i*3]] + rr[prog[i*3+1]];
+			}
+		}
+		return rr[sz];
+	}
+	ResistorFactory():pp{0},vv{0},init_res() {
 		int p;
-		pp[31] = p = add_par(res, 0, 0);
+		pp[31] = p = add_par(init_res, 0, 0);
 		vv[31] = (ONE >> 1);
 		for (int i=2; i<33; i++) {
-			pp[32 - i] = p = add_par(res, p, p);
+			pp[32 - i] = p = add_par(init_res, p, p);
 			vv[32 - i] = ONE / (long double)(1LL << i);
 		}
 		pp[32] = 0;
 		vv[32] = ONE;
-		pp[33] = p = add_seq(res, 0, 0);
+		pp[33] = p = add_seq(init_res, 0, 0);
 		vv[33] = (ONE << 1);
 		for (int i=2; i<32; i++) {
-			pp[32 + i] = p = add_seq(res, p, p);
+			pp[32 + i] = p = add_seq(init_res, p, p);
 			vv[32 + i] = (ONE << i);
 		}
-		vector<int> cc;
+	}
+	vector<int> construct(long long n) const {
+		long double nld = n;
+		vector<int> res(init_res);
+		int l = pp[0];
 		for (int i=63; i>0; i--) {
 			if (nld >= vv[i]) {
-				cc.push_back(pp[i]);
+				l = add_seq(res, l, pp[i]);
 				nld -= vv[i];
 			}
 		}
-		int l = pp[0];
-		for (auto c:cc)
-			l = add_seq(res, l, c);
 		return res;
 	}
-	static long double play(const vector<int> &prog) {
-		int sz = prog.size() / 3;
-		long double vv[sz+1];
-		vv[0] = 1000000000;
-		for (int i=0; i < sz; i++) {
-			switch (prog[i*3+2]) {
-				case 1:
-					vv[i+1] = vv[prog[i*3]] * vv[prog[i*3+1]] / (vv[prog[i*3]] + vv[prog[i*3+1]]);
-					break;
-				case 0:
-					vv[i+1] = vv[prog[i*3]] + vv[prog[i*3+1]];
-					break;
-			}
-		}
-		return vv[sz];
-	}
 };
+
+static ResistorFactory rf;
 
 TEST(TC, TC0) {
 	long double dres = ResistorFactory::play(vector<int>());
@@ -85,56 +87,56 @@ TEST(TC, TC2) {
 
 TEST(TC, AC0) {
 	long long c = 1;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC1) {
 	long long c = 2;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC2) {
 	long long c = 1000000000;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC3) {
 	long long c = 3000000000;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC4) {
 	long long c = 1200000000;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC5) {
 	long long c = 1428571428;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC6) {
 	long long c = 12000000001;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
 
 TEST(TC, AC7) {
 	long long c = 333333333;
-	vector<int> res =  ResistorFactory::construct(c);
+	vector<int> res =  rf.construct(c);
 	long double dres = ResistorFactory::play(res);
 	EXPECT_NEAR(c, dres, 1);
 }
