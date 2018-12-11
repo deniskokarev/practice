@@ -1,51 +1,51 @@
 /* TopCoder https://arena.topcoder.com/#/u/practiceCode/17372/73137/15211/2/331921 */
 #include "gtest/gtest.h"
 #include <vector>
-#include <algorithm>
-#include <cassert>
+#include <map>
+#include <set>
 
 using namespace std;
 
 class MaximizingGCD {
 public:
+	static set<int> allFactors(const vector<int> &A) {
+		set<int> res;
+		for (int i = 0; i < A.size(); i++) {
+			for (int j = i + 1; j < A.size(); j++) {
+				int a = A[i] + A[j];
+				for (int n = 1; n * n <= a; n++) {
+					if (a % n == 0) {
+						res.insert(n);
+						res.insert(a / n);
+					}
+				}
+			}
+		}
+		return res;
+	}
 	static int maximumGCDPairing(vector <int> A) {
-		constexpr int MXGCD = 1<<16;
-		int rem[MXGCD] {0};
-		int sz = A.size();
-		// check if they can all add-up to same num
-		sort(A.begin(), A.end());
-		int sum = A[0]+A[sz-1];
-		bool ans = true;
-		for (int i=1; i<sz/2; i++)
-			ans &= (A[i]+A[sz-i-1] == sum);
-		if (ans)
-			return sum;
-		// otherwise try all divisors
-		for (int g=MXGCD; g>0; g--) {
-			int rr[A.size()];
-			int rr_sz = 0;
+		int mx = -1;
+		// try all potential divisors
+		for (auto g:allFactors(A)) {
+			map<int,int> rem;
 			for (auto a:A) {
 				int r = a % g;
-				rr[rr_sz++] = r;
 				rem[r]++;
 			}
-			ans = !(rem[0] & 1);
-			for (auto r:rr) {
-				if (r > 0) {
-					int br = g-r;
-					if (r != br)
-						ans &= (rem[r] == rem[br]);
+			bool ans = !(rem[0] & 1);
+			for (auto r:rem) {
+				if (r.first > 0) {
+					int br = g-r.first;
+					if (r.first != br)
+						ans &= (r.second == rem[br]);
 					else
-						ans &= !(rem[r] & 1);
+						ans &= !(r.second & 1);
 				}
 			}
 			if (ans)
-				return g;
-			for (auto r:rr)
-				rem[r] = 0;
+				mx = max(mx, g);
 		}
-		assert(false && "must not get here");
-		return -1;
+		return mx;
 	}
 };
 
