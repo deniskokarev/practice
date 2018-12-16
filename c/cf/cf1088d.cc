@@ -4,7 +4,7 @@
 /* CodeForces CF1088D problem */
 using namespace std;
 
-constexpr int BITS = 4;
+constexpr int BITS = 29;
 
 int ask(int c, int d) {
 	cout << "? " << c << " " << d << endl;
@@ -27,15 +27,15 @@ void do_eq(int *abit, int *bbit, int pa, int pb) {
 	}
 }
 
-void do_gt(int *abit, int *bbit, int pa, int pb, int n);
+void do_continue(int *abit, int *bbit, int pa, int pb, int n);
 
 void do_lt(int *abit, int *bbit, int pa, int pb, int n) {
 	for (int i=n; i>=0; i--) {
 		if (ask(pa | (1<<i), pb | (1<<i)) == 1) {
 			abit[i] = 0;
 			bbit[i] = 1;
-			pa |= 1<<i;
-			return do_gt(abit, bbit, pa, pb, i-1);
+			pb |= 1<<i;
+			return do_continue(abit, bbit, pa, pb, i-1);
 		}
 	}
 	return do_eq(abit, bbit, pa, pb);
@@ -47,7 +47,7 @@ void do_gt(int *abit, int *bbit, int pa, int pb, int n) {
 			abit[i] = 1;
 			bbit[i] = 0;
 			pa |= 1<<i;
-			return do_lt(abit, bbit, pa, pb, i-1);
+			return do_continue(abit, bbit, pa, pb, i-1);
 		}
 	}
 	return do_eq(abit, bbit, pa, pb);
@@ -60,21 +60,25 @@ int val(int *b) {
 	return res;
 }
 
+void do_continue(int *abit, int *bbit, int pa, int pb, int n) {
+	if (n>=0) {
+		switch (ask(pa, pb)) {
+		case -1:
+			return do_lt(abit, bbit, pa, pb, n);
+		case 1:
+			return do_gt(abit, bbit, pa, pb, n);
+		default:
+			return do_eq(abit, bbit, pa, pb);
+		}
+	}
+	return do_eq(abit, bbit, pa, pb);
+}
+
 int main(int argc, char **argv) {
 	int abit[BITS], bbit[BITS];
 	fill(abit, abit+BITS, -1);
 	fill(bbit, bbit+BITS, -1);
-	int ap = 0, bp = 0;
-	switch (ask(ap, bp)) {
-	case -1:
-		do_lt(abit, bbit, ap, bp, BITS);
-		break;
-	case 1:
-		do_gt(abit, bbit, ap, bp, BITS);
-		break;
-	default:
-		do_eq(abit, bbit, ap, bp);
-	}
+	do_continue(abit, bbit, 0, 0, BITS);
 	cout << "! " << val(abit) << " " << val(bbit) << endl;
 	return 0;
 }
