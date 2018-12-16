@@ -4,7 +4,7 @@
 /* CodeForces CF1088D problem */
 using namespace std;
 
-constexpr int BITS = 29;
+constexpr int BITS = 30;
 
 int ask(int c, int d) {
 	cout << "? " << c << " " << d << endl;
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 	int abit[BITS], bbit[BITS];
 	fill(abit, abit+BITS, -1);
 	fill(bbit, bbit+BITS, -1);
-	do_continue(abit, bbit, 0, 0, BITS);
+	do_continue(abit, bbit, 0, 0, BITS-1);
 	cout << "! " << val(abit) << " " << val(bbit) << endl;
 	return 0;
 }
