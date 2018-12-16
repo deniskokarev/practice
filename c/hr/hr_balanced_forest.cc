@@ -1,66 +1,78 @@
 #include <cstdio>
-#include <climits>
 #include <cinttypes>
+#include <climits>
 #include <vector>
 #include <algorithm>
+#include <map>
 /* Hackerrank https://www.hackerrank.com/challenges/balanced-forest/problem */
 using namespace std;
 
-struct T {
+struct N {
 	int64_t sum;
-	int parent;
-	int id;
-	bool operator<(const T &o) const {
-		return sum < o.sum;
-	}
+	int64_t cost;
 };
 
-int64_t bld_tree(vector<T> &tree, const vector<vector<int>> &gg, const vector<int64_t> &vv, int root, int parent) {
-	tree[root] = T {vv[root], parent, root};
-	for (auto v:gg[root])
+struct G {
+	int64_t total;
+	vector<N> vv;
+	vector<vector<int>> ee;
+};
+
+int64_t calc_sum(G &g, int root, int parent) {
+	g.vv[root].sum = g.vv[root].cost;
+	for (auto v:g.ee[root])
 		if (v != parent)
-			tree[root].sum += bld_tree(tree, gg, vv, v, root);
-	return tree[root].sum;
+			g.vv[root].sum += calc_sum(g, v, root);
+	return g.vv[root].sum;
 }	
 
-bool is_parent(const vector<T> &tree, int parent, int chld) {
-	while (chld > 0) {
-		chld = tree[chld].parent;
-		if (chld == parent)
-			return true;
-	}
-	return false;
+int64_t solve2(G &g, int root, int parent, int64_t res) {
+	if (2*g.vv[root].sum == g.total)
+		res = min(res, g.vv[root].sum);
+	else
+		for (auto v:g.ee[root])
+			if (v != parent)
+				res = min(res, solve2(g, v, root, res));
+	return res;
 }
 
-int64_t solve(const vector<T> &tree, int n) {
-	vector<T> srtree(tree);
-	sort(srtree.begin(), srtree.end());
-	int64_t res = LLONG_MAX;
-	for (int i=n-1; i>0; i--) {
-		bool odd = (tree[0].sum + tree[i].sum) & 1;
-		if (tree[i].sum*3 > tree[0].sum || odd)
-			continue;
-		T key {(tree[0].sum - tree[i].sum)/2, -1, -1};
-		for (auto fnd = lower_bound(srtree.begin(), srtree.end(), key); fnd != srtree.end() && fnd->sum == key.sum; ++fnd)
-			if (fnd->id != i && fnd->id != 0 && !is_parent(tree, fnd->id, i))
-				res = min(res, key.sum - tree[i].sum);
-		key = T {(tree[0].sum + tree[i].sum)/2, -1, -1};
-		for (auto fnd = lower_bound(srtree.begin(), srtree.end(), key); fnd != srtree.end() && fnd->sum == key.sum; ++fnd)
-			if (fnd->id != i && fnd->id != 0 && !is_parent(tree, fnd->id, i))
-				res = min(res, key.sum - 2*tree[i].sum);
-	}
-	for (int i=n-1; i>0; i--) {
-		if (tree[i].sum*3 < tree[0].sum)
-			continue;
-		T key {tree[i].sum, -1, -1};
-		for (auto fnd = lower_bound(srtree.begin(), srtree.end(), key); fnd != srtree.end() && fnd->sum == key.sum; ++fnd)
-			if (fnd->id != i && fnd->id != 0)
-				res = min(res, tree[i].sum*3 - tree[0].sum);
-	}
-	if (res < LLONG_MAX)
-		return res;
-	else
-		return -1;
+inline bool even(int64_t a) {
+	return !(a & 1);
+}
+
+int64_t solve3(G &g, int root, int parent, map<int64_t, int> &take, map<int64_t, int> &take_inv, int64_t res) {
+	// node we select
+	if (take.find(g.vv[root].sum) != take.end())
+		if (3*g.vv[root].sum >= g.total)
+			res = min(res, 3*g.vv[root].sum - g.total);
+	if (take_inv.find(g.vv[root].sum) != take_inv.end())
+		if (3*g.vv[root].sum >= g.total)
+			res = min(res, 3*g.vv[root].sum - g.total);
+	// node we discard
+	int64_t inv = g.total - g.vv[root].sum;
+	if (even(inv) && take.find(inv/2) != take.end())
+		if (g.total >= 3*g.vv[root].sum)
+			res = min(res, (g.total - 3*g.vv[root].sum)/2);
+	// memorise the num of inv matches before going down
+	take[inv]++;
+	int ninv = take[inv];
+	// go down
+	for (auto v:g.ee[root])
+		if (v != parent)
+			res = min(res, solve3(g, v, root, take, take_inv, res));
+	// node we partially discard keeping one of children
+	if (ninv < take[inv])
+		if (2*inv >= g.vv[root].sum)
+			res = min(res, 2*inv - g.vv[root].sum);
+	take[inv]--;
+	if (take[inv] == 0)
+		take.erase(inv);
+	// hope to find a node exactly like this
+	take[g.vv[root].sum]++;
+	// hope to find node if we discard this one
+	if (even(inv))
+		take_inv[inv/2]++;
+	return res;
 }
 
 int main(int argc, char **argv) {
@@ -69,19 +81,21 @@ int main(int argc, char **argv) {
 	while (q--) {
 		int n;
 		scanf("%d", &n);
-		vector<int64_t> vv(n);
-		for (auto &v:vv)
-			scanf("%" PRId64, &v);
-		vector<vector<int>> gg(n);
+		G g {0, vector<N>(n), vector<vector<int>>(n, vector<int>())};
+		for (auto &v:g.vv)
+			scanf("%" PRId64, &v.cost);
 		for (int i=0; i<n-1; i++) {
 			int f, t;
 			scanf("%d%d", &f, &t);
 			f--, t--;
-			gg[f].push_back(t);
-			gg[t].push_back(f);
+			g.ee[f].push_back(t);
+			g.ee[t].push_back(f);
 		}
-		vector<T> tree(n);
-		bld_tree(tree, gg, vv, 0, -1);
-		printf("%" PRId64 "\n", solve(tree, n));
+		g.total = calc_sum(g, 0, -1);
+		//fprintf(stderr, "total = %" PRId64 "\n", g.total);
+		map<int64_t, int> take, take_inv;
+		int64_t ans = solve2(g, 0, -1, LLONG_MAX);
+		ans = solve3(g, 0, -1, take, take_inv, ans);
+		printf("%" PRId64 "\n", (ans < LLONG_MAX) ? ans : -1);
 	}
 }
