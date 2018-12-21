@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 		int ans = one_pass(cc, n, 0);
 		reverse(cc, cc+n);
 		for (auto &c:cc)
-			c.x = INT_MAX - c.x;
+			c.x = MOD - c.x;
 		ans += one_pass(cc, n, -1);
 		printf("%d\n", ans % MOD);
 	}
