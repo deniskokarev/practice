@@ -51,22 +51,26 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	int drn = -1;
-	for (int i=0; i<n-1; i++) {
+	int drn[2] = {-1, -1};
+	for (int i=0; i<n; i++) {
 		bool fwd = false;
 		for (int e=gg[i]; e!=-1; e=ee[e].nxt)
 			fwd |= (ee[e].dir == 0);
-		if (!fwd)
-			drn = i;
+		if (!fwd) {
+			drn[0] = drn[1];
+			drn[1] = i;
+		}
 	}
-	if (drn != -1) {
+	if (drn[0] != -1 && drn[1] != -1) {
+		if (vv[drn[0]] > vv[drn[1]])
+			swap(drn[0], drn[1]);
 		printf("YES\n");
 		for (int i=0; i<n; i++)
 			printf("%d ", vv[i]+1);
 		printf("\n");
 		for (int i=0; i<n; i++)
-			if (i == drn)
-				printf("%d ", seq);
+			if (i == drn[0])
+				printf("%d ", vv[drn[1]]+1);
 			else
 				printf("%d ", vv[i]+1);
 		printf("\n");
