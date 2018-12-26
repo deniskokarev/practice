@@ -23,20 +23,26 @@ int64_t p2m(int p) {
 	}
 }
 
-int do_paint(int n, int *vv, const int *gg, const E *ee, int root) {
-	int ans = (vv[root] == 1);
+template<class F, class S> void operator+=(pair<F,S> &a, const pair<F,S> &b) {
+	a.first += b.first;
+	a.second += b.second;
+}
+
+pair<int,int> do_paint(int n, int *vv, const int *gg, const E *ee, int root) {
+	pair<int,int> r = make_pair(1, (vv[root] == 1));
 	for (int e=gg[root]; e!=-1; e=ee[e].nxt) {
 		if (vv[ee[e].t] == -1) {
 			vv[ee[e].t] = (vv[root]^1);
-			int r = do_paint(n, vv, gg, ee, ee[e].t);
-			if (r >= 0)
-				ans += r;
+			auto cr = do_paint(n, vv, gg, ee, ee[e].t);
+			if (cr.second >= 0)
+				r += cr;
+			else
+				return make_pair(-1, -1);
 		} else if (vv[ee[e].t] == vv[root]) {
-			ans = -1;
-			break;
+			return make_pair(-1, -1);
 		}
 	}
-	return ans;
+	return r;
 }
 
 int main(int argc, char **argv) {
@@ -59,12 +65,21 @@ int main(int argc, char **argv) {
 		}
 		int vv[n];
 		fill(vv, vv+n, -1);
-		vv[0] = 0;
-		int r = do_paint(n, vv, gg, ee, 0);
-		if (r >= 0)
-			printf("%d\n", int(p2m(r)+p2m(n-r))%MOD);
-		else
-			printf("0\n");
+		int64_t ans = 1;
+		for (int i=0; i<n; i++) {
+			if (vv[i] == -1) {
+				vv[i] = 0;
+				auto r = do_paint(n, vv, gg, ee, i);
+				if (r.first >= 0) {
+					ans *= p2m(r.second)+p2m(r.first-r.second);
+					ans %= MOD;
+				} else {
+					ans = 0;
+					break;
+				}
+			}
+		}
+		printf("%d\n", int(ans));
 	}
 	return 0;
 }
