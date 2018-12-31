@@ -19,10 +19,9 @@ int64_t solve(const P *pp, int sz) {
 		const P &p = pp[i];
 		auto fnd = h2s.lower_bound(P {p.h, 0});
 		int64_t ns = prev(fnd)->w + p.w;
-		while (fnd != h2s.end()) {
+		while (fnd != h2s.end() && fnd->w <= ns) {
 			auto fn = next(fnd);
-			if (fnd->w <= ns)
-				h2s.erase(fnd);
+			h2s.erase(fnd);
 			fnd = fn;
 		}
 		h2s.insert(P {p.h, ns});
