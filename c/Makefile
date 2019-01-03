@@ -4,6 +4,7 @@ BINS = a b c d e f \
 	alg/heap_test \
 	alg/par_test \
 	alg/binomial_test \
+	alg/segtree_test \
 	draft/knapsack_test \
 	draft/matmul_test \
 	draft/lcs_test \
@@ -12,7 +13,7 @@ INCGT = ./googletest/googletest/include
 LIBGT = ./libgt/googlemock/gtest/libgtest.a
 LIBGTMAIN = ./libgt/googlemock/gtest/libgtest_main.a
 
-CXXFLAGS += -std=c++11 -Wall -g -O0 -I$(INCGT) 
+CXXFLAGS += -std=c++11 -Wall -g -O -I$(INCGT) 
 CFLAGS += -std=c99 -Wall -g -O
 LINK.o = $(LINK.cc)
 LDFLAGS =
@@ -69,6 +70,12 @@ alg/binomial_test.o: alg/binomial_test.cc alg/binomial.hh
 alg/binomial_test: alg/binomial_test.o alg/comb.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
+alg/segtree_test.o: alg/segtree_test.cc alg/segtree.hh
+	$(CXX) $(CXXFLAGS) -I$(INCGT) -o $(@) -c alg/segtree_test.cc
+
+alg/segtree_test: alg/segtree_test.o $(LIBGTMAIN) $(LIBGT)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
+
 draft/knapsack.o: draft/knapsack.hh
 draft/knapsack_test: draft/knapsack_test.o draft/knapsack.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
@@ -83,12 +90,13 @@ draft/lcs_test: draft/lcs_test.o $(LIBGTMAIN) $(LIBGT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(+) $(EXTRA_LIBS)
 
 
-test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./alg/par_test ./alg/binomial_test ./draft/knapsack_test ./draft/matmul_test
+test: ./alg/comb_test ./alg/ilog_test ./alg/heap_test ./alg/par_test ./alg/binomial_test ./alg/segtree_test ./draft/knapsack_test ./draft/matmul_test
 	./alg/comb_test
 	./alg/ilog_test
 	./alg/heap_test
 	./alg/par_test
 	./alg/binomial_test
+	./alg/segtree_test
 	./draft/knapsack_test
 	./draft/matmul_test
 
