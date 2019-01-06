@@ -91,28 +91,27 @@ int p2m(int p) {
 }
 
 int ans(const N &res) {
-	int64_t ans = 0;
-	pair<int,int64_t> p2l[N::L];
+	// two possibilities:
+	// 1) one odd others even
+	// 2) choosing i-th to be even greater or equal 2
+	//    whereas i+1,i+2,... are even too
+	pair<int,int64_t> p2[N::L+1];
 	int sz = 0;
-	p2l[sz++] = make_pair(0, 1);
 	for (auto p:res.ch)
 		if (p)
-			p2l[sz++] = make_pair(p, p2m(p-1));
-	p2l[sz++] = make_pair(0, 1);
-	pair<int,int64_t> p2r[N::L];
-	copy(p2l, p2l+sz, p2r);
-	for (int i=1; i<sz; i++)
-		p2l[i].second = (p2l[i].second * p2l[i-1].second) % MOD;
-	for (int i=sz-2; i>0; i--)
-		p2r[i].second = (p2r[i].second * p2r[i+1].second) % MOD;
-	for (int i=1; i<sz-1; i++) {
-		int64_t cnt = p2l[i-1].second * p2r[i+1].second;
-		cnt %= MOD;
-		cnt *= p2m(p2l[i].first)+MOD-1;
-		cnt %= MOD;
-		ans += cnt;
+			p2[sz++] = make_pair(p, p2m(p-1));
+	p2[sz++] = make_pair(0, 1);
+	for (int i=sz-2; i>=0; i--) {
+		p2[i].second *= p2[i+1].second;
+		p2[i].second %= MOD;
 	}
-	return int(ans % MOD);
+	int64_t ans = p2[0].second*(sz-1); // (1)
+	ans %= MOD;
+	for (int i=0; i<sz-1; i++) { // (2)
+		ans += int64_t(p2m(p2[i].first-1)-1) * p2[i+1].second;
+		ans %= MOD;
+	}
+	return int(ans);
 }
 
 int main(int argc, char **argv) {
@@ -133,7 +132,7 @@ int main(int argc, char **argv) {
 		switch (qt) {
 		case 1:
 			scanf("%d%d%d", &l, &r, &t);
-			shift_range(tree, n, l, r, t);
+			shift_range(tree, n, l, r+1, t);
 			break;
 		case 2:
 			scanf("%d%d", &l, &r);
