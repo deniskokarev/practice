@@ -2,8 +2,11 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
-#include <cassert>
 /* Hackerrank https://www.hackerrank.com/challenges/heavy-light-white-falcon */
+
+/**
+ * HLD implementation taken with minor adoption from https://acm.khpnets.info/w/index.php?title=Heavy-light-%D0%B4%D0%B5%D0%BA%D0%BE%D0%BC%D0%BF%D0%BE%D0%B7%D0%B8%D1%86%D0%B8%D1%8F
+ */
 using namespace std;
 
 /**
@@ -103,15 +106,18 @@ public:
 
 struct G {
 	int sz;
-	vector<vector<int>> ee;
+	vector<vector<int>> ee; // edges
 	vector<int> parent;
-	vector<int> size;
+	vector<int> size; // nodes in subtree
+	// node dfs in/out order for ansestry determination
 	vector<int> t_in, t_out;
+	// what chain and what pos in that chain the node belongs
 	vector<int> nchain;
 	vector<int> nchpos;
-	vector<int> chain_root;
-	vector<int> chain_sz;
-	vector<SegTree<int>> chain;
+	// chains
+	vector<int> chain_root; // root node for the chain
+	vector<int> chain_sz;   // number of nodes in the chain
+	vector<SegTree<int>> chain; // chain as segtree
 	G(int sz):sz(sz),ee(sz),parent(sz),size(sz),t_in(sz),t_out(sz),nchain(sz),nchpos(sz),chain_root(),chain_sz(),chain(){};
 };
 
@@ -126,8 +132,8 @@ int dfs_sizes(G &g, int v, int p, int &tick) {
 	return g.size[v];
 }
 
-bool is_parent(const G &g, int p, int c) {
-	return g.t_in[p] <= g.t_in[c] && g.t_out[c] <= g.t_out[p];
+bool not_parent(const G &g, int p, int c) {
+	return g.t_in[p] > g.t_in[c] || g.t_out[c] > g.t_out[p];
 }
 
 void dfs_hld(G &g, int v, int p, int nchain) {
@@ -175,11 +181,11 @@ void do_set(G &g, int node, int val) {
 
 int do_query(const G &g, int a, int b) {
 	int res = 0;
-	while (!is_parent(g, g.chain_root[g.nchain[a]], b)) {
+	while (not_parent(g, g.chain_root[g.nchain[a]], b)) {
 		res = max_fold(res, g.chain[g.nchain[a]](0, g.nchpos[a]+1));
 		a = g.parent[g.chain_root[g.nchain[a]]];
 	}
-	while (!is_parent(g, g.chain_root[g.nchain[b]], a)) {
+	while (not_parent(g, g.chain_root[g.nchain[b]], a)) {
 		res = max_fold(res, g.chain[g.nchain[b]](0, g.nchpos[b]+1));
 		b = g.parent[g.chain_root[g.nchain[b]]];
 	}
