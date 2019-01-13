@@ -6,8 +6,6 @@
 /* Hackerrank https://www.hackerrank.com/challenges/heavy-light-white-falcon */
 using namespace std;
 
-#define DEBUG
-
 /**
  * Simple Segment tree on a vector with custom "fold" operation.
  * Supports setting a value at a position and "folding" values on a range
@@ -143,7 +141,6 @@ void dfs_hld(G &g, int v, int p, int nchain) {
 	if (mxc != -1) {
 		for (auto c:g.ee[v]) {
 			if (c != p) {
-#ifndef DEBUG
 				if (c != mxc) {
 					g.chain_root.push_back(c);
 					g.chain_sz.push_back(0);
@@ -151,11 +148,6 @@ void dfs_hld(G &g, int v, int p, int nchain) {
 				} else {
 					dfs_hld(g, c, v, nchain);
 				}
-#else
-				g.chain_root.push_back(c);
-				g.chain_sz.push_back(0);
-				dfs_hld(g, c, v, g.chain_sz.size()-1);
-#endif
 			}
 			
 		}
@@ -175,15 +167,6 @@ void bld_hld(G &g) {
 	dfs_hld(g, 0, -1, 0);
 	for (auto sz:g.chain_sz)
 		g.chain.push_back(SegTree<int>(sz, max_fold));
-#ifndef DEBUG
-#else
-	assert(g.chain.size() == g.sz);
-	for (int i=0; i<g.sz; i++) {
-		assert(g.chain_root[g.nchain[i]] == i);
-		assert(g.chain_sz[i] == 1);
-		assert(g.nchpos[i] == 0);
-	}
-#endif
 }
 
 void do_set(G &g, int node, int val) {
@@ -192,7 +175,6 @@ void do_set(G &g, int node, int val) {
 
 int do_query(const G &g, int a, int b) {
 	int res = 0;
-#ifndef DEBUG
 	while (!is_parent(g, g.chain_root[g.nchain[a]], b)) {
 		res = max_fold(res, g.chain[g.nchain[a]](0, g.nchpos[a]+1));
 		a = g.parent[g.chain_root[g.nchain[a]]];
@@ -204,17 +186,6 @@ int do_query(const G &g, int a, int b) {
 	if (g.nchpos[a] > g.nchpos[b])
 		swap(a, b);
 	return max_fold(res, g.chain[g.nchain[a]](g.nchpos[a], g.nchpos[b]+1));
-#else
-	while (!is_parent(g, g.chain_root[g.nchain[a]], b)) {
-		res = max(res, g.chain[g.nchain[a]].tree[1]);
-		a = g.parent[a];
-	}
-	while (!is_parent(g, g.chain_root[g.nchain[b]], a)) {
-		res = max(res, g.chain[g.nchain[b]].tree[1]);
-		b = g.parent[b];
-	}
-	return max_fold(res, g.chain[g.nchain[a]].tree[1]);
-#endif
 }
 
 int main(int argc, char **argv) {
