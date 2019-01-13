@@ -2,8 +2,11 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <cassert>
 /* Hackerrank https://www.hackerrank.com/challenges/heavy-light-white-falcon */
 using namespace std;
+
+#define DEBUG
 
 /**
  * Simple Segment tree on a vector with custom "fold" operation.
@@ -14,7 +17,7 @@ using namespace std;
  * fold() - O(n) time
  * @author Denis Kokarev
  */
-template<class ValueType=int> class SegTree {
+template<class ValueType=int> struct SegTree {
 	using value_type = ValueType;
 	using FOLD_OP = std::function<value_type(const value_type &, const value_type &)>;
 	int sz;
@@ -32,7 +35,7 @@ public:
 	 * Create segment tree with given size and custom fold operator
 	 * Upon creation all values will be zeros
 	 * @param _sz - maximum size
-	 * @param _fold  - custom fold operator - default std::plus
+	 * @param _fold	 - custom fold operator - default std::plus
 	 */
 	SegTree(int _sz, FOLD_OP _fold=std::plus<value_type>()):sz(_sz),tree(sz+sz),fold(_fold) {
 	}
@@ -41,7 +44,7 @@ public:
 	 * Alternative constructor to initialize the values right away
 	 * Works in O(n)
 	 * @param list - list of given values
-	 * @param _fold  - custom fold operator - default std::plus
+	 * @param _fold	 - custom fold operator - default std::plus
 	 */
 	SegTree(const std::initializer_list<value_type> &list, FOLD_OP _fold=std::plus<value_type>()):SegTree(list.size(), _fold) {
 		std::copy(list.begin(), list.end(), tree.begin()+sz);
@@ -104,7 +107,6 @@ struct G {
 	int sz;
 	vector<vector<int>> ee;
 	vector<int> parent;
-	vector<int> depth;
 	vector<int> size;
 	vector<int> t_in, t_out;
 	vector<int> nchain;
@@ -112,43 +114,50 @@ struct G {
 	vector<int> chain_root;
 	vector<int> chain_sz;
 	vector<SegTree<int>> chain;
-	G(int sz):sz(sz),ee(sz),parent(sz),depth(sz),size(sz),t_in(sz),t_out(sz),nchain(sz),nchpos(sz),chain_root(),chain_sz(),chain(){};
+	G(int sz):sz(sz),ee(sz),parent(sz),size(sz),t_in(sz),t_out(sz),nchain(sz),nchpos(sz),chain_root(),chain_sz(),chain(){};
 };
 
-int dfs_sizes(G &g, int v, int p, int &tick, int depth) {
+int dfs_sizes(G &g, int v, int p, int &tick) {
 	g.t_in[v] = tick++;
 	g.parent[v] = p;
-	g.depth[v] = depth;
 	g.size[v] = 1;
 	for (int c:g.ee[v])
 		if (c != p)
-			g.size[v] += dfs_sizes(g, c, v, tick, depth+1);
+			g.size[v] += dfs_sizes(g, c, v, tick);
 	g.t_out[v] = tick++;
 	return g.size[v];
 }
 
 bool is_parent(const G &g, int p, int c) {
-    return g.t_in[p] <= g.t_in[c] && g.t_out[c] <= g.t_out[p];
+	return g.t_in[p] <= g.t_in[c] && g.t_out[c] <= g.t_out[p];
 }
 
-void dfs_hld(G &g, int v, int p) {
-	int nchain = g.chain_sz.size()-1;
-    g.nchain[v] = nchain;
-    g.nchpos[v] = g.chain_sz[nchain];
+void dfs_hld(G &g, int v, int p, int nchain) {
+	g.nchain[v] = nchain;
+	g.nchpos[v] = g.chain_sz[nchain];
 	g.chain_sz[nchain]++;
-    int mxc = g.size[g.ee[v][0]];
-    for (auto c:g.ee[v])
-        if (c != p && g.size[c] > g.size[mxc])
-            mxc = c;
-	if (g.ee[v].size() > 1) {
+	int mxc = -1;
+	for (auto c:g.ee[v])
+		if (c != p && (mxc == -1 || g.size[c] > g.size[mxc]))
+			mxc = c;
+	if (mxc != -1) {
 		for (auto c:g.ee[v]) {
 			if (c != p) {
+#ifndef DEBUG
 				if (c != mxc) {
 					g.chain_root.push_back(c);
 					g.chain_sz.push_back(0);
+					dfs_hld(g, c, v, g.chain_sz.size()-1);
+				} else {
+					dfs_hld(g, c, v, nchain);
 				}
-				dfs_hld(g, c, v);
+#else
+				g.chain_root.push_back(c);
+				g.chain_sz.push_back(0);
+				dfs_hld(g, c, v, g.chain_sz.size()-1);
+#endif
 			}
+			
 		}
 	}
 }
@@ -160,12 +169,21 @@ static int max_fold(int a, int b) {
 /* Build Heavy-Light decomposition and SegTree for each chain */
 void bld_hld(G &g) {
 	int tick = 0;
-	dfs_sizes(g, 0, -1, tick, 0);
+	dfs_sizes(g, 0, -1, tick);
 	g.chain_root.push_back(0);
 	g.chain_sz.push_back(0);
-	dfs_hld(g, 0, -1);
+	dfs_hld(g, 0, -1, 0);
 	for (auto sz:g.chain_sz)
 		g.chain.push_back(SegTree<int>(sz, max_fold));
+#ifndef DEBUG
+#else
+	assert(g.chain.size() == g.sz);
+	for (int i=0; i<g.sz; i++) {
+		assert(g.chain_root[g.nchain[i]] == i);
+		assert(g.chain_sz[i] == 1);
+		assert(g.nchpos[i] == 0);
+	}
+#endif
 }
 
 void do_set(G &g, int node, int val) {
@@ -173,18 +191,30 @@ void do_set(G &g, int node, int val) {
 }
 
 int do_query(const G &g, int a, int b) {
-    int res = 0;
-    while (!is_parent(g, g.chain_root[a], b)) {
-        res = max_fold(res, g.chain[g.nchain[a]](0, g.nchpos[a]));
-        a = g.parent[g.chain_root[g.nchain[a]]];
-    }
-    while (!is_parent(g, g.chain_root[b], a)) {
-        res = max_fold(res, g.chain[g.nchain[b]](0, g.nchpos[b]));
-        b = g.parent[g.chain_root[g.nchain[b]]];
-    }
-    if (g.nchpos[a] > g.nchpos[b])
-        swap(a, b);
-    return max_fold(res, g.chain[g.nchain[a]](g.nchpos[a], g.nchpos[b]));
+	int res = 0;
+#ifndef DEBUG
+	while (!is_parent(g, g.chain_root[g.nchain[a]], b)) {
+		res = max_fold(res, g.chain[g.nchain[a]](0, g.nchpos[a]+1));
+		a = g.parent[g.chain_root[g.nchain[a]]];
+	}
+	while (!is_parent(g, g.chain_root[g.nchain[b]], a)) {
+		res = max_fold(res, g.chain[g.nchain[b]](0, g.nchpos[b]+1));
+		b = g.parent[g.chain_root[g.nchain[b]]];
+	}
+	if (g.nchpos[a] > g.nchpos[b])
+		swap(a, b);
+	return max_fold(res, g.chain[g.nchain[a]](g.nchpos[a], g.nchpos[b]+1));
+#else
+	while (!is_parent(g, g.chain_root[g.nchain[a]], b)) {
+		res = max(res, g.chain[g.nchain[a]].tree[1]);
+		a = g.parent[a];
+	}
+	while (!is_parent(g, g.chain_root[g.nchain[b]], a)) {
+		res = max(res, g.chain[g.nchain[b]].tree[1]);
+		b = g.parent[b];
+	}
+	return max_fold(res, g.chain[g.nchain[a]].tree[1]);
+#endif
 }
 
 int main(int argc, char **argv) {
