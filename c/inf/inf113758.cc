@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 	int64_t t = floor(std::cbrt(bd));
 	int64_t ans = 0;
 	for (int64_t y=f; y<=t; y++)
-		ans += nsqrt(y*y*y-k, y*y*y+k+1);
+		ans += nsqrt(std::max(a, y*y*y-k), std::min(y*y*y+k, b)+1);
 	cout << ans << endl;
 	return 0;
 }
