@@ -31,21 +31,18 @@ class Cache{
 
 #include <list>
 class LRUCache: public Cache {
-	size_t cap;
 	std::list<pair<int,int>> cache;
 	std::map<int, std::list<pair<int,int>>::iterator> map;
 public:
-	LRUCache(size_t cap):cap{cap},cache(cap),map() {}
+	LRUCache(size_t cap):cache(cap),map() {}
 	virtual void set(int k, int v) {
 		auto fnd = map.find(k);
 		if (fnd != map.end()) {
 			cache.erase(fnd->second);
 		} else {
-			if (cache.size() >= cap) {
-				auto &e = cache.back();
-				map.erase(e.first);
-				cache.erase(prev(cache.end()));
-			}
+			auto &e = cache.back();
+			map.erase(e.first);
+			cache.erase(prev(cache.end()));
 		}
 		cache.push_front(make_pair(k,v));
 		map[k] = cache.begin();
