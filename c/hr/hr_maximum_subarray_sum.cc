@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <cinttypes>
-#include <map>
+#include <set>
 /* Hackerrank https://www.hackerrank.com/challenges/maximum-subarray-sum */
 
 int main(int argc, char **argv) {
@@ -10,19 +10,17 @@ int main(int argc, char **argv) {
 		int n;
 		int64_t m;
 		scanf("%d%" PRId64, &n, &m);
-		std::map<int64_t, int> mm;
-		mm[0] = 0;
-		mm[m] = -1;
+		std::set<int64_t> ssum;
+		ssum.insert(m); // m always findable with upper_bound
 		int64_t sum = 0;
 		int64_t mx = 0;
-		for (int i=1; i<=n; i++) {
+		while (n--) {
 			int64_t a;
 			scanf("%" PRId64, &a);
 			sum += a;
 			sum %= m;
-			auto fnd = mm.upper_bound(sum);
-			mx = std::max(mx, (m+sum-fnd->first) % m);
-			mm[sum] = i;
+			mx = std::max(mx, (m+sum-(*ssum.upper_bound(sum))) % m);
+			ssum.insert(sum);
 		}
 		printf("%" PRId64 "\n", mx);
 	}
