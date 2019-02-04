@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 		median10 = aa[n/2]*10;
 	else
 		median10 = (aa[n/2-1]+aa[n/2])*5;
-	int ave10 = (sm*10+5)/n;
+	int ave10 = (sm*20+n)/n/2;
 	printf("%d.%d\n%d.%d\n%d\n", ave10/10, ave10%10,  median10/10, median10%10, mode);
 	return 0;
 }
