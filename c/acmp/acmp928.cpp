@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <set>
+#include <cassert>
 /* ACMP 928 */
 using namespace std;
 
@@ -23,6 +24,7 @@ struct LNPT {
 };
 
 static void save_lnpt(vector<set<LNPT>> &fw_lnpt, double len, int npt, int ry) {
+	int tot_sz = 0; // DEBUG
 	for (int i=ry; i<fw_lnpt.size(); i|=i+1) {
 		set<LNPT> &slnpt = fw_lnpt[i];
 		auto it = slnpt.upper_bound(LNPT{len,-1});
@@ -33,9 +35,11 @@ static void save_lnpt(vector<set<LNPT>> &fw_lnpt, double len, int npt, int ry) {
 				//cerr << "erasing: [len=" << it->len << ",npt=" << it->npt << "]" << endl;
 				slnpt.erase(it);
 			}
-			slnpt.insert(LNPT{len,npt});
+			slnpt.insert(it, LNPT{len,npt});
+			tot_sz += slnpt.size(); // DEBUG
 		}
 	}
+	assert(tot_sz < 100000); // DEBUG
 }
 
 static int get_max_npt(const vector<set<LNPT>> &fw_lnpt, double len, int ry) {
