@@ -51,11 +51,8 @@ int main(int argc, char **argv) {
 	for (int i=0; i<pe_sz; i++) {
 		auto &p = pe[i];
 		cnt[i] = 0;
-		uint64_t dv = p.first;
-		while (dv <= n) {
+		for (uint64_t dv=p.first,nr = n/p.first; nr>0; nr/=p.first,dv*=p.first)
 			cnt[i] += n/dv;
-			dv *= p.first;
-		}
 		cerr << p.first << ": " << cnt[i] << endl;
 	}
 	uint64_t ans = ULLONG_MAX;
