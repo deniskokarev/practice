@@ -1,4 +1,5 @@
 #include <iostream>
+#include <climits>
 /* CodeForces CF1114C problem */
 using namespace std;
 
@@ -42,6 +43,10 @@ int main(int argc, char **argv) {
 	cin >> n >> b;
 	pair<uint64_t,int> pe[64];
 	int pe_sz = prime_factors_lst(b, pe);
+	for (int i=0; i<pe_sz; i++) {
+		auto &p = pe[i];
+		cerr << p.first << " ** " << p.second << endl;
+	}
 	uint64_t cnt[64];
 	for (int i=0; i<pe_sz; i++) {
 		auto &p = pe[i];
@@ -51,8 +56,9 @@ int main(int argc, char **argv) {
 			cnt[i] += n/dv;
 			dv *= p.first;
 		}
+		cerr << p.first << ": " << cnt[i] << endl;
 	}
-	uint64_t ans = INT_MAX;
+	uint64_t ans = ULLONG_MAX;
 	for (int i=0; i<pe_sz; i++) {
 		auto &p = pe[i];
 		ans = min(ans, cnt[i]/p.second);
