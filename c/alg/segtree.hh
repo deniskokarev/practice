@@ -10,8 +10,8 @@
  * Supports setting a value at a position and "folding" values on a range
  * Typically, folding would be operator+() or max()
  * O(2*n) space
- * set() - O(n) time
- * fold() - O(n) time
+ * set() - O(NlogN) time
+ * fold() - O(NlogN) time
  * @author Denis Kokarev
  */
 template<class ValueType=int> class SegTree {
