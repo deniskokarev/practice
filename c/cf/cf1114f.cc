@@ -35,7 +35,7 @@ template<class ValueType, class LazyType, class FoldOp> class LazySegTree {
 	 * Propagate increments down to a specific element in O(logN)
 	 */
 	void propagate_inc(int pos) {
-		for (int l=l2; l>0; l--) {
+		for (int l=l2; l>1; l--) {
 			int p = pos >> l;
 			int c1 = p << 1;
 			int c2 = c1 + 1;
@@ -45,6 +45,13 @@ template<class ValueType, class LazyType, class FoldOp> class LazySegTree {
 			tree[c2] = FoldOp()(tree[c2], lazy[p], l-1);
 			lazy[p] = lazy_type();
 		}
+		int l = 1;
+		int p = pos >> l;
+		int c1 = p << 1;
+		int c2 = c1 + 1;
+		tree[c1] = FoldOp()(tree[c1], lazy[p], l-1);
+		tree[c2] = FoldOp()(tree[c2], lazy[p], l-1);
+		lazy[p] = lazy_type();
 	}
 public:
 	/**
@@ -52,7 +59,7 @@ public:
 	 * Upon creation all values will be zeros
 	 * @param sz - maximum size
 	 */
-	LazySegTree(int _sz):sz(_sz),l2(floor(log2(sz))),tree(sz+sz),lazy(sz+sz) {
+	LazySegTree(int _sz):sz(_sz),l2(floor(log2(sz))),tree(sz+sz),lazy(sz) {
 	}
 
 	value_type &operator[](int p) {
@@ -74,6 +81,19 @@ public:
 		int rb = b;
 		int re = e;
 		int level = 0;
+		if (b < e) {
+			if (b&1) {
+				tree[b] = FoldOp()(tree[b], v, level);
+				b++;
+			}
+			if (e&1) {
+				--e;
+				tree[e] = FoldOp()(tree[e], v, level);
+			}
+			b >>= 1;
+			e >>= 1;
+			level++;
+		}
 		while (b < e) {
 			if (b&1) {
 				tree[b] = FoldOp()(tree[b], v, level);
@@ -91,6 +111,15 @@ public:
 		}
 		rebuild_pos(rb);
 		rebuild_pos(re-1);
+	}
+
+	/**
+	 * Compute and get the value at position pos in O(logN)
+	 */
+	const value_type &get(int pos) {
+		int node = sz+pos;
+		propagate_inc(node);
+		return tree[node];
 	}
 
 	/**
@@ -127,18 +156,19 @@ public:
 
 constexpr int MOD = 1e9+7;
 
-unsigned pow_mod(unsigned b, unsigned p) {
-	if (p) {
-		uint64_t r = pow_mod(b, p/2);
-		r *= r;
-		r %= MOD;
-		if (p&1)
-			r *= b;
-		r %= MOD;
-		return r;
-	} else {
-		return 1;
+inline unsigned pow_mod(unsigned b, unsigned p) {
+	uint64_t r = 1;
+	uint64_t b2 = b;
+	while (p) {
+		if (p&1) {
+			r *= b2;
+			r %= MOD;
+		}
+		b2 *= b2;
+		b2 %= MOD;
+		p >>= 1;
 	}
+	return unsigned(r);
 }
 
 /**
@@ -235,39 +265,45 @@ const InvPrimes<P::SZ> P::inv_primes;
  * Our lazy segtree update operations
  */
 struct Fold {
-	P mul(const P &a, const P &b) const {
+	inline P mul(const P &a, const P &b) const {
 		P res(a);
 		res += b;
 		return res;
 	}
 	// "combine" 2 values together
-	P operator()(const P &a, const P &b) const {
+	inline P operator()(const P &a, const P &b) const {
 		return mul(a, b);
 	}
 	// "combine" value with lazy update value and its power (level of the lazy update in the tree)
-	P operator()(const P &a, const P &lazy, int level) const {
+	inline P operator()(const P &a, const P &lazy, int level) const {
 		return mul(a, lazy.pow(1<<level));
 	}
 };
 
 int main(int argc, char **argv) {
+	P i2p[301]; // to speedup factorization
+	for (int i=0; i<301; i++)
+		i2p[i] = P(i);
 	int n, q;
-	scanf("%d%d", &n, &q);
+	//FILE *fin = fopen("/tmp/n11", "r");
+	FILE *fin = stdin;
+	//(void)getchar();
+	fscanf(fin, "%d%d", &n, &q);
 	LazySegTree<P, P, Fold> segtree(n);
 	for (int i=0; i<n; i++) {
 		int a;
-		scanf("%d", &a);
-		segtree[i] = P(a);
+		fscanf(fin, "%d", &a);
+		segtree[i] = i2p[a];
 	}
 	segtree.rebuild();
 	while (q--) {
 		char qs[32];
-		scanf("%32s", qs);
+		fscanf(fin, "%32s", qs);
 		int l, r, x;
 		switch(qs[0]) {
 		case 'T':
 			{
-				scanf("%d%d", &l, &r);
+				fscanf(fin, "%d%d", &l, &r);
 				l--;
 				P res = segtree(l, r);
 				//fprintf(stderr, "[%d,%d) prod = %d\n", l, r, res.prod);
@@ -276,9 +312,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'M':
 			{
-				scanf("%d%d%d", &l, &r, &x);
+				fscanf(fin, "%d%d%d", &l, &r, &x);
 				l--;
-				segtree.inc(l, r, P(x));
+				segtree.inc(l, r, i2p[x]);
 			}
 			break;
 		}
