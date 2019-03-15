@@ -1,79 +1,130 @@
 #include <cstdio>
-#include <algorithm>
 #include <vector>
 #include <cmath>
-#include <cinttypes>
+#include <bitset>
 /* CodeForces CF1114F problem */
 using namespace std;
 
 /**
  * Segment tree to perform "lazy" Increments on all values in the open interval [b, e)
- * Then you can still perofrm Fold over the range
- * Both operations run in O(logN)
+ * Then you can still perofrm Fold over the range. FoldOp must be supporting 2 operations:
+ *    fold two ValueTypes and fold ValueType with LazyType and level
+ * LazyTypes must support += between them
+ * All operations run in O(logN)
  */
-template<class ValueType, class IncOp, class FoldOp> class IncFoldSegTree {
+template<class ValueType, class LazyType, class FoldOp> class LazySegTree {
 	using value_type = ValueType;
+	using lazy_type = LazyType;
 	int sz;
 	int l2;
-	std::vector<value_type> tree; // where we keep values and aggregates (first sz elements are aggreagates)
-	std::vector<value_type> lazy; // where we keep lazy updates
+	std::vector<value_type> tree; // where we keep all values (first sz elements are aggreagates)
+	std::vector<lazy_type> lazy;
+
+	void rebuild_pos(int p) {
+		int level = 1;
+		while (p > 1) {
+			p >>= 1;
+			int c1 = p << 1;
+			int c2 = c1 + 1;
+			tree[p] = FoldOp()(FoldOp()(tree[c1], tree[c2]), lazy[p], level);
+			level++;
+		}
+	}
+
 	/**
 	 * Propagate increments down to a specific element in O(logN)
 	 */
 	void propagate_inc(int pos) {
-		for (int l=l2; l>0; l--) {
+		for (int l=l2; l>1; l--) {
 			int p = pos >> l;
-			IncOp()(lazy[p<<1], lazy[p]);
-			IncOp()(lazy[(p<<1)|1], lazy[p]);
-			lazy[p] = value_type();
+			int c1 = p << 1;
+			int c2 = c1 + 1;
+			lazy[c1] += lazy[p];
+			lazy[c2] += lazy[p];
+			tree[c1] = FoldOp()(tree[c1], lazy[p], l-1);
+			tree[c2] = FoldOp()(tree[c2], lazy[p], l-1);
+			lazy[p] = lazy_type();
 		}
+		int l = 1;
+		int p = pos >> l;
+		int c1 = p << 1;
+		int c2 = c1 + 1;
+		tree[c1] = FoldOp()(tree[c1], lazy[p], l-1);
+		tree[c2] = FoldOp()(tree[c2], lazy[p], l-1);
+		lazy[p] = lazy_type();
 	}
-
 public:
 	/**
-	 * Create segment tree with given size
+	 * Create lazy segment tree with given size
 	 * Upon creation all values will be zeros
-	 * @param _sz - maximum size
+	 * @param sz - maximum size
 	 */
-	IncFoldSegTree(int _sz):sz(_sz),l2(floor(log2(sz))),tree(sz+sz),lazy(sz+sz) {
+	LazySegTree(int _sz):sz(_sz),l2(floor(log2(sz))),tree(sz+sz),lazy(sz) {
 	}
 
-	/**
-	 * direct access to element for initialization
-	 * must use rebuild() afterwards
-	 */
-	value_type &operator[](size_t i) {
-		return tree[sz+i];
+	value_type &operator[](int p) {
+		return tree[p+sz];
 	}
 	
-	/**
-	 * If you touched values directly, you must perform rebuild()
-	 */
 	void rebuild() {
 		for (int i=sz+sz-1; i>1; i-=2)
 			tree[i>>1] = FoldOp()(tree[i-1], tree[i]);
 	}
-	
+
 	/**
 	 * Perform "lazy" increment by v on all values in the open interval [b, e)
 	 * Runs in O(logN)
 	 */ 
-	void inc_each(int b, int e, const value_type &v) {
+	void inc(int b, int e, const lazy_type &v) {
 		b += sz;
 		e += sz;
-		while (b < e) {
-			if (b&1)
-				IncOp()(lazy[b++], v);
-			if (e&1)
-				IncOp()(lazy[--e], v);
+		int rb = b;
+		int re = e;
+		int level = 0;
+		if (b < e) {
+			if (b&1) {
+				tree[b] = FoldOp()(tree[b], v, level);
+				b++;
+			}
+			if (e&1) {
+				--e;
+				tree[e] = FoldOp()(tree[e], v, level);
+			}
 			b >>= 1;
 			e >>= 1;
+			level++;
 		}
+		while (b < e) {
+			if (b&1) {
+				tree[b] = FoldOp()(tree[b], v, level);
+				lazy[b] += v;
+				b++;
+			}
+			if (e&1) {
+				--e;
+				tree[e] = FoldOp()(tree[e], v, level);
+				lazy[e] += v;
+			}
+			b >>= 1;
+			e >>= 1;
+			level++;
+		}
+		rebuild_pos(rb);
+		rebuild_pos(re-1);
+	}
+
+	/**
+	 * Compute and get the value at position pos in O(logN)
+	 */
+	const value_type &get(int pos) {
+		int node = sz+pos;
+		propagate_inc(node);
+		return tree[node];
 	}
 
 	/**
 	 * Perform interval folding on open-ended [b, e) segment. Runs in O(logN)
-	 * At each level we will fold with lazy updates
+	 * Folding is left-associative
 	 * @param b - begin - first element inclusive
 	 * @param e - end - element after last
 	 * @return fold(tree[b], fold(tree[b+1], fold(tree[b+2], ... fold(tree[e-2], fold(tree[e-1])...)))
@@ -82,157 +133,188 @@ public:
 		b += sz;
 		e += sz;
 		propagate_inc(b);
-		int level = 0;
-		if (e-b > 1) {
+		if (e-b > 1) {	
+			value_type vb = value_type();
+			value_type ve = value_type();
 			propagate_inc(e-1);
-			value_type vb = FoldOp()(tree[b], lazy[b], level);
-			b++, e--;
-			value_type ve = FoldOp()(tree[e], lazy[e], level);
 			while (b < e) {
-				level++;
-				if (b&1) {
-					vb = FoldOp()(FoldOp()(vb, tree[b]), lazy[b], level);
-					b++;
-				}
-				if (e&1) {
-					e--;
-					ve = FoldOp()(FoldOp()(tree[e], ve), lazy[e], level);
-				}
+				if (b&1)
+					vb = FoldOp()(vb, tree[b++]);
+				if (e&1)
+					ve = FoldOp()(tree[--e], ve);
 				b >>= 1;
 				e >>= 1;
 			}
 			return FoldOp()(vb, ve);
+		} else if (e-b == 1) {
+			return tree[b];
 		} else {
-			return FoldOp()(tree[b], lazy[b], level);
+			return value_type();
 		}
-	}
-
-};
-
-struct P {
-	static constexpr int SZ = 300;
-	int p[SZ];
-	P() {
-		fill(p, p+SZ, 0);
-	}
-};
-
-struct Inc {
-	void operator()(P &me, const P &by) const {
-		for (int i=0; i<P::SZ; i++)
-			me.p[i] += by.p[i];
-	}
-};
-
-struct Fold {
-	// fold values together
-	P operator()(const P &a, const P &b) const {
-		P r(a);
-		for (int i=0; i<r.SZ; i++)
-			r.p[i] += b.p[i];
-		return r;
-	}
-	// fold value, lazy update and lazy update power (level in the tree)
-	P operator()(const P &a, const P &lazy, int level) const {
-		P r(a);
-		for (int i=0; i<r.SZ; i++)
-			r.p[i] += lazy.p[i] << level;
-		return r;
 	}
 };
 
 constexpr int MOD = 1e9+7;
 
-unsigned pow_mod(unsigned b, unsigned p) {
-	if (p) {
-		uint64_t r = pow_mod(b, p/2);
-		r *= r;
-		r %= MOD;
-		if (p&1)
-			r *= b;
-		r %= MOD;
-		return r;
-	} else {
-		return 1;
-	}
-}
-
-int totient_mod(const P &p) {
-	int64_t phi = 1;
-	for (int i=0; i<p.SZ; i++) {
-		if (p.p[i]) {
-			phi *= pow_mod(i, p.p[i]-1) * (i-1);
-			phi %= MOD;
+inline unsigned pow_mod(unsigned b, unsigned p) {
+	uint64_t r = 1;
+	uint64_t b2 = b;
+	while (p) {
+		if (p&1) {
+			r *= b2;
+			r %= MOD;
 		}
+		b2 *= b2;
+		b2 %= MOD;
+		p >>= 1;
 	}
-	return phi;
+	return unsigned(r);
 }
 
 /**
- * Naive prime number factorization in O(sqrt(N))
- * @param n - number greater than that you want to factorize
- * @param p[] - preallocated recipient array where the of ordered
- *   prime numbers of n will be placed
- * 	p.length >= 64
- * @return number of populated primes in p[]
+ * Precompute inverted primes in ring modulo MOD
+ * 0 for non-primes
  */
-int prime_factors(uint64_t n, uint64_t p[]) {
-	int np = 0;
-	for (uint64_t i = 2; i <= n / i; i++) {
-		while (n % i == 0) {
-			p[np++] = i;
-			n /= i;
-		}
+template<int MXSZ> class InvPrimes {
+	int inv_primes[MXSZ];
+public:
+	InvPrimes() {
+		fill(inv_primes, inv_primes+MXSZ, 1);
+		for (int i=2; i<MXSZ; i++)
+			for (int j=i+i; j<MXSZ; j+=i)
+				inv_primes[j] = 0;
+		inv_primes[0] = 0;
+		inv_primes[1] = 1;
+		for (int i=2; i<MXSZ; i++)
+			if (inv_primes[i])
+				inv_primes[i] = pow_mod(i, MOD-2);
 	}
-	if (n > 1)
-		p[np++] = n;
-	return np;
-}
+	const int &operator[](int i) const {
+		return inv_primes[i];
+	}
+};
 
-P getprimes(int x) {
-	P node;
-	uint64_t pp[64];
-	for (int i=prime_factors(x, pp)-1; i>=0; i--)
-		node.p[pp[i]]++;
-	return node;
-}
+/**
+ * In order to compute the totient of the product
+ * we may keep only product and the list of primes
+ * involved. No need to keep prime powers
+ * We'll keep P() elements in the nodes of segment tree
+ */
+class P {
+	static constexpr int SZ = 300;
+	static const InvPrimes<P::SZ> inv_primes;
+	int prod;
+	bitset<SZ> primes;
+	/**
+	 * Naive prime number factorization in O(sqrt(N))
+	 * @param n - number greater than that you want to factorize
+	 * @param p[] - preallocated recipient array where the of ordered
+	 *   prime numbers of n will be placed
+	 * 	p.length >= 64
+	 * @return number of populated primes in p[]
+	 */
+	int prime_factors(uint64_t n, uint64_t p[]) {
+		int np = 0;
+		for (uint64_t i = 2; i <= n / i; i++) {
+			while (n % i == 0) {
+				p[np++] = i;
+				n /= i;
+			}
+		}
+		if (n > 1)
+			p[np++] = n;
+		return np;
+	}
+public:
+	P():prod(1),primes(0) {
+	}
+	P(int x):prod(x),primes(0) {
+		uint64_t pp[64];
+		for (int i=prime_factors(x, pp)-1; i>=0; i--)
+			primes[pp[i]] = 1;
+	}
+	void operator+=(const P &o) {
+		int64_t rp(prod);
+		rp *= o.prod;
+		rp %= MOD;
+		prod = int(rp);
+		primes |= o.primes;
+	}
+	P pow(int pow) const {
+		P res(*this);
+		res.prod = pow_mod(prod, pow);
+		return res;
+	}
+	int totient() const {
+		int64_t phi = prod;
+		for (int i=0; i<P::SZ; i++) {
+			if (primes[i]) {
+				phi *= (i-1);
+				phi %= MOD;
+				phi *= inv_primes[i];
+				phi %= MOD;
+			}
+		}
+		return int(phi);
+	}
+};
 
-static uint64_t dbg_pval(const P &p) {
-	int v = 1;
-	for (int i=0; i<P::SZ; i++)
-		v *= pow_mod(i, p.p[i]);
-	return v;
-}
+const InvPrimes<P::SZ> P::inv_primes;
+
+/**
+ * Our lazy segtree update operations
+ */
+struct Fold {
+	inline P mul(const P &a, const P &b) const {
+		P res(a);
+		res += b;
+		return res;
+	}
+	// "combine" 2 values together
+	inline P operator()(const P &a, const P &b) const {
+		return mul(a, b);
+	}
+	// "combine" value with lazy update value and its power (level of the lazy update in the tree)
+	inline P operator()(const P &a, const P &lazy, int level) const {
+		return mul(a, lazy.pow(1<<level));
+	}
+};
 
 int main(int argc, char **argv) {
+	P i2p[301]; // to speedup factorization
+	for (int i=0; i<301; i++)
+		i2p[i] = P(i);
 	int n, q;
-	scanf("%d%d", &n, &q);
-	IncFoldSegTree<P, Inc, Fold> segtree(n);
+	//FILE *fin = fopen("/tmp/n11", "r");
+	FILE *fin = stdin;
+	//(void)getchar();
+	fscanf(fin, "%d%d", &n, &q);
+	LazySegTree<P, P, Fold> segtree(n);
 	for (int i=0; i<n; i++) {
 		int a;
-		scanf("%d", &a);
-		segtree[i] = getprimes(a);
+		fscanf(fin, "%d", &a);
+		segtree[i] = i2p[a];
 	}
 	segtree.rebuild();
 	while (q--) {
 		char qs[32];
-		scanf("%32s", qs);
+		fscanf(fin, "%32s", qs);
 		int l, r, x;
 		switch(qs[0]) {
 		case 'T':
 			{
-				scanf("%d%d", &l, &r);
+				fscanf(fin, "%d%d", &l, &r);
 				l--;
 				P res = segtree(l, r);
-				//fprintf(stderr, "[%d,%d) prod = %" PRIu64 "\n", l, r, dbg_pval(res));
-				printf("%d\n", totient_mod(res));
+				//fprintf(stderr, "[%d,%d) prod = %d\n", l, r, res.prod);
+				printf("%d\n", res.totient());
 			}
 			break;
 		case 'M':
 			{
-				scanf("%d%d%d", &l, &r, &x);
+				fscanf(fin, "%d%d%d", &l, &r, &x);
 				l--;
-				segtree.inc_each(l, r, getprimes(x));
+				segtree.inc(l, r, i2p[x]);
 			}
 			break;
 		}
