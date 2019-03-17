@@ -100,8 +100,17 @@ using namespace std;
 
 constexpr int SZ = 1e5+1;
 
+struct MyInt {
+	int n;
+	MyInt(int _n):n(_n){}
+	MyInt():MyInt(INT_MAX){} // for min
+	operator int() const {
+		return n;
+	}
+};
+
 struct MinInt {
-	int operator()(int a, int b) const {
+	int operator()(const MyInt &a, const MyInt &b) const {
 		return std::min(a, b);
 	}
 };
@@ -127,7 +136,7 @@ int main(int argc, char **argv) {
 	for (int i=0; i<btypes; i++)
 		for (int j=0; j<bb[i]; j++)
 			ps[i].push_back(-1);
-	BotUpSegTree<int, MinInt> mn(btypes);
+	BotUpSegTree<MyInt, MinInt> mn(btypes);
 	for (int i=0; i<btypes; i++)
 		mn.set(i, ps[i].front());
 	int fstp = -1;
@@ -139,6 +148,7 @@ int main(int argc, char **argv) {
 			ps[b].pop_front();
 			int pb = ps[b].front();
 			mn.set(b, pb);
+			//cerr << "b=[" << b << "] = " << pb << endl;
 			fstp = mn();
 		}
 		int rmk = i-fstp+1-k; // must remove this many between i and fstp to fit into k
@@ -147,7 +157,7 @@ int main(int argc, char **argv) {
 			npluck = rmk + fstp%k;
 		else
 			npluck = (i+1)%k;
-		cerr << "i=" << i << " fstp=" << fstp << " rmk=" << rmk << " npluck=" << npluck << endl;
+		//cerr << "i=" << i << " fstp=" << fstp << " rmk=" << rmk << " npluck=" << npluck << endl;
 		if (fstp >= 0 && m-npluck >= nk) {
 			cout << npluck << endl;
 			if (rmk >= 0) {
