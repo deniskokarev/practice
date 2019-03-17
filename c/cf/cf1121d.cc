@@ -100,15 +100,16 @@ using namespace std;
 
 constexpr int SZ = 1e5+1;
 
-struct MaxInt {
+struct MinInt {
 	int operator()(int a, int b) const {
-		return std::max(a, b);
+		return std::min(a, b);
 	}
 };
 
 int main(int argc, char **argv) {
 	int m, k, n, s;
 	cin >> m >> k >> n >> s;
+	const int nk = n*k;
 	vector<int> aa(m);
 	for (auto &a:aa)
 		cin >> a;
@@ -125,35 +126,50 @@ int main(int argc, char **argv) {
 	vector<deque<int>> ps(btypes);
 	for (int i=0; i<btypes; i++)
 		for (int j=0; j<bb[i]; j++)
-			ps[i].push_back(INT_MAX);
-	BotUpSegTree<int, MaxInt> mx(btypes);
+			ps[i].push_back(-1);
+	BotUpSegTree<int, MinInt> mn(btypes);
 	for (int i=0; i<btypes; i++)
-		mx.set(i, ps[i].front());
-	vector<int> pluck;
-	for (int i=m-1; i>=0; i--) {
+		mn.set(i, ps[i].front());
+	int fstp = -1;
+	for (int i=0; i<m; i++) {
 		int a = aa[i];
 		if (bmap[a] != -1) {
 			int b = bmap[a];
 			ps[b].push_back(i);
-			if (ps[b].front() < INT_MAX)
-				pluck.push_back(aa[ps[b].front()]);
 			ps[b].pop_front();
 			int pb = ps[b].front();
-			mx.set(b, pb);
-			int mn = mx();
-			//cerr << "b=" << b << " pb=" << pb << " mn=" << mn << " i=" << i << " diff=" << mn-i << endl;
-			if (mn < INT_MAX) {
-				int npluck = mn-i-s+1;
-				if ((m-npluck) >= n*k) {
-					cout << npluck << endl;
-					for (int j=npluck-1; j>=0; j--)
-						cout << pluck[j]+1 << " ";
-					cout << endl;
-					return 0;
+			mn.set(b, pb);
+			fstp = mn();
+		}
+		int rmk = i-fstp+1-k; // must remove this many between i and fstp to fit into k
+		int npluck;
+		if (rmk >= 0)
+			npluck = rmk + fstp%k;
+		else
+			npluck = (i+1)%k;
+		cerr << "i=" << i << " fstp=" << fstp << " rmk=" << rmk << " npluck=" << npluck << endl;
+		if (fstp >= 0 && m-npluck >= nk) {
+			cout << npluck << endl;
+			if (rmk >= 0) {
+				for (int j=i; j>=0 && rmk; j--) {
+					int b = bmap[aa[j]];
+					if (b < 0 || bb[b] <= 0) {
+						cout << j+1 << " ";
+						rmk--;
+					}
+					if (b >= 0)
+						bb[b]--;
 				}
+				int more = fstp%k;
+				for (int j=0; j<more; j++)
+					cout << j+1 << " ";
+			} else {
+				int more = (i+1)%k;
+				for (int j=0; j<more; j++)
+					cout << j+1 << " ";
 			}
-		} else {
-			pluck.push_back(i);
+			cout << endl;
+			return 0;
 		}
 	}
 	cout << -1 << endl;
