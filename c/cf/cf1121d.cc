@@ -98,7 +98,7 @@ public:
 
 using namespace std;
 
-constexpr int SZ = 1e5+1;
+constexpr int SZ = 5e5+1;
 
 struct MyInt {
 	int n;
