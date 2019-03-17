@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include <vector>
 #include <map>
 #include <queue>
@@ -117,17 +117,17 @@ struct MinInt {
 
 int main(int argc, char **argv) {
 	int m, k, n, s;
-	cin >> m >> k >> n >> s;
+	scanf("%d%d%d%d", &m, &k, &n, &s);
 	const int nk = n*k;
 	vector<int> aa(m);
 	for (auto &a:aa)
-		cin >> a;
+		scanf("%d", &a);
 	int btypes = 0; // number of various kinds of bs
 	vector<int> bmap(SZ, -1); // a->btype
 	vector<int> bb(SZ, 0);	// btype->cnt
 	for (int i=0; i<s; i++) {
 		int b;
-		cin >> b;
+		scanf("%d", &b);;
 		if (bmap[b] == -1)
 			bmap[b] = btypes++;
 		bb[bmap[b]]++;
@@ -159,12 +159,12 @@ int main(int argc, char **argv) {
 			npluck = (i+1)%k;
 		//cerr << "i=" << i << " fstp=" << fstp << " rmk=" << rmk << " npluck=" << npluck << endl;
 		if (fstp >= 0 && m-npluck >= nk) {
-			cout << npluck << endl;
+			printf("%d\n", npluck);
 			if (rmk >= 0) {
 				for (int j=i; j>=0 && rmk; j--) {
 					int b = bmap[aa[j]];
 					if (b < 0 || bb[b] <= 0) {
-						cout << j+1 << " ";
+						printf("%d ", j+1);
 						rmk--;
 					}
 					if (b >= 0)
@@ -172,16 +172,16 @@ int main(int argc, char **argv) {
 				}
 				int more = fstp%k;
 				for (int j=0; j<more; j++)
-					cout << j+1 << " ";
+					printf("%d ", j+1);
 			} else {
 				int more = (i+1)%k;
 				for (int j=0; j<more; j++)
-					cout << j+1 << " ";
+					printf("%d ", j+1);
 			}
-			cout << endl;
+			printf("\n");
 			return 0;
 		}
 	}
-	cout << -1 << endl;
+	printf("-1\n");
 	return 0;
 }
