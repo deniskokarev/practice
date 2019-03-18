@@ -43,8 +43,8 @@ int main(int argc, char **argv) {
 			int	bare = 2*(rr[i].r-rr[i].l+1) - (ss2[rr[i].r]-ss2[rr[i].l-1]);
 			bare += 2*(rr[j].r-rr[j].l+1) - (ss2[rr[j].r]-ss2[rr[j].l-1]);
 			if (rr[i].r >= rr[j].l) {
-				int l = rr[j].l;
-				int r = rr[i].r;
+				int l = max(rr[i].l, rr[j].l);
+				int r = min(rr[i].r, rr[j].r);
 				bare += 3*(r-l+1) - (ss3[r]-ss3[l-1]);
 			}
 			mn = min(mn, bare);
