@@ -30,6 +30,8 @@ uuidgsp: uuidgsp.o uuidmatch.o die.o
 
 pfgrep: act.o pfgrep.o die.o par.o
 
+rkmatch: rkmatch.o die.o
+
 test: test_uuidgrep test_act
 
 test_uuidgrep: uuidgrep
