@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <queue>
 /* CodeForces CF1144F problem */
 using namespace std;
 
@@ -8,19 +9,10 @@ struct E {
 	int orient;
 };
 
-void dfs(vector<vector<pair<E*,int>>> &gg, vector<E> &ee, vector<int> &seen, int root, int orient) {
-	seen[root] = 1;
-	for (auto &et:gg[root]) {
-		if (et.first->orient == -1) {
-			if (et.first->f == root)
-				et.first->orient = orient;
-			else
-				et.first->orient = !orient;
-		}
-		if (!seen[et.second])
-			dfs(gg, ee, seen, et.second, !orient);
-	}
-}
+struct Q {
+	int node;
+	int orient;
+};
 
 int main(int argc, char **argv) {
 	int n, m;
@@ -35,10 +27,31 @@ int main(int argc, char **argv) {
 		gg[e.t].push_back(make_pair(&ee[i], e.f));
 	}
 	vector<int> seen(n+1);
-	dfs(gg, ee, seen, 1, 0);
-	cout << "YES" << endl;
-	for (auto &e:ee)
-		cout << e.orient;
-	cout << endl;
+	queue<Q> qq; // node,orient
+	qq.push(Q{1,0});
+	seen[1] = 0;
+	bool ans = true;
+	while (!qq.empty()) {
+		auto top = qq.front();
+		qq.pop();
+		for (auto &et:gg[top.node]) {
+			if (!seen[et.second]) {
+				seen[et.second] = 1;
+				qq.push(Q {et.second, !top.orient});
+			}
+			int o = ((top.orient == 0) ^ (et.first->f == top.node));
+			if (et.first->orient == -1)
+				et.first->orient = o;
+			ans &= (et.first->orient == o);
+		}
+	}
+	if (ans) {
+		cout << "YES" << endl;
+		for (auto &e:ee)
+			cout << e.orient;
+		cout << endl;
+	} else {
+		cout << "NO" << endl;
+	}
 	return 0;
 }
