@@ -1,7 +1,5 @@
 #include <cstdio>
 #include <vector>
-#include <algorithm>
-#include <queue>
 /* CodeForces CF1143C problem */
 using namespace std;
 
@@ -28,7 +26,6 @@ int main(int argc, char **argv) {
 	int i = 0;
 	int root = -1;
 	vector<vector<int>> gg(n);
-	priority_queue<int,vector<int>,std::greater<int>> qq;
 	for (auto &t:tree) {
 		t.id = i;
 		scanf("%d%d", &t.p, &t.c);
@@ -38,14 +35,11 @@ int main(int argc, char **argv) {
 		else
 			gg[t.p].push_back(i);
 		t.nc = t.nb = 0;
-		qq.push(i);
 		i++;
 	}
 	dfs(gg, tree, root);
 	int cnt = 0;
-	while (!qq.empty()) {
-		int top = qq.top();
-		qq.pop();
+	for (int top=0; top<n; top++) {
 		auto &t = tree[top];
 		if (!t.c || t.nc != t.nb)
 			continue;
