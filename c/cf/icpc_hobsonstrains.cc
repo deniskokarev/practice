@@ -18,14 +18,18 @@ static int dfs(const vector<vector<int>> &ef,
 			   int k,
 			   vector<int> &cnt)
 {
+	int lsz = loop.size();
 	if (depth >= k) {
 		cnt[up[depth-k]]--;
 	} else {
-		int lsz = loop.size();
-		int d = min(k-depth, lsz-1);
-		cnt[loop[(root_loop_idx+d) % lsz]]--;
+		int d = min(k-depth, lsz);
+		int ms = (root_loop_idx+d) % lsz;
+		cnt[loop[ms]]--;
+		if (ms <= root_loop_idx)
+			cnt[loop[0]]++; // if end wraps around ringbuf
 	}
 	up[depth] = root;
+	cnt[root]++;
 	for (auto f:ef[root])
 		if (f > 0)
 			cnt[root] += dfs(ef, loop, root_loop_idx, f, up, depth+1, k, cnt);
@@ -69,7 +73,8 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-#if 1
+#if 0
+	// detected loops
 	for (auto &l:loop) {
 		for (auto i:l)
 			fprintf(stderr, "%d ", i);
@@ -77,26 +82,24 @@ int main(int argc, char **argv) {
 	}
 #endif
 	// now handle trees growing from loops
-	vector<int> cnt(n+1, 1);
+	vector<int> cnt(n+1, 0);
 	vector<int> up(n+1);
-	for (int i=1; i<=n; i++) {
-		if (vl[i].nloop != -1 && ef[i].size() > 1) {
-			for (auto &f:ef[i])
+	for (int li=0; li<loop.size(); li++) {
+		auto &l = loop[li];
+		for (int ni=0; ni<l.size(); ni++) {
+			int node = l[ni];
+			for (auto &f:ef[node])
 				if (vl[f].nloop != -1)
-					f = -1; // isolate the tree from loop
-			cnt[i] = dfs(ef, loop[vl[i].nloop], vl[i].idx, i, up, 0, k, cnt);
+					f = -1; // isolate the node from loop
+			(void)dfs(ef, l, ni, node, up, 0, k, cnt);
 		}
 	}
-#if 0
-	// finish computing
+	// final loop nodes computation
 	for (auto &l:loop) {
 		int lsz = l.size();
-		for (int i=0; i<lsz; i++) {
-			int j = (i+1)%lsz;
-			cnt[l[j]] += cnt[l[i]];
-		}
+		for (int i=0; i<lsz-1; i++)
+			cnt[l[i+1]] += cnt[l[i]];
 	}
-#endif
 	for (int i=1; i<=n; i++)
 		printf("%d\n", cnt[i]);
 	return 0;
