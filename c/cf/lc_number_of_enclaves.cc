@@ -25,14 +25,10 @@ public:
 		int szx = A[0].size();
 		vector<vector<int>> mm(szy+2, vector<int>(szx+2));
 		vector<int> parent((szx+2)*(szy+2));
-		for (int y=0; y<szy+2; y++) {
-			mm[y][0] = 1;
-			mm[y][szx+1] = 1;
-		}
-		for (int x=0; x<szx+2; x++) {
-			mm[0][x] = 1;
-			mm[szy+1][x] = 1;
-		}
+		for (int y=0; y<szy+2; y++)
+			mm[y][0] = mm[y][szx+1] = 1;
+		for (int x=0; x<szx+2; x++)
+			mm[0][x] = mm[szy+1][x] = 1;
 		for (int y=0; y<szy; y++) {
 			for (int x=0; x<szx; x++) {
 				mm[y+1][x+1] = A[y][x];
@@ -40,23 +36,17 @@ public:
 					parent[node_num(x+1, y+1, szx+2)] = node_num(x+1, y+1, szx+2);
 			}
 		}
-		for (int y=0; y<=szy; y++) {
-			for (int x=0; x<=szx; x++) {
+		for (int y=0; y<=szy; y++)
+			for (int x=0; x<=szx; x++)
 				if (mm[y][x])
 					for (auto m:mvlst)
 						if (mm[y+m.y][x+m.x])
 							dsu_join(node_num(x+m.x, y+m.y, szx+2), node_num(x, y, szx+2), parent);
-			}
-		}
 		int ans = 0;
-		for (int y=0; y<=szy+1; y++) {
-			for (int x=0; x<=szx+1; x++) {
-				//cerr << dsu_root(node_num(x, y, szx+2), parent) << ' ';
+		for (int y=0; y<=szy+1; y++)
+			for (int x=0; x<=szx+1; x++)
 				if (mm[y][x])
 					ans += (dsu_root(node_num(x, y, szx+2), parent) != dsu_root(0, parent));
-			}
-			//cerr << "\n";
-		}
 		return ans;
     }
 };
