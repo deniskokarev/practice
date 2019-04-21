@@ -22,21 +22,23 @@ int main(int argc, char **argv) {
 	ss[0] = 0;
 	for (int i=0; i<n; i++)
 		ss[i+1] = ss[i]+dd[i];
-	int64_t mn = *min_element(ss, ss+n+1);
-	int64_t ans;
-	if (ss[n] > 0 && h+mn > 0) {
-		ans = -1;
-	} else if (ss[n] == 0) {
-		ans = fnd(ss, n, h);
-	} else {
-		ans = -h/ss[n];
-		ans -= mn/ss[n];
-		ans = max(ans, 0LL);
-		int64_t sm = ss[n]*ans;
-		ans *= n;
-		h += sm;
-		ans += fnd(ss, n, h);
+	int64_t f = 0;
+	if (ss[n] < 0) {
+		int64_t t = -h/ss[n]+1;
+		while (f<t) {
+			int64_t m = f+(t-f)/2;
+			int64_t hs = h+ss[n]*m;
+			if (fnd(ss, n, hs) < 0)
+				f = m+1;
+			else
+				t = m;
+		}
 	}
-	cout << ans << endl;
+	int64_t ans = f*n+fnd(ss, n, h+ss[n]*f);
+	//cerr << "f=" << f << " ans=" << ans << endl;
+	if (ans >= 0)
+		cout << ans << endl;
+	else
+		cout << -1 << endl;
 	return 0;
 }
