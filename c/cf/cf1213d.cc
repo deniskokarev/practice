@@ -2,13 +2,11 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <map>
-#include <set>
 /* CodeForces CF1213D problem */
 using namespace std;
 
-constexpr int BITS = 30;
-constexpr int MX = 2e5+1;
+constexpr int BITS = 20;
+constexpr int MX = (1<<BITS)+1;
 
 int main(int argc, char **argv) {
 	int n, k;
@@ -17,13 +15,13 @@ int main(int argc, char **argv) {
 	for (int i=0; i<n; i++) {
 		int a;
 		cin >> a;
-		int l2 = log2(a);
+		int l2 = log2(a)+1;
 		mm[l2][i].second = a;
 		for (int l=l2-1; l>=0; l--)
 			mm[l][i] = make_pair(mm[l+1][i].first+1, mm[l+1][i].second/2);
 	}
 	int mn = INT_MAX;
-	for (int p=BITS-1; p>=0 && mn == INT_MAX; p--) {
+	for (int p=BITS-1; p>=0; p--) {
 		vector<pair<int,int>> &srt = mm[p];
 		sort(srt.begin(), srt.end());
 		vector<int> k_cnt(MX);
