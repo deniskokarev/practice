@@ -6,16 +6,14 @@
 using namespace std;
 
 class Solution {
-	static bool is_subseq(const string &src, const string &pattern) {
-		vector<vector<int>> dp(2, vector<int>(src.size()+2));
-		for (int i=0,l=0,nl=1; i<pattern.size(); i++,l^=1,nl^=1) {
-			for (int j=1; j<=src.size(); j++) {
-				dp[nl][j] = max(dp[l][j], dp[nl][j-1] + (src[j-1] == pattern[i]));
-				if (dp[nl][j] == pattern.size())
-					return true;
-			}
+	static bool has_subseq(const string &src, const string &pattern) {
+		int si = 0, pi = 0;
+		while (si < src.size() && pi < pattern.size()) {
+			if (src[si] == pattern[pi])
+				pi++;
+			si++;
 		}
-		return false;
+		return (pi == pattern.size());
 	};
 	static vector<string> camel_tokenize(const string &s) {
 		vector<string> res;
@@ -39,7 +37,11 @@ public:
 			if (tok_pattern.size() == tok_src.size()) {
 				fnd = true;
 				for (int i=0; i<tok_pattern.size(); i++)
-					fnd &= is_subseq(tok_src[i], tok_pattern[i]);
+					fnd &= has_subseq(tok_src[i], tok_pattern[i]);
+			} else if (tok_pattern.size()+1 == tok_src.size() && islower(tok_src[0][0])) {
+				fnd = true;
+				for (int i=0; i<tok_pattern.size(); i++)
+					fnd &= has_subseq(tok_src[i+1], tok_pattern[i]);
 			} else {
 				fnd = false;
 			}
