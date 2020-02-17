@@ -1,4 +1,7 @@
 #include <iostream>
+#include <vector>
+#include <algorithm>
+#include <numeric>
 /* CodeForces CF...F problem */
 using namespace std;
 
