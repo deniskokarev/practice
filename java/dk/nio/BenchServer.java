@@ -61,34 +61,34 @@ class ReaderWorker implements Runnable {
 					Iterator<SelectionKey> iter = readSelector.selectedKeys().iterator();
 					while (iter.hasNext()) {
 						SelectionKey key = iter.next();
-		                if (key.isReadable()) {
-		                	SocketChannel client = (SocketChannel)key.channel();
-		                	buffer.clear();
-		                	int sz = client.read(buffer);
-		                	if (sz == -1) {
-		                		System.err.format("closed channel with volume %d MB%n", chan.get(client).get()/1024/1024);
-		                		chan.remove(client);
-		                		client.close();
-		                	} else {
-		                		chan.get(client).inc(sz);
-		                		totalSz.getAndAdd(sz);
-		                	}
-		                }
-		                iter.remove();
+						if (key.isReadable()) {
+							SocketChannel client = (SocketChannel)key.channel();
+							buffer.clear();
+							int sz = client.read(buffer);
+							if (sz == -1) {
+								System.err.format("closed channel with volume %d MB%n", chan.get(client).get()/1024/1024);
+								chan.remove(client);
+								client.close();
+							} else {
+								chan.get(client).inc(sz);
+								totalSz.getAndAdd(sz);
+							}
+						}
+						iter.remove();
 					}
 				}
 			}
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
-        System.err.println("Done reader thread");
+		System.err.println("Done reader thread");
 	}
 	
 	public void addChan(SocketChannel client) throws IOException {
-    	client.configureBlocking(false);
-    	chan.put(client, new ChanStat());
-    	newSockets.add(client);
-    	readSelector.wakeup();
+		client.configureBlocking(false);
+		chan.put(client, new ChanStat());
+		newSockets.add(client);
+		readSelector.wakeup();
 	}
 };
 
@@ -106,28 +106,28 @@ public class BenchServer implements Runnable {
 	boolean shutdown = false;
 	Selector acceptSelector;
 	ServerSocketChannel socket;
-	BenchServer(int nth) throws IOException {
+	BenchServer(int nth, String host) throws IOException {
 		this.nth = nth;
 		acceptSelector = Selector.open(); // selector is open here
 		socket = ServerSocketChannel.open();
-		InetSocketAddress addr = new InetSocketAddress("localhost", PORT);
+		InetSocketAddress addr = new InetSocketAddress(host, PORT);
 		socket.bind(addr);
 		socket.configureBlocking(false);
 		socket.register(acceptSelector, SelectionKey.OP_ACCEPT);
 	}
-    public void run() {
-        try {
-            System.err.println("Shutting down ...");
-            acceptSelector.close();
-    		socket.close();
-            shutdown = true;
-        } catch (IOException e) {
-            Thread.currentThread().interrupt();
+	public void run() {
+		try {
+			System.err.println("Shutting down ...");
+			acceptSelector.close();
+			socket.close();
+			shutdown = true;
+		} catch (IOException e) {
+			Thread.currentThread().interrupt();
 			e.printStackTrace();
 		}
-    }
-    private void update_stats(Stats stat, ReaderWorker rworker[]) {
-    	final int FREQ_SEC = 10;
+	}
+	private void update_stats(Stats stat, ReaderWorker rworker[]) {
+		final int FREQ_SEC = 10;
 		long now = (new Date()).getTime();
 		if (stat.lastStatTS + FREQ_SEC * 1000 < now) {
 			long total = 0;
@@ -137,7 +137,7 @@ public class BenchServer implements Runnable {
 			stat.lastStatTS = now;
 			stat.lastTotal = total;
 		}
-    }
+	}
 	private void do_server() throws IOException {
 		Stats stat = new Stats();
 		ReaderWorker rworker[] = new ReaderWorker[nth];
@@ -155,13 +155,13 @@ public class BenchServer implements Runnable {
 				Iterator<SelectionKey> iter = acceptSelector.selectedKeys().iterator();
 				while (iter.hasNext()) {
 					SelectionKey key = iter.next();
-	                if (key.isAcceptable()) {
-	                	SocketChannel client = ((ServerSocketChannel)key.channel()).accept();
-	                	rworker[idx].addChan(client);
-	                	idx++;
-	                	idx %= nth;
-	                }
-	                iter.remove();
+					if (key.isAcceptable()) {
+						SocketChannel client = ((ServerSocketChannel)key.channel()).accept();
+						rworker[idx].addChan(client);
+						idx++;
+						idx %= nth;
+					}
+					iter.remove();
 				}
 			} else {
 				break;
@@ -176,16 +176,19 @@ public class BenchServer implements Runnable {
 				e.printStackTrace();
 			}
 		}
-        System.err.println("Finished shutdown ...");
+		System.err.println("Finished shutdown ...");
 	}
 	public static void main(String[] args) {
 		try {
 			int nth = 1;
+			String host = "localhost";
 			if (args.length > 0)
 				nth = Integer.parseInt(args[0]);
 			if (nth <= 0)
 				throw new Exception("number of threads must be positive");
-			BenchServer server = new BenchServer(nth);
+			if (args.length > 1)
+				host = args[1];
+			BenchServer server = new BenchServer(nth, host);
 			Runtime.getRuntime().addShutdownHook(new Thread(server));
 			server.do_server();
 		} catch(Exception ex) {
@@ -193,64 +196,3 @@ public class BenchServer implements Runnable {
 		}
 	}
 }
-
-/**
-public class BenchServer {
-	private static void log(String str) {
-		System.out.println(str);
-	}
-	private static void do_server() throws IOException {
-		Selector acceptSelector = Selector.open(); // selector is open here
-		Selector readSelector = Selector.open(); // selector is open here
-
-		// ServerSocketChannel: selectable channel for stream-oriented listening sockets
-		ServerSocketChannel socket = ServerSocketChannel.open();
-		InetSocketAddress addr = new InetSocketAddress("localhost", 1111);
- 
-		// Binds the channel's socket to a local address and configures the socket to listen for connections
-		socket.bind(addr);
- 
-		// Adjusts this channel's blocking mode.
-		socket.configureBlocking(false);
- 
-		socket.register(acceptSelector, SelectionKey.OP_ACCEPT);
-		ByteBuffer buffer = ByteBuffer.allocate(1024*1024);
-		HashMap<SocketChannel,MutableInt> chanVolume = new HashMap<SocketChannel,MutableInt>();
-		while (true) {
-			// Selects a set of keys whose corresponding channels are ready for I/O operations
-			selector.select();
-			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
-			while (iter.hasNext()) {
-				SelectionKey key = iter.next();
-                if (key.isAcceptable()) {
-                	SocketChannel client = ((ServerSocketChannel)key.channel()).accept();
-                	client.configureBlocking(false);
-                	client.register(selector, SelectionKey.OP_READ);
-                	chanVolume.put(client, new MutableInt());
-                }
-                if (key.isReadable()) {
-                	SocketChannel client = (SocketChannel)key.channel();
-                	buffer.clear();
-                	int sz = client.read(buffer);
-                	if (sz == -1) {
-                		System.err.format("closed channel with volume %d%n", chanVolume.get(client).get());
-                		chanVolume.remove(client);
-                		client.close();
-                	} else {
-                		chanVolume.get(client).inc(sz);
-                	}
-                }
-                iter.remove();
-			}
-		}
-		
-	}
-	public static void main(String[] args) {
-		try {
-			do_server();
-		} catch(IOException ex) {
-			ex.printStackTrace();
-		}
-	}
-}
-*/

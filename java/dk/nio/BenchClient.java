@@ -14,12 +14,12 @@ public class BenchClient implements Runnable {
 	Socket socket;
 	OutputStream os;
 	AtomicLong totalSz;
-	BenchClient() throws UnknownHostException, IOException {
+	BenchClient(String host) throws UnknownHostException, IOException {
 		buffer = new byte[SZ];
 		Random random = new Random();
 		for (int i=0; i<SZ; i++)
 			buffer[i] = (byte)random.nextInt(256);
-		socket = new Socket("localhost", 1111);
+		socket = new Socket(host, 1111);
 		os = socket.getOutputStream();
 		totalSz = new AtomicLong();
 	}
@@ -38,20 +38,23 @@ public class BenchClient implements Runnable {
 	}
 	public static void main(String[] args) {
 		int nth = 1;
+		String host = "localhost";
 		try {
 			if (args.length > 0)
 				nth = Integer.parseInt(args[0]);
 			if (nth <= 0)
 				throw new Exception("number of threads must be positive");
+			if (args.length > 1)
+				host = args[1];
 			BenchClient bc[] = new BenchClient[nth];
 			Thread clth[] = new Thread[nth];
 			for (int i=0; i<nth; i++) {
-				bc[i] = new BenchClient();
+				bc[i] = new BenchClient(host);
 				clth[i] = new Thread(bc[i]);
 				clth[i].start();
 			}
-	    	final int FREQ_SEC = 10;
-	    	long lastTotal = 0;
+			final int FREQ_SEC = 10;
+			long lastTotal = 0;
 			while (true) {
 				Thread.sleep(FREQ_SEC * 1000);
 				long total = 0;
