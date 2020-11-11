@@ -1,5 +1,4 @@
 class Solution {
-	static constexpr int MXA = 1000;
 public:
 	static int bestTeamScore(const vector<int>& scores, const vector<int>& ages) {
 		int sz = scores.size();
@@ -7,16 +6,26 @@ public:
 		for (int i=0; i<sz; i++)
 			sa[i] = {scores[i], ages[i]};
 		sort(sa.begin(), sa.end());
-		vector<int> as(MXA+1); // age->sum
+		map<int,int> as; // age->score
+		as[0] = 0;
 		for (int i=0; i<sz; i++) {
 			int score = sa[i].first;
 			int age = sa[i].second;
-			int mx = -1;
-			for (int a=0; a<=age; a++)
-				mx = max(mx, as[a]);
-			as[age] = mx + score;
+			auto fnd = as.lower_bound(age);
+			if (fnd != as.end() && fnd->first == age)
+				fnd->second += score;
+			else
+				as[age] = prev(fnd)->second + score;
+			fnd = as.find(age);
+			int hi = fnd->second;
+			++fnd;
+			while (fnd != as.end() && fnd->second <= hi) {
+				auto del = fnd;
+				++fnd;
+				as.erase(del);
+			}
 		}
-		return *max_element(as.begin(), as.end());
+		return prev(as.end())->second;
 	}
 };
 
