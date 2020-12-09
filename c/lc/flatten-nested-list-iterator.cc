@@ -2,6 +2,7 @@ class NestedIterator {
     stack<pair<reference_wrapper<vector<NestedInteger>>,int>> stack;
     int curr;
 public:
+    // try to navigate from current node to first leaf
     bool goto_next_leaf() {
         bool found = false;
         if (!stack.empty()) {
@@ -13,24 +14,27 @@ public:
                     found = true;
                 } else {
                     stack.push({list[pos].getList(),0});
-                    found |= goto_next_leaf();
+                    if (!goto_next_leaf())
+                        stack.pop();
+                    else
+                        found = true;
                 }
                 pos++;
             }
-            if (!found)
-                stack.pop();
         }
         return found;
     }
     
     NestedIterator(vector<NestedInteger> &nestedList):stack() {
         stack.push({nestedList,0});
-        goto_next_leaf();
+        if (!goto_next_leaf())
+            stack.pop();
     }
     
     int next() {
         int res = curr;
-        while (!stack.empty() && !goto_next_leaf());
+        while (!stack.empty() && !goto_next_leaf())
+            stack.pop();
         return res;
     }
     
