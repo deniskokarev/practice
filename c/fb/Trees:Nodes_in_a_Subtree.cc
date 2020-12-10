@@ -63,11 +63,36 @@ struct Query {
 };
 
 // Add any helper functions you may need here
+using ACNT = array<int,26>;
+using STAT = unordered_map<int,ACNT>;
 
+void dfs_stat(STAT &stat, const Node* root, const string &s) {
+  if (root) {
+    ACNT acnt {{0}};
+    int id = root->val - 1;
+    acnt[s[id]-'a']++;
+    for (auto c:root->children) {
+      if (c) {
+        int cid = c->val-1;
+        dfs_stat(stat, c, s);
+        for (unsigned i=0; i<acnt.size(); i++)
+          acnt[i] += stat[cid][i];
+      }
+    }
+    stat[id] = acnt;
+  }
+}
 
 vector<int> countOfNodes(Node* root, vector<Query> queries, string s) {
   // Write your code here
-  
+  STAT stat;
+  dfs_stat(stat, root, s);
+  int qsz = queries.size();
+  vector<int> res(qsz);
+  int i=0;
+  for (auto &q:queries)
+    res[i++] = stat[q.u-1][q.c-'a'];
+  return res;
 }
 
 
