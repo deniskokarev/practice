@@ -40,7 +40,29 @@ using namespace std;
 
 bool isBalanced(string s) {
   // Write your code here
-  
+  stack<char> stack;
+  for (auto c:s) {
+    switch (c) {
+      case '(':
+        stack.push(')');
+        break;
+      case '{':
+        stack.push('}');
+        break;
+      case '[':
+        stack.push(']');
+        break;
+      case ')':
+      case '}':
+      case ']':
+        if (stack.empty() || stack.top() != c)
+          return false;
+        else
+          stack.pop();
+        break;
+    }
+  }
+  return stack.empty();
 }
 
 
