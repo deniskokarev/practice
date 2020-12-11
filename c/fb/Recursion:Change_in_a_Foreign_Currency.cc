@@ -30,10 +30,28 @@ using namespace std;
 
 // Add any helper functions you may need here
 
+constexpr int MXV = 1e6;
+
+bool dfs_search(int root, vector<bool> &seen, const vector<int>& denominations, int tgt) {
+  if (root == tgt) {
+    return true;
+  } else if (root > tgt) {
+    return false;
+  } else if (seen[root]) {
+    return false;
+  } else {
+    for (int d:denominations)
+      if (dfs_search(root+d, seen, denominations, tgt))
+        return true;
+    seen[root] = true;
+    return false;
+  }
+}
 
 bool canGetExactChange(int targetMoney, vector<int>& denominations){
   // Write your code here
-  
+  vector<bool> seen(targetMoney);
+  return dfs_search(0, seen, denominations, targetMoney);
 }
 
 
