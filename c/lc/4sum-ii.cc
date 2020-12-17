@@ -2,17 +2,16 @@ class Solution {
 public:
     int fourSumCount(vector<int>& A, vector<int>& B, vector<int>& C, vector<int>& D) {
         int sz = A.size();
-        unordered_map<int,int> cnt_ab;
         unordered_map<int,int> cnt_cd;
-        for (int i=0; i<sz; i++) {
-            for (int j=0; j<sz; j++) {
-                cnt_ab[A[i]+B[j]]++;
-                cnt_cd[C[i]+D[j]]++;
-            }
-        }
+        for (int c:C)
+            for (int d:D)
+                cnt_cd[c+d]++;
         int ans = 0;
-        for (auto ab:cnt_ab)
-            ans += ab.second * cnt_cd[-ab.first];
+        unordered_map<int,int>::iterator it_cd;
+        for (int a:A)
+            for (int b:B)
+                if ((it_cd = cnt_cd.find(-a-b)) != cnt_cd.end())
+                    ans += it_cd->second;
         return ans;
     }
 };
