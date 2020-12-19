@@ -1,0 +1,198 @@
+
+Design a logging system that will log messages from multiple actors
+(processes) into a single logfile.  The system should log each output to
+a single line of text in the logfile, along with a timestamp prepended
+and the actor's name included.
+
+Example log entries:
+<timestamp>              <process name>  <log message>
+10:10:33 5/30/2020 EDT   Webserver        Established connection from 10.30.44.56
+10:10:35 5/30/2020 EDT   ticketCounter    Got a new ticket
+
+The API's exposed to the clients are:
+
+   enroll(name)  - establish that this actor (identified by "name") will be logging
+   log(message)  - log a message (associated with the previously enrolled name)
+   withdraw()    - release any resources established by enroll() 
+
+
+
+What are some basic design alternatives and their tradeoffs?
+
+
+
+   +---------------+                         +-------------------+
+   | Web server    |    ----->               |                   |
+   +---------------+                         |    Common Log     |
+                                             |                   |
+   +----------------+                        |      File         |
+   | Ticket counter |   ----->               \                   |
+   +----------------+                         \                  |
+                                               \                 |
+   +-----------------+                          \                |
+   | database server |  ----->                   \               |
+   +-----------------+                            \              |
+                                                   \             |         
+                                                    \ ___________+                           
+
+constexpr string LOG_FNAME {"/var/log/app.log"};
+
+struct Session {
+    string name;
+    FILE *flog;
+};
+
+Session enroll(const string &name) {
+    FILE *flog = fopen(LOG_FNAME, "a"); // >> append
+    // TODO err handling ...
+    return Session {name, flog};
+}
+
+void withdraw(Session &session) {
+    fclose(session.flog); // TODO err handling
+}
+
+void log(Session &session, const string &message) {
+    int rc;
+    while ((rc=flock(session.flog, EXCLUSIVE)) != ERR_INTR);
+    // flock error handling rc
+    string snow = strftime(""); // get date
+    fprintf(session.flog, "%s %s %s\n", snow, session.name.c_ptr(), message.c_ptr());
+    fflush(session.flog);
+    funlock(session.flog);
+}
+
+// $ cat
+#include <stdio.h>
+#include <stdlib.h>
+
+void die(const char *err) {
+    fprintf(stderr, "%s\n", err);
+    exit(-1);
+}
+
+#define BUF_SZ  16*1024
+
+int main(int argc, char **argv) {
+    char buf[BUF_SZ];
+    int sz;
+    int rc;
+    while ((sz=fread(buf, 1, BUF_SZ, stdin)) == BUF_SZ) {
+        rc = fwrite(buf, BUF_SZ, 1, stdout);
+        if (rc != 1)
+            die("Write error");
+    }
+    if (sz > 0) {
+        rc = fwrite(buf, sz, 1, stdout);
+        if (rc != 1)
+            die("Write error");
+    } else if (ferror(stdin)) {
+        die("REad error");
+    }
+    return 0;
+}
+
+cat < /usr/dict/words | head
+
+
+
+
+data file:
+
+
+The fields of this file represent the name, department, 
+and years of tenure respectively for each employee
+
+
+$ cat data
+Norman Goldstein|engineering|22
+Becky johnson|accounting|23
+George Henry|sales|22
+June Smith|engineering|10
+Jimmy Angler|sales|4
+David kratchaw|engineering|15
+Andrew Badarmas|accounting|21
+$
+
+0)  Please list the employee names (unordered)  
+cut -d\| -f1 <data
+1)  how many people work in accounting?
+
+awk -F\| '($2=="accounting"){n++}END{print n}' <data
+
+2)  who has the longest tenure?
+
+sort -t\| -k3,3r data | head -1
+3)  which department has the most employees?
+
+cut -d\| -f2 | sort | uniq -c | sort -k1,1nr | head -1
+
+
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <queue>
+/* CodeForces CF...D problem */
+using namespace std;
+
+class Solution {
+	struct C3D {
+		int h, w, l;
+		//int sm_l;
+	};
+
+public:
+	static int maxHeight(const vector<vector<int>>& cuboids) {
+		int sz = cuboids.size();
+		vector<C3D> dp(3*sz);
+		vector<vector<pair<int,int>>> gg(3*sz);
+		for (int i=0; i<sz; i++) {
+			auto &c = cuboids[i];
+			C3D cb[3] = {
+				{c[0], c[1], c[2]},
+				{c[1], c[2], c[0]},
+				{c[2], c[0], c[1]}
+			};
+			int p = i*3;
+			for (int ci=0; ci<3; ci++) {
+				auto &c = cb[ci];
+				for (int j=0; j<p; j++) {
+					auto &cl = dp[j];
+					if (cl.h <= c.h && cl.w <= c.w && cl.l <= c.l)
+						gg[p+ci].push_back({c.l, j});
+					else if (cl.h >= c.h && cl.w >= c.w && cl.l >= c.l)
+						gg[j].push_back({c.l, p+ci});
+				}
+				dp[p+ci] = c;
+			}
+		}
+		int ans = 0;
+		for (int i=0; i<3*sz; i++) {
+			priority_queue<pair<int,int>> qq;
+			qq.push({-1, i});
+			vector<int> dist(sz);
+			while (!qq.empty()) {
+				int l = qq.top().first;
+				int to = qq.top().second;
+				qq.pop();
+				if (dist[to] < l) {
+					dist[to] = l;
+					ans = max(ans, l);
+					for (auto &e:gg[to])
+						qq.push({l+e.first, e.second});
+				}
+			}
+		}
+		return ans+1;
+	}
+};
+
+int main(int argc, char **argv) {
+	cout << Solution::maxHeight({{50,45,20},{95,37,53},{45,23,12}}) << endl;
+	cout << Solution::maxHeight({{38,25,45},{76,35,3}}) << endl;
+	cout << Solution::maxHeight({{7,11,17},{7,17,11},{11,7,17},{11,17,7},{17,7,11},{17,11,7}}) << endl;
+	return 0;
+}
