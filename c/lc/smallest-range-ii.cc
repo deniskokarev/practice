@@ -17,7 +17,7 @@ public:
 					ss.erase(it);
 					it = nit;
 				} else {
-					++it;
+					break;
 				}
 				mn_diff = min(mn_diff, prev(ss.end())->first - ss.begin()->first);
 			}
