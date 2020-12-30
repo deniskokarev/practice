@@ -1,6 +1,6 @@
 /**
  * https://leetcode.com/problems/checking-existence-of-edge-length-limited-paths/
- * Hmm, gives TL
+ * Fixed
  * Works in O(|E| * log(|E|) + |Q| * log(|V|))
  */
 
@@ -73,8 +73,11 @@ struct E {
 	int score;
 	int id;
 	int mx;
-	bool operator<(const E &o) const {
-		return score > o.score;
+};
+
+struct CMP_E {
+	bool operator()(const E *a, const E *b) {
+		return a->score > b->score;
 	}
 };
 
@@ -83,23 +86,24 @@ class Solution {
 		vector<vector<int>> rg(gg.size());
 		vector<bool> seen(gg.size());
 		int nseen = gg.size();
-		priority_queue<E> pq;
+		priority_queue<const E*,vector<const E*>,CMP_E> pq;
 		seen[0] = true;
 		nseen--;
 		for (auto ce_id:gg[0])
-			pq.push(ee[ce_id]);
+			pq.push(&ee[ce_id]);
 		while (!pq.empty()) {
-			E e = pq.top();
-			int root = e.to;
+			const E *pe = pq.top();
+			int root = pe->to;
 			pq.pop();
 			if (!seen[root]) {
 				seen[root] = true;
-				rg[e.from].push_back(e.id);
+				rg[pe->from].push_back(pe->id);
 				nseen--;
 				if (!nseen)
 					break;
 				for (auto &ce_id:gg[root])
-					pq.push(ee[ce_id]);
+					if (!seen[ee[ce_id].to])
+						pq.push(&ee[ce_id]);
 			}
 		}
 		return rg;
@@ -107,7 +111,7 @@ class Solution {
 	// populate par_e[node] -> [parent_edge_up(-1), parent_edge_up(-2), parent_edge_up(-4), -8, ...
 	// populate mx_score_e[edge] -> mx score from edge edge below
 	// @return mx_score
-	static void prep_r(vector<array<int,20>> &par_e, vector<array<int,20>> &mx_score_e, const vector<vector<int>> tree, const vector<E> &ee, int e_id, vector<int> &up_e, vector<int> &dep, int lvl) {
+	static void prep_r(vector<array<int,20>> &par_e, vector<array<int,20>> &mx_score_e, const vector<vector<int>> &tree, const vector<E> &ee, int e_id, vector<int> &up_e, vector<int> &dep, int lvl) {
 		int root = ee[e_id].to;
 		dep[root] = lvl;
 		up_e.push_back(e_id);
@@ -126,7 +130,7 @@ class Solution {
 		vector<array<int,20>> mx_score_e;
 		vector<int> dep;
 	};
-	static PR prep(const vector<vector<int>> tree, const vector<E> &ee) {
+	static PR prep(const vector<vector<int>> &tree, const vector<E> &ee) {
 		PR res { vector<array<int,20>>(tree.size(), {{0}}), vector<array<int,20>>(ee.size(), {{0}}), vector<int>(tree.size())};
 		vector<int> up_e;
 		prep_r(res.par_e, res.mx_score_e, tree, ee, 0, up_e, res.dep, 0);
