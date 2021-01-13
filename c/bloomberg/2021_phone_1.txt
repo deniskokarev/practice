@@ -1,0 +1,61 @@
+#include <iostream>
+#include <cmath>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <array>
+
+using namespace std;
+
+/* 
+1. Write a function that checks whether two strings are anagrams of each other. A string s1 is an anagram of another string s2 if the same characters exist in both s1 and s2 in any order. For example: "abcd" and "cdab" are anagrams. Also "aabfffr" and "afbfraf" are anagrams.
+2. Assume we get a list of strings. Find if one or more strings are anagrrams of each other?
+*/
+
+// a = abca
+// b = caba
+
+#define dim(X) int((sizeof(X)/sizeof(X[0])))
+
+/**
+* @return true if a is anagram of b
+*/
+bool is_anagram(const string &a, const string &b) {
+    int ca[256]{0};
+    int cb[256]{0};
+    for (unsigned char c:a)
+        ca[c]++;
+    for (unsigned char c:b)
+        cb[c]++;
+    bool ans = true;
+    for (int i=0; i<dim(ca); i++)
+        ans &= (ca[i] == cb[i]);
+    return ans;
+}
+
+size_t hash(const array<int,256> &aa) {
+    constexpr uint64_t BASE = 127;
+    uint64_t h = 0;
+    for (int i=0;)
+    
+}
+
+bool has_anagram(const vector<string> &ss) {
+    int sz = ss.size();
+    vector<array<int,256>> hist(sz);
+    for (int i=0; i<sz; i++) {
+        for (unsigned char c:ss[i])
+            hist[i][c]++;
+            
+    }
+    
+}
+
+//ca = ...0,0...
+// ca['a']
+int main() {
+    const char *sans[] {"false", "true"};
+    cout << "(true) test1: " << sans[is_anagram("abca", "caba")] << endl;
+    return 0;
+}
