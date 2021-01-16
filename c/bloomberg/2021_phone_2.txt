@@ -1,0 +1,76 @@
+#include <map>
+#include <set>
+#include <list>
+#include <cmath>
+#include <ctime>
+#include <deque>
+#include <queue>
+#include <stack>
+#include <string>
+#include <bitset>
+#include <cstdio>
+#include <limits>
+#include <vector>
+#include <climits>
+#include <cstring>
+#include <cstdlib>
+#include <fstream>
+#include <numeric>
+#include <sstream>
+#include <iostream>
+#include <algorithm>
+#include <unordered_map>
+
+using namespace std;
+
+// @param s - non-empty string
+char find_first_non_dup(const string &s) {
+    int cnt[256]{0};
+    for (unsigned char c:s)
+        cnt[c]++;
+    for (unsigned char c:s)
+        if (cnt[c] == 1)
+            return c;
+    return '\xff';
+}
+
+// @param s - non-empty string
+char find_nth_non_dup(const string &s, int nth) {
+    int cnt[256]{0};
+    for (unsigned char c:s)
+        cnt[c]++;
+    for (unsigned char c:s) {
+        nth -= (cnt[c] == 1);
+        if (!nth)
+            return c;
+    }
+    return '\xff';
+}
+
+// @param s - non-empty string
+char find_any_non_dup(const string &s) {
+    int cnt[256]{0};
+    for (unsigned char c:s)
+        cnt[c]++;
+    for (int c=0; c<256; c++)
+        if (cnt[c] == 1)
+            return c;
+    return '\xff';
+}
+
+int main() {
+    /* Enter your code here. Read input from STDIN. Print output to STDOUT */
+    string s;
+    cin >> s;
+    if (s.empty()) {
+        cerr << "hmm, empty string";
+        exit(-1);
+    }
+    char res = find_first_non_dup(s);
+    if (res != '\xff')
+        cout << "first non dup: '" << res << "'" << endl;
+    else
+        cout << "all are dups" << endl;
+    return 0;
+}
+
