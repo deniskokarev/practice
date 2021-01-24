@@ -1,0 +1,189 @@
+Bloomberg Indices Team
+Requisition 83718 - Sr. SWE/SRE - Bloomberg Indices
+
+Recruiters:
+Emily Hunter  ehunter49@bloomberg.net
+Katie Rasheed krasheed1@bloomberg.net
+Christopher Ioannou cioannou9@bloomberg.net
+
+################ coding 1 ################
+********** George ************
+
+// Transaction Fraud
+// Name, Amount, Time, Location
+// George, 20, 10, NY
+
+// 1) Any transaction with amount greater than 1000USD
+// Emily, 2000, 30, London
+
+// 2) Any transaction by a user, who has a previous transaction less than 60 minutes earlier, and in a different location
+// Anna, 50, 60, London
+// ...
+// Anna, 20, 90, Singapore
+#include <iostream>
+#include <unordered_map>
+
+using  namespace std;
+
+struct R {
+    string nm;
+    int sum;
+    time_t t;
+    string loc;    
+    ostream &os operator<<(ostream &os) const {
+        return os;      
+    }
+};
+// for if in 1 2 3; do ./run_rules <"in${i}.txt"  > ""
+int parse(R &out, const string &in);
+
+constexpr int R1_TH = 1000;
+constexpr int R2_T_TH = 60;
+
+int main(int argc, char **argv) {
+    string s;
+    unordered_map<string, R> last;
+    while ((cin >> s)) {
+        R r;
+        int err = parse(r, s);
+        // TODO chgec err
+        if (r.sum > R1_TH)
+            cout << "R1|" << s << '\n';
+        R &old = last[r.nm];
+        if (old.loc != r.loc && old.t > r.t-R2_T_TH)
+            cout << "R2|" << s << '\n';
+        old.t = r.t;
+        old.loc = r.loc;
+        old.sum = r.sum;
+    }
+    return 0;
+}
+
+################ coding 2 ################
+***************** Ashish ***************
+
+/**
+
+10min left. Started writing then said that done it before and given two ideas - set+hashmap and custom_hash+hashmap
+
+Ticker, Size, price, B/S
+MSFT, 1000, 200, B
+GOOGL, 1000, 1000, S
+APPL, 500, 300, B
+TSLA, 800, 1000, S
+
+
+MSFT, 1000, 180, B
+
+*/
+
+
+
+#include <iostream>
+#include <cmath>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <set>
+#include <unordered_map>
+
+using namespace std;
+
+struct R {
+    string nm;
+    int stp;  
+};
+
+int read_record(R &r, istream &is);
+
+class DB {
+    set<int,string> ord; // size*price -> name
+    unordered_map<string,int> old; // name -> old size*price
+    void add_new(const R &r) {
+        
+    }    
+}
+
+int main() {
+    R r;
+    while (read_record(r,cin)>0) {
+        
+    }
+
+    return 0;
+}
+
+Their dev team is 40 people formerly Barclays. That is Win/C#/MSSQL portion. Working towards using MS .Net on linux, not Mono
+
+
+
+################ SRE ################
+******** Ralph - SRE from other team, Prandeep - SRE from the team
+
+describe SRE practices on the project: a-la Google Nest, IOT, Thermistat, Backend, GUI
+
+Mentioned src code organization, including forking workflow
+
+Automated build
+
+Unit testing/code coverage
+
+Packaging with RPM and hosting on Nexus
+
+Rolling deployment into NTCs using ansible
+
+UAT environment
+
+Monitoring/Alerting using Prometheus/Grafana/AlertManager
+
+Mentioned SLA and 1/2 SLO. Individual lags metricses to narrow down the problem
+
+
+Didn't know about OpenTracing https://opentracing.io
+
+Mentined that services won't work in AT&T anyways, because you'll never find responsible party
+
+
+################ Behavioral 1 ################
+Tawfeek Lawal - SRE team lead, Noel - mgr eng team
+
+What have I learned on the job?
+
+- Political correctness
+- Designing and building big systems
+
+How to instrument legacy Web GUI + Backend + DB system with monitoring
+
+Started talking about intriducing ficticious data set, ficticious set of users and automated `curl` robots to measure end-to-end quality
+
+Then was asked how to troubleshoot users complains, which led to the necessity to correlate log records in all systems and having a concept
+of session id.
+
+Then was asked how to convince a component owner in this pipeline to include session id into the log files.
+Mentioned:
+- Using a mapping between their and ours sessions - which is a poor choice
+- Funding them
+- Lending them people
+- Teaming up with other customers of this component
+- Attempting to rewrite
+
+Describe when last time had to rollback
+
+Answered:
+- easy when software is deployed using ansible, just remove the RPM from repo and re-play the playbook
+- having rollback document ready
+
+Their linux soft is packaged in DEB
+
+They don't use containers as extensively yet
+
+
+################ Behavioral 2 ################
+Gareth Houghon - Mgr all index team
+
+Asking why SRE and why Bloomberg
+
+Asking about most interesting project and drill down on one technical aspect.
+
+Told about BSA and explained how exactly once delivery works using zk.
