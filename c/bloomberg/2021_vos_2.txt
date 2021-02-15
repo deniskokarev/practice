@@ -1,0 +1,353 @@
+Bloomberg Indices Team
+Requisition No. 86529 - SRE (C++) - Trading Systems Infrastructure
+
+Recruiters:
+Emily Hunter  ehunter49@bloomberg.net
+Katie Rasheed krasheed1@bloomberg.net
+Christopher Ioannou cioannou9@bloomberg.net
+
+= 1 =
+
+== a ==
+
+Pierre-Oliver
+
+#/*
+#In this exercise, the goal is to allocate long running tasks to machines.
+#We wish to balance the load fairly across the machines without worrying about the machine's maximum capacity.
+#Each task is represented by its name and its abstract cost or load.
+#
+#We get 2 input lists containing the tasks and the machines.
+#
+#Example tasks to allocate:
+#Long running task name , load/cost
+#Blue , 2
+#Red , 4
+#Green , 6
+#Yellow, 1
+#Orange, 2
+#
+#Example machines where we can allocate tasks:
+#name
+#Alpha
+#Beta
+#Gamma
+#
+#
+#Sample result for the above input:
+#Alpha: [Green]       => load 6
+#Beta: [Red, Yellow]  => load 5
+#Gamma: [Blue,Orange] => load 4
+#
+#Please
+#1) Create types/classes to represent the data (input and output)
+#2) Describe a possible algorithm to assign the tasks to the machines
+#3) Implement algorithm in your language of choice (C++, Python, Java or other)
+#4) write a display function that shows the solution solution
+#5) Discuss other criteria and issues with load balancing.
+#*/
+#
+
+from __future__ import print_function
+import heapq
+
+class Task:
+    def __init__(self, nm, cost):
+        self.nm = nm
+        self.cost = cost
+    def __lt__(self, o):
+        return self.cost > o.cost
+        
+class Machine:
+    def __init__(self, nm):
+        self.nm = nm        
+
+class SchResults:
+    def __init__(self, mach):
+        self.cost = 0
+        self.mach = mach
+        self.tasks = []
+        
+    def add(self, task):
+        self.tasks.append(task)
+        self.cost += task.cost
+        
+    def __lt__(self, o):
+        return self.cost < o.cost
+    
+#class Scheduler:
+#    def __init__(self, machines):
+#        self.machines = machines
+
+def build_schedule(machines, tasks):
+    """
+    @param machines - list of Machines
+    @param tasks - list of tasks
+    @return SchResults
+    """
+    tasks.sort()
+    nmach = len(machines)
+    heap = [SchResults(m) for m in machines]
+    for t in tasks:
+        top = heapq.heappop(heap)
+        top.add(t)
+        heapq.heappush(heap, top)
+    return heap
+
+    
+#
+# Main
+#    
+tasks = [Task(n,c) for (n,c) in [ ("blue", 2), ("read",4), ("green", 3), ("Yellow", 6)]]
+machines = [Machine(m) for m in ["alpha", "beta", "gamma"]]
+
+for sr in build_schedule(machines, tasks):
+    print(sr.mach.nm, sr.cost, end=' ')
+    for t in sr.tasks:
+        print(t.nm, end=',')
+    print()
+
+== b ==
+
+James
+
+server - side application investigation
+
+strace, gdb attach+bt+detach
+        
+= 2 =
+
+Saru, Oleg Kosenkov
+
+//std::weak_ptr
+
+// RAII - dtor
+// C++ }
+
+//::open()
+//::close()
+template<class P>
+struct s_ptr {
+    // DS
+    P *p;
+    int cnt;
+};
+
+template<class P> class u_ptr {
+    //P *p;
+    s_ptr<P> *shared; // MT
+public:
+    u_ptr():p(nullptr),cnt(0) {
+    }
+    u_ptr(u_ptr<P> &o) {
+        p = o.p;
+        o.p = nullptr;
+    }
+    u_ptr(u_ptr<P> &&o) {
+    }
+    u_ptr(P *p):p(p) {
+    }
+    void operator=(P *ap) {
+        if (p && ap != p)
+            delete p;
+        p = ap;
+    }
+    P *operator->() const throw {
+        throw 1;
+        return p;
+    }
+    P* get_ptr() const {
+        return p;
+    }
+    operator bool() const {
+        return p != nullptr;
+    }
+    ~u_ptr() {
+        if (!shared->cnt == 1) {
+            delete shared->p;
+            delete shared;
+        } else {
+            shared->cnt--;
+        }
+    }
+};
+
+struct Trade {
+  int m_trade_number;
+  double m_quantity;  
+  
+  bool book() {
+      return true;
+  }
+};
+
+void f(u_ptr<Trade> const& p) {
+    p->book();
+}
+
+void g(Trade * t) {
+    
+}
+ 
+int main(int argc, char **argv) {
+    using BufferPtr = u_ptr<char>;
+    
+    BufferPtr b { new char[100]};
+    
+    
+    u_ptr<Trade> upc;
+    u_ptr<Trade> upc { nullptr};
+    u_ptr<Trade> upc {};
+    Trade *ts = new Trade();
+    u_ptr<Trade> upc(ts);
+    
+    upc = ts;
+    
+    upc->book();
+    
+    u_ptr<Trade> upc2 {upc};
+    
+    //upc2?
+    //upc?
+    //upc = new Trade();
+    
+    g(upc2.get_ptr());
+    upc = new Trade();
+    
+    int a,b;
+    a = b = 4;
+    
+    try {
+        throw Trade();
+    }
+    catch(...)
+    {
+        throw;
+    }
+
+
+    u_ptr<Trade> upc {upc2}; // cctor -> contt   
+    int x = upc2 ? 1 : 2;
+    
+    // ~upc();
+    
+    /*
+    
+    throw
+    
+    1.
+    
+    */
+}
+
+
+//std::weak_ptr
+
+// RAII - dtor
+// C++ }
+
+//::open()
+//::close()
+template<class P>
+struct s_ptr {
+    // DS
+    P *p;
+    int cnt;
+};
+
+template<class P> class u_ptr {
+    //P *p;
+    s_ptr<P> *shared; // MT
+public:
+    u_ptr():p(nullptr),cnt(0) {
+    }
+    u_ptr(u_ptr<P> &o) {
+        p = o.p;
+        o.p = nullptr;
+    }
+    u_ptr(u_ptr<P> &&o) {
+    }
+    u_ptr(P *p):p(p) {
+    }
+    void operator=(P *ap) {
+        if (p && ap != p)
+            delete p;
+        p = ap;
+    }
+    P *operator->() const {
+        return p;
+    }
+    P* get_ptr() const {
+        return p;
+    }
+    operator bool() const {
+        return p != nullptr;
+    }
+    ~u_ptr() {
+        if (!shared->cnt == 1) {
+            delete shared->p;
+            delete shared;
+        } else {
+            shared->cnt--;
+        }
+    }
+};
+
+struct Trade {
+  int m_trade_number;
+  double m_quantity;  
+  
+  bool book() {
+      return true;
+  }
+};
+
+void f(u_ptr<Trade> const& p) {
+    p->book();
+}
+
+void g(Trade * t) {
+    
+}
+ 
+int main(int argc, char **argv) {
+    using BufferPtr = u_ptr<char>;
+    
+    BufferPtr b { new char[100]};
+    
+    
+    u_ptr<Trade> upc;
+    u_ptr<Trade> upc { nullptr};
+    u_ptr<Trade> upc {};
+    Trade *ts = new Trade();
+    u_ptr<Trade> upc(ts);
+    
+    upc = ts;
+    
+    upc->book();
+    
+    u_ptr<Trade> upc2 {upc};
+    
+    //upc2?
+    //upc?
+    //upc = new Trade();
+    
+    g(upc2.get_ptr());
+    upc = new Trade();
+    
+    int a,b;
+    a = b = 4;
+
+
+    u_ptr<Trade> upc {upc2}; // cctor -> contt   
+    int x = upc2 ? 1 : 2;
+    
+    // ~upc();
+    
+    /*
+    
+    
+    
+    */}
+
+
