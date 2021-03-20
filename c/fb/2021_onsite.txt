@@ -1,0 +1,283 @@
+#1 Andy
+==============
+
+Welcome to Facebook!
+
+This is just a simple shared plaintext pad, with no execution capabilities.
+
+When you know what language you would like to use for your interview,
+simply choose it from the dropdown in the top bar.
+
+Enjoy your interview!
+  
+  I'm on https://fb.bluejeans.com/168271187
+
+
+question (a)
+--------------
+  
+  
+Implement the power function that computes a to the power of b using basic arithmetic operations (+, -, *, /).
+
+Examples: 2^5 = 32, 5^4 = 625
+
+  // O(e)
+uint64_t pow(uint64_t b, int e) {
+  uint64_t r = 1;
+  while (e--)
+    r *= b;
+  return r;
+}
+
+// O(log(e))
+// mod 2^64
+// 5 ^ 5 -> 5^2 * 5 ^ 2 * 5
+uint64_t pow(uint64_t b, int e) {
+  uint64_t r = 1;
+  if (e) {
+    int he = e/2;
+    uint64_t hr = pow(b, he);
+    r = hr*hr;
+  }
+  if (e&1) {
+    r *= b;
+  }
+  return r;
+}
+
+
+question (b)
+--------------
+
+
+/*
+
+Given a binary search tree and a target integer value, return the
+predecessor of the target. The predecessor of a target is the largest
+number that comes before the target in the number line that
+also exists in the tree.
+
+
+          6
+    3             10
+ 2    4        9     15
+             
+
+
+class Tree {
+    Tree *left, *right;
+    int val;
+}
+
+
+predecessor(root, 9) = 8
+predecessor(root, 4) = 3
+predecessor(root, 8) = 6
+
+
+              6
+    3                   10
+       3.5
+     3.1     4        9     15
+                   8
+
+
+*/
+
+// O(height(Tree))
+int rightmost(Tree *root) {
+  if (root->right)
+    return rightmost(root->right);
+  else
+    return root;
+}
+
+
+int find_prev(Tree *root, vector<int> &par, int tgt) {
+  //if (root) {
+    if (root->val < tgt) {
+      par.push_back(root->val);
+      return find_prev(root->right, par, tgt);
+    } else if (root->val > tgt) {
+      par.push_back(root->val);
+      return find_prev(root->left, par, tgt);
+    } else {
+      if (root->left) {
+        return rightmost(root->left);
+      } else {
+        for (auto rit=rbegin(par); rit!=rend(par); ++rit)
+          if (*rit < tgt)
+            return *rit;
+      }
+    }
+  //}
+}
+
+int get_candidate(int curr, int tgt, int val) {
+  if (val < tgt)
+    return max(curr, val);
+  else
+    return curr;
+}
+
+// O(|Tree|)
+// @param par_candidate - greatest parent that is still less than tgt
+int find_prev_better(Tree *root, int par_candidate, int tgt) {
+  if (root) {
+    if (root->val < tgt) {
+      return find_prev(root->right, get_candidate(par_candidate, tgt, root->val), tgt);
+    } else if (root->val > tgt) {
+      return find_prev(root->left, get_candidate(par_candidate, tgt, root->val), tgt);
+    } else {
+      if (root->left) {
+        return rightmost(root->left);
+      } else {
+        return par_candidate;
+      }
+    }
+  } else {
+    return INT_MIN;
+  }
+}
+
+// non-recursion
+int pred = find_prev_better(root, INT_MIN, tgt);
+if (pred == INT_MIN)
+  cerr << "no pred";
+
+
+
+
+
+#2 Pengfei Y.
+==============
+Welcome to Facebook!
+
+This is just a simple shared plaintext pad, with no execution capabilities.
+
+When you know what language you would like to use for your interview,
+simply choose it from the dropdown in the top bar.
+
+Enjoy your interview!
+
+Hi Pengfei  here
+
+question (a)
+--------------
+
+
+*Description*
+Given a string containing parenthesis (), braces {}, brackets [], and angle brackets <>, write a function to return True if that string is balanced, and False otherwise.
+
+*Example:*
+“some string" => True
+"[abc(def)gh{i}j]" => True
+"[abcdef" => False (no closing bracket)
+"abcd(egf))" => False (extra closing parenthesis)
+")abcd((egf)" => False (extra closing parenthesis at the start)
+"(abcd[)]efgh" => False (closing parenthesis is not nested at the same level as the opening one)
+  
+
+  
+bool check(stack<char> &ss, char c) {
+  if (ss.size()) {
+    char t = ss.top();
+    ss.pop();
+    if (t == '[' && c == ']' || 
+        t == '(' && c == ')' ||
+        t == '{' && c == '}' ||
+        t == '<' && c == '>')
+      return true;
+    else
+      return false;
+  } else {
+    return false; // depled stack
+  }
+}
+  
+bool is_balanced(const string &s) {
+  stack<char> ss;
+  for (char c:s) {
+    switch(c) {
+      case '[':
+      case '(':
+      case '{':
+      case '<':
+        ss.push(c);
+        break;
+      case ']':
+      case ')':
+      case '}':
+      case '>':
+        if (!check(ss, c))
+          return false;
+        break;
+    }
+  }
+  return ss.empty(); // some open brackets
+}
+
+
+
+question (b)
+--------------
+
+
+*Description*
+Find the leftmost column that has 1 in a binary matrix
+
+*Question Statement*
+Given a matrix satisfying the following two conditions:
+each cell is either 1 or 0
+in each row, from left to right, when you first see a number 1 in cell, then the rest cells in this row will all be 1
+
+For example:
+[[0, 0, 1, 1, 1],
+ [0, 1, 1, 1, 1],
+ [0, 0, 1, 1, 1],
+ [0, 0, 0, 0, 0]]
+
+Question: find the leftmost column that has number 1
+In this example, answer will be 2, because there is a number 1 at Matrix[1, 1]
+
+// O(h * log(w))
+// return 0 when not found
+// 1-based
+int find_leftmost_one(const vector<vector<bool>> &mat) {
+  int h = mat.size();
+  int w = mat[0].size();
+  int mn = w;
+  for (auto &row:mat) {
+    int f=0, t=w;
+    // upper bound search for 0  std::upper_bound(); [000000] 2^32 f->2^31, t=2^32
+    // f=0, t=5
+    while (f<t) {
+      int m = f+(t-f)/2; // f = 100, t = INT_MAX   m=(f+t)/2
+      if (row[m] == false)
+        f = m+1;
+      else
+        t = m;
+    }
+    if (f < w)
+      mn = min(mn, f+1);
+  }
+  if (mn < w)
+    reutrn mn;
+  else
+    return 0;
+}
+
+
+#3 System design 1 Yuxuan?
+==============
+
+Design wikipedia web-crawler with 1B pages scalability
+
+
+#4 System design 2 Arghya P.
+==============
+
+Design status-phrase search - a-la search autocomplete
+
+#5 Behavioral ???
+==============
