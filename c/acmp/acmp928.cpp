@@ -1,5 +1,5 @@
 /**
-   ACMP birch alley: https://acmp.ru/asp/do/index.asp?main=task&id_course=2&id_section=20&id_topic=45&id_problem=612
+   ACMP 928 birch alley: https://acmp.ru/asp/do/index.asp?main=task&id_course=2&id_section=20&id_topic=45&id_problem=612
 
    N - number of left-side trees
    M - number of right-side trees
@@ -61,43 +61,42 @@ using TV = array<double, 4096>;
 using TVS = array<TV, 2001>;
 
 void register_max_v(TV &fw, unsigned cnt, double v) {
-	for (; cnt < fw.size(); cnt |= cnt+1)
+	for (; cnt < fw.size(); cnt |= cnt+1)	// fw inc walk
 		fw[cnt] = max(fw[cnt], v);
 }
 
-void register_max_v(TVS &fw, unsigned pos, unsigned cnt, double v) {
-	for (; pos < fw.size(); pos |= pos+1)
-		register_max_v(fw[pos], cnt, v);
+void register_max_v(TVS &fw2d, unsigned pos, unsigned cnt, double v) {
+	for (; pos < fw2d.size(); pos |= pos+1)	// fw inc walk
+		register_max_v(fw2d[pos], cnt, v);
 }
 
-// binary search in Max Fenwick tree
-// @return min cnt such that v is no less than given
-// this is the best code I could come up with
-int get_best_cnt(const TV &fw, double v) {
+// lower bound binary search in Max Fenwick tree
+// @return min position for which v is no less than given
+// NB!: this trick works only with 2^n FW trees
+int fw_lower_bound(const TV &fw, double v) {
 	int f = 0, t = fw.size() - 1;
-	int fnd = INF;
-	while (t-f > 1) {
+	while (f < t) {
 		int m = f+(t-f)/2;
-		if (fw[m] >= v) {
-			fnd = m;
+		if (fw[m] >= v)
 			t = m;
-		} else {
+		else
 			f = m+1;
-		}
 	}
-	if (fw[f] >= v)
-		fnd = f;
-	return fnd;
+	return t;
 }
 
-int get_best_cnt(const TVS &fw, int pos, double v) {
+// find best trapezoid aligned to origin with smallest number of points
+// the trapezoid has its left A-vertice less than pos
+// and has perimiter no greater than v
+// @return min number of points such trapezoid may encircle
+int get_min_cnt(const TVS &fw2d, int pos, double v) {
 	int mn = INF;
-	for (; pos >= 0; pos = (pos & (pos+1)) - 1)
-		mn = min(mn, get_best_cnt(fw[pos], v));
+	for (; pos >= 0; pos = (pos & (pos+1)) - 1) // fw sum walk
+		mn = min(mn, fw_lower_bound(fw2d[pos], v));
 	return mn;
 }
 
-inline double s(const vector<int> &ll, const vector<int> &rr, int l, int r, int w) {
+inline double diag(const vector<int> &ll, const vector<int> &rr, int l, int r, int w) {
 	int64_t d = ll[l] - rr[r];
 	return sqrt(w*w + d*d);
 }
@@ -130,14 +129,14 @@ int main(int argc, char **argv) {
 		// pre-calculate V function for each left point A
 		for (unsigned l=0; l<ll.size(); l++) {
 			int cnt = r + l;
-			double v = ll[l] + rr[r] - s(ll, rr, l, r, w);
+			double v = ll[l] + rr[r] - diag(ll, rr, l, r, w);
 			register_max_v(fw, l, cnt, v);
 		}
 		// iterate over point B and use best V() to find greatest trapezoid A,B,C,D
 		for (unsigned l=0; l<ll.size(); l++) {
 			int cnt = r + l + 2;
-			double tp = ll[l] + rr[r] + s(ll, rr, l, r, w);
-			int mn_sub_cnt = get_best_cnt(fw, l, tp - len);
+			double tp = ll[l] + rr[r] + diag(ll, rr, l, r, w);
+			int mn_sub_cnt = get_min_cnt(fw, l, tp - len);
 			ans = max(ans, cnt - mn_sub_cnt);
 		}
 	}
