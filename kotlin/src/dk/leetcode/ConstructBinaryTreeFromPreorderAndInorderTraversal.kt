@@ -6,18 +6,22 @@ class Solution {
     companion object {
         const val zeroVal = 3000
     }
-    private fun buildTree(inorderVal2Pos: IntArray, sz: Int, preorder: IntArray, preOfs: Int, inorder: IntArray, inOfs: Int): TreeNode? = when (sz) {
-        0 -> null
-        1 -> TreeNode(preorder[preOfs])
-        else -> {
-            val rootVal = preorder[preOfs]
-            val inorderRootOfs = inorderVal2Pos[rootVal + zeroVal]
-            val szL = inorderRootOfs - inOfs
-            val left = buildTree(inorderVal2Pos, szL, preorder, preOfs + 1, inorder, inOfs)
-            val szR = sz - szL - 1
-            val right = buildTree(inorderVal2Pos, szR, preorder, preOfs + 1 + szL, inorder, inorderRootOfs + 1)
-            TreeNode(rootVal, left, right)
-        }
+    private fun buildTree(inorderVal2Pos: IntArray,
+                          sz: Int,
+                          preorder: IntArray,
+                          preOfs: Int,
+                          inorder: IntArray,
+                          inOfs: Int): TreeNode? =
+    if (sz == 0) {
+        null
+    } else {
+        val rootVal = preorder[preOfs]
+        val inorderRootOfs = inorderVal2Pos[rootVal + zeroVal]
+        val szL = inorderRootOfs - inOfs
+        val left = buildTree(inorderVal2Pos, szL, preorder, preOfs + 1, inorder, inOfs)
+        val szR = sz - szL - 1
+        val right = buildTree(inorderVal2Pos, szR, preorder, preOfs + 1 + szL, inorder, inorderRootOfs + 1)
+        TreeNode(rootVal, left, right)
     }
     fun buildTree(preorder: IntArray, inorder: IntArray): TreeNode? {
         val inorderVal2Pos = IntArray(2 * zeroVal + 1)
