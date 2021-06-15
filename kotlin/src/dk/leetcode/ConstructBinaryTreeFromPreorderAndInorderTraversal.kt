@@ -2,7 +2,7 @@ import dk.leetcode.TreeNode
 
 // https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/
 
-class Solution {
+class Solution1 {
     companion object {
         const val zeroVal = 3000
     }
