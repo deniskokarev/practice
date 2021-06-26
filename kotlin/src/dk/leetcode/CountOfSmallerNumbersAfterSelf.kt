@@ -1,6 +1,6 @@
 package dk.leetcode
 
-class Solution {
+class Solution_7 {
     // fenwick tree
     class Fw(private val sz: Int) {
         private val fw = IntArray(sz)
