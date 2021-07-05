@@ -2,7 +2,7 @@
 
 Типичное интервью состоит из трех разделов:
 - [CODING](#CODING)
-- [SYSTEM DESIGN](#SYSTEM%20DESIGN)
+- [SYSTEM DESIGN](#SYSTEM-DESIGN)
 - [BEHAVIORAL](#BEHAVIORAL)
 
 Каждый этап имеет свои цели и нюансы подготовки.
