@@ -1,4 +1,3 @@
 package dk.leetcode
 
-class TreeNode(v: Int, left: TreeNode? = null, right: TreeNode? = null) {
-}
+class TreeNode(var `val`: Int, var left: TreeNode? = null, var right: TreeNode? = null)
