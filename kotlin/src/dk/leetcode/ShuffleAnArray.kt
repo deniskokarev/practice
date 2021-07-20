@@ -19,7 +19,7 @@ class Solution_19(private val nums: IntArray) {
 
     /** Returns a random shuffling of the array. */
     fun shuffle(): IntArray {
-        for (i in nums.indices) {
+        for (i in 0 until sz) {
             val p = Random.nextInt(i, sz)
             shuf.swap(i, p)
         }
