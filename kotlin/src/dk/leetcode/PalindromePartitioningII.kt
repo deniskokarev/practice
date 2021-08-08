@@ -1,4 +1,7 @@
 package dk.leetcode
+// https://leetcode.com/problems/palindrome-partitioning-ii/
+// CPU: O(n^2)
+// MEM: O(n)
 
 class Solution_31 {
     fun minCut(s: String): Int {
