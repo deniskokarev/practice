@@ -5,7 +5,7 @@
 
 using namespace std;
 
-class Solution {
+class Solution2 {
 public:
     static int maxSatisfaction(const vector<int> &sat) {
         int sz = sat.size();
@@ -21,6 +21,27 @@ public:
             for (int l = 1; l <= i; l++)
                 dp[i][l] = max(dp[i - 1][l], dp[i - 1][l - 1] + ss[i - 1] * l);
         return *max_element(dp[sz].begin(), dp[sz].end());
+    }
+};
+
+class Solution {
+public:
+    static int maxSatisfaction(const vector<int> &sat) {
+        int sz = sat.size();
+        vector<int> ss(sat); // sorted sequence in desc order
+        sort(ss.begin(), ss.end(), greater<int>());
+        // if it was sorted in asc order we'd go from right to left
+        // and take entire positive part,
+        // then we can go into negative part while the total sum increases
+        int mx = 0;
+        int tot = 0;
+        int sm = 0;
+        for (auto n:ss) {
+            sm += n;
+            tot += sm;
+            mx = max(mx, tot);
+        }
+        return mx;
     }
 };
 
