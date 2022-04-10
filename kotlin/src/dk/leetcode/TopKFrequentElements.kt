@@ -1,5 +1,7 @@
 package dk.leetcode
 
+import kotlin.random.Random
+
 // https://leetcode.com/problems/top-k-frequent-elements/
 
 /**
@@ -87,7 +89,7 @@ class IncHeap<K>(k: K) {
     }
 }
 
-class Solution_TopKFrequentElements {
+class Solution2_TopKFrequentElements {
     fun topKFrequent(nums: IntArray, k: Int): IntArray {
         val hh = IncHeap(nums[0])
         var i = 1
@@ -98,5 +100,80 @@ class Solution_TopKFrequentElements {
         while (i < k)
             ans[i++] = hh.pop()
         return ans
+    }
+}
+
+class Solution__TopKFrequentElements {
+    private fun <T> Array<T>.swap(i: Int, j: Int) {
+        val t = this[i]
+        this[i] = this[j]
+        this[j] = t
+    }
+
+    /**
+     * Comparable Pair
+     * (1, 0) < (0, 1)
+     * (1, 1) < (1, 0)
+     */
+    private class MxPair<F: Comparable<F>, S: Comparable<S>>(val first: F, val second: S): Comparable<MxPair<F,S>> {
+        override fun compareTo(o: MxPair<F, S>): Int {
+            val cmpF = first.compareTo(o.first)
+            return if (cmpF != 0) {
+                -cmpF
+            } else {
+                -second.compareTo(o.second)
+            }
+        }
+    }
+
+    /**
+     * Partition array between [b, e) 3way based on pivot element originally located at position b
+     * return Pair(first, second)
+     * [b, first) < pivot
+     * [first, second) = pivot
+     * [second, e) > pivot
+     */
+    private fun <T : Comparable<T>> Array<T>.part3(b: Int, e: Int): Pair<Int, Int> {
+        val pivot = this[b]
+        var m = b
+        var i = b
+        var j = e - 1
+        while (i <= j) {
+            if (this[i] < pivot)
+                swap(m++, i)
+            else if (pivot < this[i])
+                swap(i, j--)
+            else
+                i++
+        }
+        return Pair(m, i)
+    }
+
+    fun topKFrequent(nums: IntArray, k: Int): IntArray {
+        val fq = mutableMapOf<Int, Int>()
+        nums.forEach { n ->
+            fq[n] = fq.getOrDefault(n, 0) + 1
+        }
+        val aa = Array(fq.size) { MxPair(0, 0) }
+        var i = 0
+        fq.forEach { (k, v) ->
+            aa[i++] = MxPair(v, k)
+        }
+        val rnd = Random(1)
+        var b = 0
+        var e = aa.size
+        while (true) {
+            val p = b + rnd.nextInt(e - b)
+            aa.swap(b, p)
+            val (i, j) = aa.part3(b, e)
+            if (k > j) {
+                b = j
+            } else if (k < i) {
+                e = i
+            } else {
+                break
+            }
+        }
+        return IntArray(k) { i -> aa[i].second }
     }
 }
