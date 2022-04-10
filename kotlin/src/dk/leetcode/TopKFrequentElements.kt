@@ -103,45 +103,30 @@ class Solution2_TopKFrequentElements {
     }
 }
 
-class Solution__TopKFrequentElements {
-    private fun <T> Array<T>.swap(i: Int, j: Int) {
+class Solution_TopKFrequentElements {
+    private inline fun IntArray.swap(i: Int, j: Int) {
         val t = this[i]
         this[i] = this[j]
         this[j] = t
     }
 
     /**
-     * Comparable Pair
-     * (1, 0) < (0, 1)
-     * (1, 1) < (1, 0)
-     */
-    private class MxPair<F: Comparable<F>, S: Comparable<S>>(val first: F, val second: S): Comparable<MxPair<F,S>> {
-        override fun compareTo(o: MxPair<F, S>): Int {
-            val cmpF = first.compareTo(o.first)
-            return if (cmpF != 0) {
-                -cmpF
-            } else {
-                -second.compareTo(o.second)
-            }
-        }
-    }
-
-    /**
      * Partition array between [b, e) 3way based on pivot element originally located at position b
+     * @param cmp - custom comparator
      * return Pair(first, second)
      * [b, first) < pivot
      * [first, second) = pivot
      * [second, e) > pivot
      */
-    private fun <T : Comparable<T>> Array<T>.part3(b: Int, e: Int): Pair<Int, Int> {
-        val pivot = this[b]
+    private inline fun IntArray.part3(b: Int, e: Int, cmp: Comparator<Int>): Pair<Int, Int> {
+        val pv = this[b]
         var m = b
         var i = b
         var j = e - 1
         while (i <= j) {
-            if (this[i] < pivot)
+            if (cmp.compare(this[i], pv) < 0)
                 swap(m++, i++)
-            else if (pivot < this[i])
+            else if (cmp.compare(this[i], pv) > 0)
                 swap(i, j--)
             else
                 i++
@@ -154,18 +139,18 @@ class Solution__TopKFrequentElements {
         nums.forEach { n ->
             fq[n] = fq.getOrDefault(n, 0) + 1
         }
-        val aa = Array(fq.size) { MxPair(0, 0) }
-        var i = 0
-        fq.forEach { (k, v) ->
-            aa[i++] = MxPair(v, k)
-        }
+        // value set
+        val aa = fq.keys.toIntArray()
+        // compare by frequency of value occurrence in reversed order
+        val cmpFreq = compareBy<Int> { -fq[it]!! }
+        // using random pivot to prevent n^2 attack
         val rnd = Random(1)
         var b = 0
         var e = aa.size
         while (true) {
             val p = b + rnd.nextInt(e - b)
             aa.swap(b, p)
-            val (i, j) = aa.part3(b, e)
+            val (i, j) = aa.part3(b, e, cmpFreq)
             if (k > j) {
                 b = j
             } else if (k < i) {
@@ -174,6 +159,6 @@ class Solution__TopKFrequentElements {
                 break
             }
         }
-        return IntArray(k) { i -> aa[i].second }
+        return aa.copyOfRange(0, k)
     }
 }
