@@ -140,7 +140,7 @@ class Solution__TopKFrequentElements {
         var j = e - 1
         while (i <= j) {
             if (this[i] < pivot)
-                swap(m++, i)
+                swap(m++, i++)
             else if (pivot < this[i])
                 swap(i, j--)
             else
