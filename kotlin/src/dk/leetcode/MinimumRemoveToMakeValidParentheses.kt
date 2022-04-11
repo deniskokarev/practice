@@ -1,6 +1,7 @@
 package dk.leetcode
 // https://leetcode.com/problems/minimum-remove-to-make-valid-parentheses/
 
+// leetcode doesn't have removeLast()
 private fun <T> MutableList<T>.pop() {
     removeAt(lastIndex)
 }
