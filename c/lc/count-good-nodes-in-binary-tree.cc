@@ -1,25 +1,19 @@
 // https://leetcode.com/problems/count-good-nodes-in-binary-tree/
 class Solution {
-    static int goodNodes(const TreeNode *root, vector<int> &vv) {
+    static int goodNodes(const TreeNode *root, int mx) {
         if (root) {
             int v = root->val;
-            int cnt;
-            if (vv.empty() || vv.back() <= v) {
-                vv.push_back(v);
-                cnt = goodNodes(root->left, vv) + goodNodes(root->right, vv) + 1;
-                vv.pop_back();
+            if (v >= mx) {
+                return goodNodes(root->left, v) + goodNodes(root->right, v) + 1;
             } else {
-                cnt = goodNodes(root->left, vv) + goodNodes(root->right, vv);
+                return goodNodes(root->left, mx) + goodNodes(root->right, mx);
             }
-            return cnt;
         } else {
             return 0;
         }
     }
 public:
     static int goodNodes(const TreeNode *root) {
-        vector<int> vv;
-        return goodNodes(root, vv);
+        return goodNodes(root, INT_MIN);
     }
 };
-
