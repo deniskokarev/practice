@@ -23,24 +23,23 @@ public:
         for (p = 0; !(n & 1); p++)
             n >>= 1;
         int i = 0; // number of piles (1-bits in n)
-        vector<int> ans[2] = {dp[p], vector<int>(target + 1)};
+        vector<int> ans = dp[p];
         n >>= 1;
         p++;
         while (n > 0) {
             if (n & 1) {
                 // add dp[p] pile to all prior piles of dice
-                i++;
-                int curr = i & 1;
-                int prev = !curr;
-                fill(begin(ans[curr]), end(ans[curr]), 0);
-                for (int t = 2; t <= target; t++)
+                // iterating t backwards to reuse ans[]
+                for (int t = target; t > 1; t--) {
+                    ans[t] = 0;
                     for (int l = 1; l < t; l++)
-                        ans[curr][t] = (ans[curr][t] + int64_t(ans[prev][l]) * dp[p][t - l]) % MOD;
+                        ans[t] = (ans[t] + int64_t(ans[l]) * dp[p][t - l]) % MOD;
+                }
             }
             n >>= 1;
             p++;
         }
-        return ans[i & 1][target];
+        return ans[target];
     }
 };
 
