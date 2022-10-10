@@ -1,3 +1,23 @@
+// https://leetcode.com/problems/break-a-palindrome/
+
+class Solution {
+public:
+    string breakPalindrome(string &pp) {
+        int sz = pp.size();
+        if (sz == 1) {
+            return "";
+        }
+        for (int i=0; i<sz/2; i++) {
+            if (pp[i] != 'a') {
+                pp[i] = 'a';
+                return pp;
+            }
+        }
+        pp[sz-1] = 'b';
+        return pp;
+    }
+};
+
 class Solution {
     enum { NOT_A, A };
 public:
