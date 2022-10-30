@@ -1,3 +1,48 @@
+// https://leetcode.com/problems/minimum-window-substring
+// faster solution 99%
+
+constexpr int INF = INT_MAX / 2;
+
+using uchar = unsigned char;
+
+class Solution {
+public:
+    static string minWindow(const string &s, const string &t) {
+        int lcnt[256] = {0}; // each char match cnt: when need --, when found ++
+        int need[256] = {0}; // ignore other chars
+        for (uchar c: t) {
+            lcnt[c]--;
+            need[c] = 1;
+        }
+        int tcnt = 0; // total char match cnt: when need --, when found ++
+        for (int c: lcnt)
+            tcnt -= (c < 0);
+        int sz = s.size();
+        int l = 0, r = INF;
+        int i = 0, j = 0;
+        while (i < sz) {
+            while (j < sz && tcnt) {
+                uchar c = s[j++];
+                if (need[c] && !(++lcnt[c]))
+                    tcnt++;
+            }
+            if (!tcnt && j - i < r - l) {
+                l = i;
+                r = j;
+            }
+            uchar c = s[i++];
+            if (need[c] && !(lcnt[c]--))
+                tcnt--;
+        }
+        if (r < INF)
+            return s.substr(l, r - l);
+        else
+            return "";
+    }
+};
+
+
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
