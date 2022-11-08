@@ -1,3 +1,23 @@
+// https://leetcode.com/problems/make-the-string-great/
+
+constexpr char UC = 1 << 5;
+
+class Solution {
+public:
+    static string makeGood(const string &s) {
+        string ss;
+        ss.push_back(' ');
+        for (auto c:s) {
+            char p = ss.back();
+            if ((c ^ p) == UC)
+                ss.pop_back();
+            else
+                ss.push_back(c);
+        }
+        return ss.substr(1);
+    }
+};
+
 class Solution {
 public:
     string makeGood(const string &s) {
