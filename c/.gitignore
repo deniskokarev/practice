@@ -2,3 +2,5 @@
 Build
 [abcdef]
 libgt
+cmake-build-*
+.idea
