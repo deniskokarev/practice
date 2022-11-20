@@ -3,16 +3,14 @@ package dk.foobar;
 import java.math.BigInteger;
 
 public class Solution_3_2 {
-    static void assertMe(Boolean c, String err) throws IllegalStateException {
-        if (!c)
-            throw new IllegalStateException(err);
-    }
-
     static protected class R {
         BigInteger n, d;
 
         private static BigInteger lcm(BigInteger a, BigInteger b) {
             BigInteger g = a.gcd(b);
+            if (g.equals(BigInteger.ZERO)) {
+                System.out.println("WTF");
+            }
             return a.divide(g).multiply(b);
         }
 
@@ -35,13 +33,23 @@ public class Solution_3_2 {
         }
 
         R simplify() {
+            if (d.equals(BigInteger.ZERO)) {
+                System.out.println("WTF");
+            }
             BigInteger g = n.gcd(d);
             n = n.divide(g);
             d = d.divide(g);
+            if (d.signum() < 0) {
+                n = n.negate();
+                d = d.negate();
+            }
             return this;
         }
 
         public R plus(R o) {
+            if (o.d.equals(BigInteger.ZERO)) {
+                System.err.println("WTF");
+            }
             BigInteger nd = lcm(d, o.d);
             return new R(n.multiply(nd.divide(d)).add(o.n.multiply(nd.divide(o.d))), nd);
         }
@@ -56,13 +64,7 @@ public class Solution_3_2 {
         }
 
         public R div(R o) {
-            int sign = n.signum() * o.n.signum();
-            BigInteger nn = n.abs();
-            BigInteger on = o.n.abs();
-            BigInteger m = nn.multiply(o.d);
-            if (sign < 0)
-                m = m.negate();
-            return new R(m, d.multiply(on)).simplify();
+            return new R(n.multiply(o.d), d.multiply(o.n)).simplify();
         }
 
         public R abs() {
@@ -70,8 +72,7 @@ public class Solution_3_2 {
         }
 
         public boolean isZero() {
-            int i = n.intValue();
-            return i == 0;
+            return n.equals(BigInteger.ZERO);
         }
 
         public boolean isGreaterThanZero() {
@@ -113,15 +114,15 @@ public class Solution_3_2 {
             return clMat;
         }
 
-        // naive method rules, Gauss overflows quickly in R
-        public R det() {
+        // naive method rules
+        public R naive_det() {
             int sz = rows;
             if (sz == 1) {
                 return mm[0][0];
             } else {
                 int sign = 1;
                 R det = new R(0);
-                for (int c=0; c<sz; c++) {
+                for (int c = 0; c < sz; c++) {
                     Mat minor = mat_minor(0, c);
                     det = det.plus(r(sign).mul(mm[0][c].mul(minor.det())));
                     sign *= -1;
@@ -160,6 +161,10 @@ public class Solution_3_2 {
                             dmat[j][k2] = dmat[j][k2].minus(dmat[i][k2].mul(dmat[j][i]));
             }
             return det;
+        }
+
+        public R det() {
+            return naive_det();
         }
 
         Mat mat_minor(int r, int c) {
@@ -237,127 +242,150 @@ public class Solution_3_2 {
 //    public static int[] solution(int[][] m) {
 //    }
 
-    static Mat mkRMat(int[][] imat) {
-        int rows = imat.length;
-        int cols = imat[0].length;
-        R mm[][] = new R[rows][cols];
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                mm[i][j] = r(imat[i][j]);
-        return new Mat(mm);
-    }
+    static class Test {
+        static void assertMe(Boolean c, String err) throws IllegalStateException {
+            if (!c)
+                throw new IllegalStateException(err);
+        }
 
-    static Mat randMat(int sz) {
-        R mm[][] = new R[sz][sz];
-        for (int i = 0; i < sz; i++) {
-            for (int j = 0; j < sz; j++) {
-                int n = (int) (Math.random() * 8) - 4;
-                int d = (int) (Math.random() * 7) + 1;
-                mm[i][j] = new R(n, d);
+        static Mat mkRMat(int[][] imat) {
+            int rows = imat.length;
+            int cols = imat[0].length;
+            R mm[][] = new R[rows][cols];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < cols; j++)
+                    mm[i][j] = r(imat[i][j]);
+            return new Mat(mm);
+        }
+
+        static Mat randMat(int sz) {
+            R mm[][] = new R[sz][sz];
+            for (int i = 0; i < sz; i++) {
+                for (int j = 0; j < sz; j++) {
+                    int n = (int) (Math.random() * 8) - 4;
+                    int d = (int) (Math.random() * 7) + 1;
+                    mm[i][j] = new R(n, d);
+                }
+            }
+            return new Mat(mm);
+        }
+
+        static boolean isEye(Mat mat) {
+            int sz = mat.rows;
+            boolean ans = true;
+            for (int i = 0; i < sz; i++)
+                for (int j = 0; j < sz; j++)
+                    ans &= (i == j && mat.mm[i][j].n.equals(mat.mm[i][j].d)) || (i != j && mat.mm[i][j].isZero());
+            return ans;
+        }
+
+        static void checkInv(Mat mat) {
+            Mat inv = mat.inv();
+            Mat res = mat.mul(inv);
+            boolean isCorrect = isEye(res);
+            if (!isCorrect) {
+                System.err.println("=== Mat ===");
+                System.err.println(mat);
+                System.err.println("=== Inv ===");
+                System.err.println(inv);
+                assertMe(false, "incorrect inverse!");
             }
         }
-        return new Mat(mm);
-    }
 
-    static boolean isEye(Mat mat) {
-        int sz = mat.rows;
-        boolean ans = true;
-        for (int i = 0; i < sz; i++)
-            for (int j = 0; j < sz; j++)
-                ans &= (i == j && mat.mm[i][j].n.equals(mat.mm[i][j].d)) || (i != j && mat.mm[i][j].isZero());
-        return ans;
-    }
+        static void runTests() {
+            int mat0[][] = {{3}};
+            int mat1[][] = {
+                    {2, -2},
+                    {3, 5},
+            };
+            int mat2[][] = {
+                    {1, 0, 2, -3},
+                    {3, 0, 0, 5},
+                    {2, 1, 4, -3},
+                    {1, 0, 5, 0}
+            };
+            int mat3[][] = {
+                    {0, 0, 1},
+                    {0, 1, 0},
+                    {1, 0, 0}
+            };
+            int mat5[][] = {
+                    {5, -2, 2, 7},
+                    {1, 0, 0, 3},
+                    {-3, 1, 5, 0},
+                    {3, -1, -9, 4}
+            };
+            int mat6[][] = {
+                    {0, 2, -3},
+                    {0, 0, 5},
+                    {1, 4, -3},
+            };
+            int mat9[][] = {
+                    {0, 2, -3},
+                    {0, 0, 5},
+                    {0, 5, 0},
+            };
+            Mat mm0 = mkRMat(mat0);
+            System.out.println("d0=" + mm0.det());
+            Mat mm1 = mkRMat(mat1);
+            System.out.println("d1=" + mm1.det());
 
-    static void checkInv(Mat mat) {
-        Mat inv = mat.inv();
-        Mat res = mat.mul(inv);
-        boolean isCorrect = isEye(res);
-        if (!isCorrect) {
-            System.err.println("=== Mat ===");
-            System.err.println(mat);
-            System.err.println("=== Inv ===");
-            System.err.println(inv);
-            assertMe(false, "incorrect inverse!");
+            Mat mm2 = mkRMat(mat2);
+            R d2 = mm2.det();
+            R expD2 = r(60);
+            System.out.println("d2=" + d2);
+            assertMe(d2.equals(expD2), "wrong det for matrix 2");
+
+            Mat mm3 = mkRMat(mat3);
+            R d3 = mm3.det();
+            R expD3 = r(-1);
+            System.out.println("d3=" + d3);
+            assertMe(d3.equals(expD3), "wrong det for matrix 3");
+
+            Mat mm6 = mkRMat(mat6);
+            System.out.println(mm6);
+            R d6 = mm6.det();
+            R expD6 = r(10);
+            System.out.println("d6=" + d6);
+            assertMe(d6.equals(expD6), "wrong det for matrix 6");
+
+            Mat mm9 = mkRMat(mat9);
+            //R d9 = mm9.gauss_det();
+            R d9 = mm9.det();
+            R expD9 = r(0);
+            System.out.println("d9=" + d9);
+            assertMe(d3.equals(expD3), "wrong det for matrix 9");
+
+            checkInv(mkRMat(mat0));
+            checkInv(mkRMat(mat1));
+            checkInv(mkRMat(mat2));
+            checkInv(mkRMat(mat3));
+            checkInv(mkRMat(mat5));
+            checkInv(mkRMat(mat6));
+            R mat7r[][] = {
+                    {r(-3, 2), r(-2, 7), r(-4, 5), r(0, 3), r(-3 / 2)},
+                    {r(-2, 5), r(-2, 2), r(-1, 7), r(-1, 2), r(3, 2)},
+                    {r(-3, 6), r(1, 5), r(-2, 7), r(1, 2), r(3, 1)},
+                    {r(2, 7), r(3, 1), r(-1, 1), r(3, 1), r(0, 6)},
+                    {r(-2, 5), r(0, 3), r(-3, 3), r(3, 7), r(3, 7)},
+            };
+            Mat mm7 = new Mat(mat7r);
+            System.out.println(mm7);
+            System.out.println(mm7.det());
+            System.out.println(mm7.adj());
+            checkInv(mm7);
+            for (int sz = 1; sz < 6; sz++) {
+                for (int rep = 0; rep < 100; rep++) {
+                    Mat m = randMat(sz);
+                    R d = m.det();
+                    if (!d.isZero()) // ignore det=0
+                        checkInv(m);
+                }
+            }
         }
     }
 
     public static void main(String args[]) {
-        int mat0[][] = {{3}};
-        int mat1[][] = {
-                {2, -2},
-                {3, 5},
-        };
-        int mat2[][] = {
-                {1, 0, 2, -3},
-                {3, 0, 0, 5},
-                {2, 1, 4, -3},
-                {1, 0, 5, 0}
-        };
-        int mat3[][] = {
-                {0, 0, 1},
-                {0, 1, 0},
-                {1, 0, 0}
-        };
-        int mat5[][] = {
-                {5, -2, 2, 7},
-                {1, 0, 0, 3},
-                {-3, 1, 5, 0},
-                {3, -1, -9, 4}
-        };
-        int mat6[][] = {
-                {0, 2, -3},
-                {0, 0, 5},
-                {1, 4, -3},
-        };
-        Mat mm0 = mkRMat(mat0);
-        System.out.println("d0=" + mm0.det());
-        Mat mm1 = mkRMat(mat1);
-        System.out.println("d1=" + mm1.det());
-
-        Mat mm2 = mkRMat(mat2);
-        R d2 = mm2.det();
-        R expD2 = r(60);
-        System.out.println("d2=" + d2);
-        assertMe(d2.equals(expD2), "wrong det for matrix 2");
-
-        Mat mm3 = mkRMat(mat3);
-        R d3 = mm3.det();
-        R expD3 = r(-1);
-        System.out.println("d3=" + d3);
-        assertMe(d3.equals(expD3), "wrong det for matrix 3");
-
-        Mat mm6 = mkRMat(mat6);
-        System.out.println(mm6);
-        R d6 = mm6.det();
-        R expD6 = r(10);
-        System.out.println("d6=" + d6);
-        assertMe(d6.equals(expD6), "wrong det for matrix 6");
-
-        checkInv(mkRMat(mat0));
-        checkInv(mkRMat(mat1));
-        checkInv(mkRMat(mat2));
-        checkInv(mkRMat(mat3));
-        checkInv(mkRMat(mat5));
-        checkInv(mkRMat(mat6));
-        R mat7r[][] = {
-                {r(-3, 2), r(-2, 7), r(-4, 5), r(0, 3), r(-3 / 2)},
-                {r(-2, 5), r(-2, 2), r(-1, 7), r(-1, 2), r(3, 2)},
-                {r(-3, 6), r(1, 5), r(-2, 7), r(1, 2), r(3, 1)},
-                {r(2, 7), r(3, 1), r(-1, 1), r(3, 1), r(0, 6)},
-                {r(-2, 5), r(0, 3), r(-3, 3), r(3, 7), r(3, 7)},
-        };
-        Mat mm7 = new Mat(mat7r);
-        System.out.println(mm7);
-        System.out.println(mm7.det());
-        System.out.println(mm7.adj());
-        checkInv(mm7);
-        for (int sz = 7; sz < 8; sz++) {
-            for (int rep = 0; rep < 1; rep++) {
-                Mat m = randMat(sz);
-                R d = m.det();
-                if (!d.equals(0)) // ignore det=0
-                    checkInv(m);
-            }
-        }
+        Test.runTests();
     }
 }
