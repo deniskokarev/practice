@@ -542,9 +542,14 @@ public class Solution_3_2 {
         System.err.println("=== [1,0,0..] * ((I - Q) ** -1) * R ===");
         System.err.println(res);
 
+        // simplify res fractions
+        for (int i = 0; i < rsz; i++) {
+            res.mm[0][i] = res.mm[0][i].simplify();
+        }
+
         // convert to required answer format
         // reformat to common denominator
-        // and return as last element
+        // and return common denom as last element
         BigInteger lcm = new BigInteger("1");
         BigInteger bAns[] = new BigInteger[rsz];
         for (int i = 0; i < rsz; i++) {
