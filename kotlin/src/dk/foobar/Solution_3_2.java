@@ -1,115 +1,5 @@
 package dk.foobar;
 
-// Java program to find Determinant of a matrix
-class GFG
-{
-
-    // Dimension of input square matrix
-    static final int N = 4;
-
-    // Function to get determinant of matrix
-    static int determinantOfMatrix(int mat[][], int n)
-    {
-        int num1, num2, det = 1, index,
-                total = 1; // Initialize result
-
-        // temporary array for storing row
-        int[] temp = new int[n + 1];
-
-        // loop for traversing the diagonal elements
-        for (int i = 0; i < n; i++)
-        {
-            index = i; // initialize the index
-
-            // finding the index which has non zero value
-            while (index < n && mat[index][i] == 0)
-            {
-                index++;
-            }
-            if (index == n) // if there is non zero element
-            {
-                // the determinant of matrix as zero
-                continue;
-            }
-            if (index != i)
-            {
-                // loop for swapping the diagonal element row
-                // and index row
-                for (int j = 0; j < n; j++)
-                {
-                    swap(mat, index, j, i, j);
-                }
-                // determinant sign changes when we shift
-                // rows go through determinant properties
-                det = (int)(det * Math.pow(-1, index - i));
-            }
-
-            // storing the values of diagonal row elements
-            for (int j = 0; j < n; j++)
-            {
-                temp[j] = mat[i][j];
-            }
-
-            // traversing every row below the diagonal
-            // element
-            for (int j = i + 1; j < n; j++)
-            {
-                num1 = temp[i]; // value of diagonal element
-                num2 = mat[j]
-                        [i]; // value of next row element
-
-                // traversing every column of row
-                // and multiplying to every row
-                for (int k = 0; k < n; k++)
-                {
-                    // multiplying to make the diagonal
-                    // element and next row element equal
-                    mat[j][k] = (num1 * mat[j][k])
-                            - (num2 * temp[k]);
-                }
-                total = total * num1; // Det(kA)=kDet(A);
-            }
-        }
-
-        // multiplying the diagonal elements to get
-        // determinant
-        for (int i = 0; i < n; i++)
-        {
-            det = det * mat[i][i];
-        }
-        return (det / total); // Det(kA)/k=Det(A);
-    }
-
-    static int[][] swap(int[][] arr, int i1, int j1, int i2,
-                        int j2)
-    {
-        int temp = arr[i1][j1];
-        arr[i1][j1] = arr[i2][j2];
-        arr[i2][j2] = temp;
-        return arr;
-    }
-
-    // Driver code
-    public static void main(String[] args)
-    {
-		/*int mat[N][N] = {{6, 1, 1},
-						{4, -2, 5},
-						{2, 8, 7}}; */
-
-        int mat[][] = { { 1, 0, 2, -1 },
-                { 3, 0, 0, 5 },
-                { 2, 1, 4, -3 },
-                { 1, 0, 5, 0 } };
-
-        // Function call
-        System.out.printf(
-                "Determinant of the matrix is : %d",
-                determinantOfMatrix(mat, N));
-    }
-}
-
-// This code is contributed by Rajput-Ji
-
 public class Solution_3_2 {
     static void assertMe(Boolean c, String err) throws IllegalStateException {
         if (!c)
@@ -176,6 +66,10 @@ public class Solution_3_2 {
             return new R(n * o.d * sign, d * on).simplify();
         }
 
+        public R abs() {
+            return new R(Math.abs(n), d);
+        }
+
         public Boolean equals(int i) {
             return n == i && d == 1 || (n == 0 && i == 0);
         }
@@ -216,61 +110,35 @@ public class Solution_3_2 {
         }
 
         public R det() {
-            int sz = rows; // rows == cols
-            // diagonal matrix
-            R dmat[][] = cloneMat();
-            R total = new R(1);
-            R det = new R(1);
-
-            // temporary array for storing row
-            R[] temp = new R[sz];
-
-            // loop for traversing the diagonal elements
-            for (int i = 0; i < sz; i++) {
-                int index = i; // initialize the index
-                int sign = 1;
-
-                // finding the index which has non zero value
-                while (index < sz && dmat[index][i].equals(0)) {
-                    index++;
-                    sign *= -1;
+            int sz = rows;
+            R tmp[] = new R[sz];
+            R det = r(1);
+            for (int i = 0; i < sz; ++i) {
+                int k = i;
+                for (int j = i + 1; j < sz; ++j) {
+                    R d = mm[j][i].abs().minus(mm[k][i].abs());
+                    if (d.n > 0) // abs(mm[j][i]) > abs(mm[k][i]))
+                        k = j;
                 }
-                if (index == sz) {// if there is non zero element
-                    // the determinant of matrix as zero
-                    continue;
-                } else if (index != i) {
-                    // loop for swapping the diagonal element row and index row
-                    System.arraycopy(dmat[index], 0, temp, 0, sz);
-                    System.arraycopy(dmat[i], 0, dmat[index], 0, sz);
-                    System.arraycopy(temp, 0, dmat[i], 0, sz);
-                    // determinant sign changes when we shift
-                    // rows go through determinant properties
-                    //det = det.mul(r((int)Math.pow(-1, index - i)));
-                    det = det.mul(new R(sign));
-                } else {
-                    // storing the values of diagonal row elements
-                    System.arraycopy(dmat[i], 0, temp, 0, sz);
+                if (mm[k][i].equals(0)) {
+                    det = r(0);
+                    break;
                 }
-                // traversing every row below the diagonal element
-                for (int j = i + 1; j < sz; j++) {
-                    R num1 = temp[i]; // value of diagonal element
-                    R num2 = dmat[j][i]; // value of next row element
-                    // traversing every column of row
-                    // and multiplying to every row
-                    for (int k = 0; k < sz; k++) {
-                        // multiplying to make the diagonal
-                        // element and next row element equal
-                        dmat[j][k] = num1.mul(dmat[j][k]).minus((num2.mul(temp[k])));
-                    }
-                    total = total.mul(num1); // Det(kA)=kDet(A);
-                }
+                //swap(mm[i], mm[k]);
+                System.arraycopy(mm[i], 0, tmp, 0, sz);
+                System.arraycopy(mm[k], 0, mm[i], 0, sz);
+                System.arraycopy(tmp, 0, mm[k], 0, sz);
+                if (i != k)
+                    det = det.mul(r(-1));
+                det = det.mul(mm[i][i]);
+                for (int j = i + 1; j < sz; ++j)
+                    mm[i][j] = mm[i][j].div(mm[i][i]);
+                for (int j = 0; j < sz; ++j)
+                    if (j != i && !mm[j][i].equals(0))
+                        for (int k2 = i + 1; k2 < sz; ++k2)
+                            mm[j][k2] = mm[j][k2].minus(mm[i][k2].mul(mm[j][i]));
             }
-            // multiplying the diagonal elements to get
-            // determinant
-            for (int i = 0; i < sz; i++) {
-                det = det.mul(dmat[i][i]);
-            }
-            return det.div(total); // Det(kA)/k=Det(A);
+            return det;
         }
 
         Mat mat_minor(int r, int c) {
@@ -295,7 +163,7 @@ public class Solution_3_2 {
                 int sign = ((r & 1) == 0) ? 1 : -1;
                 for (int c = 0; c < rows; c++) {
                     Mat mr = mat_minor(r, c);
-                    if (c == 0 && r == 3) {
+                    if (false && c == 0 && r == 3) {
                         System.out.println("Mat minor [3][0]");
                         for (int i=0; i<3; i++) {
                             for (int j=0; j<3; j++)
@@ -354,10 +222,6 @@ public class Solution_3_2 {
 //    }
 
     public static void main(String args[]) {
-        R r1 = new R(-180, 1);
-        R r2 = new R(-6, 1);
-        R q = r1.div(r2);
-        System.out.println("result=" + q);
         R[][] mat0 = new R[][]{
                 {r(3)},
         };
@@ -370,6 +234,11 @@ public class Solution_3_2 {
                 {3, 0, 0, 5},
                 {2, 1, 4, -3},
                 {1, 0, 5, 0}
+        };
+        int mat3[][] = {
+                {0, 0, 1},
+                {0, 1, 0},
+                {1, 0, 0}
         };
         int mat5[][] = {
                 {5, -2, 2, 7},
@@ -387,6 +256,11 @@ public class Solution_3_2 {
             for (int j = 0; j < 4; j++)
                 mat2r[i][j] = r(mat2[i][j]);
         }
+        R mat3r[][] = new R[3][3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++)
+                mat3r[i][j] = r(mat3[i][j]);
+        }
         R mat5r[][] = new R[4][4];
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++)
@@ -397,36 +271,39 @@ public class Solution_3_2 {
             for (int j = 0; j < 3; j++)
                 mat6r[i][j] = r(mat6[i][j]);
         }
-        Mat mm5 = new Mat(mat5r);
-        System.out.println(mm5);
-        System.out.println(mm5.adj());
-        System.out.println(mm5.inv());
-        System.out.println(mm5.mul(mm5.inv()));
-
         Mat mm0 = new Mat(mat0);
-        System.out.println(mm0.det());
+        System.out.println("d0=" + mm0.det());
         Mat mm1 = new Mat(mat1);
-        System.out.println(mm1.det());
+        System.out.println("d1=" + mm1.det());
 
         Mat mm2 = new Mat(mat2r);
-        System.out.println(mm2);
-        System.out.println(mm2.inv());
-        System.out.println(mm2.mul(mm2.inv()));
-        System.out.println(mm2.adj());
         R d2 = mm2.det();
         R expD2 = r(60);
         System.out.println("d2=" + d2);
         assertMe(d2.equals(expD2), "wrong det for matrix 2");
 
-
-        int rd6 = GFG.determinantOfMatrix(mat6, 3);
-        System.out.println("rd6="+rd6);
-
-        Mat mm3 = new Mat(mat6r);
-        System.out.println(mm3);
+        Mat mm3 = new Mat(mat3r);
         R d3 = mm3.det();
-        R expD3 = r(10);
+        R expD3 = r(-1);
         System.out.println("d3=" + d3);
         assertMe(d3.equals(expD3), "wrong det for matrix 3");
+
+        Mat mm6 = new Mat(mat6r);
+        System.out.println(mm6);
+        R d6 = mm6.det();
+        R expD6 = r(10);
+        System.out.println("d6=" + d6);
+        assertMe(d6.equals(expD6), "wrong det for matrix 6");
+
+        System.out.println(mm2);
+        //System.out.println(mm2.inv());
+        //System.out.println(mm2.mul(mm2.inv()));
+        System.out.println(mm2.adj());
+
+        Mat mm5 = new Mat(mat5r);
+        System.out.println(mm5);
+        System.out.println(mm5.adj());
+        //System.out.println(mm5.inv());
+        //System.out.println(mm5.mul(mm5.inv()));
     }
 }
