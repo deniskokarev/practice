@@ -107,6 +107,15 @@ public class Solution_3_2 {
             cols = mm[0].length;
         }
 
+        public Mat(int[][] imat) {
+            rows = imat.length;
+            cols = imat[0].length;
+            mm = new R[rows][cols];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < cols; j++)
+                    mm[i][j] = r(imat[i][j]);
+        }
+
         R[][] cloneMat() {
             R clMat[][] = new R[rows][cols];
             for (int i = 0; i < rows; i++)
@@ -239,23 +248,16 @@ public class Solution_3_2 {
             return o;
         }
     }
-//    public static int[] solution(int[][] m) {
-//    }
+
+    static void assertMe(Boolean c, String err) throws IllegalStateException {
+        if (!c)
+            throw new IllegalStateException(err);
+    }
 
     static class Test {
-        static void assertMe(Boolean c, String err) throws IllegalStateException {
-            if (!c)
-                throw new IllegalStateException(err);
-        }
 
         static Mat mkRMat(int[][] imat) {
-            int rows = imat.length;
-            int cols = imat[0].length;
-            R mm[][] = new R[rows][cols];
-            for (int i = 0; i < rows; i++)
-                for (int j = 0; j < cols; j++)
-                    mm[i][j] = r(imat[i][j]);
-            return new Mat(mm);
+            return new Mat(imat);
         }
 
         static Mat randMat(int sz) {
@@ -383,9 +385,128 @@ public class Solution_3_2 {
                 }
             }
         }
+
+        static void runSolution1() {
+            int mat[][] = {
+                    {0, 1, 0, 0, 0, 1},  // s0, the initial state, goes to s1 and s5 with equal probability
+                    {4, 0, 0, 3, 2, 0},  // s1 can become s0, s3, or s4, but with different probabilities
+                    {0, 0, 0, 0, 0, 0},  // s2 is terminal, and unreachable (never observed in practice)
+                    {0, 0, 0, 0, 0, 0},  // s3 is terminal
+                    {0, 0, 0, 0, 0, 0},  // s4 is terminal
+                    {0, 0, 0, 0, 0, 0},  // s5 is terminal
+            };
+            int result[] = solution(mat);
+            for (int i = 0; i < result.length; i++)
+                System.out.print(result[i] + " ");
+            System.out.println();
+        }
+    }
+
+    public static int[] solution(int[][] m) {
+        int sz = m.length;
+        int o2n[] = new int[sz];
+        int oc = sz - 1;
+        for (int r = sz - 1; r >= 0; r--) {
+            int sm = 0;
+            for (int c = 0; c < sz; c++) {
+                if (r != c) {
+                    sm += m[r][c];
+                }
+            }
+            if (sm == 0) {
+                o2n[r] = oc--;
+            }
+        }
+        int qsz = oc + 1;
+        assertMe(qsz < sz, "must have at least one terminal node");
+        for (int r = sz - 1; r >= 0; r--) {
+            if (o2n[r] == 0)
+                o2n[r] = oc--;
+        }
+        assertMe(oc == -1, "must account for all rows");
+        int rsz = sz - qsz;
+        // Q | R
+        // 0 | I
+        int iSMat[][] = new int[sz][sz];
+        for (int i = 0; i < sz; i++) {
+            for (int j = 0; j < sz; j++)
+                iSMat[o2n[i]][o2n[j]] = m[i][j];
+        }
+        int sm[] = new int[qsz];
+        for (int i=0; i<qsz; i++) {
+            for (int j=0; j<sz; j++)
+                sm[i] += iSMat[i][j];
+        }
+
+        R rQ[][] = new R[qsz][qsz];
+        for (int i = 0; i < qsz; i++) {
+            for (int j = 0; j < qsz; j++)
+                rQ[i][j] = r(iSMat[i][j]).div(r(sm[i]));
+        }
+        R rR[][] = new R[qsz][rsz];
+        for (int i = 0; i < qsz; i++) {
+            for (int j = 0; j < rsz; j++)
+                rR[i][j] = r(iSMat[i][j + qsz]).div(r(sm[i]));
+        }
+        Mat mR = new Mat(rR);
+        System.err.println("=== Q ===");
+        System.err.println(new Mat(rQ));
+        System.err.println("=== R ===");
+        System.err.println(mR);
+
+        // ImQ = I - Q
+        R rImQ[][] = new R[qsz][qsz];
+        for (int i = 0; i < qsz; i++) {
+            for (int j = 0; j < qsz; j++) {
+                if (i == j) {
+                    rImQ[i][j] = r(1).minus(rQ[i][j]);
+                } else {
+                    rImQ[i][j] = r(0).minus(rQ[i][j]);
+                }
+            }
+        }
+        Mat mImQ = new Mat(rImQ);
+        System.err.println("=== I - Q ===");
+        System.err.println(mImQ);
+
+        Mat mInvImQ = mImQ.inv();
+        System.err.println("=== (I - Q) ** -1 ===");
+        System.err.println(mInvImQ);
+
+        R rP[][] = new R[1][qsz];
+        for (int i=0; i<qsz; i++)
+            rP[0][i] = r(0);
+        rP[0][0] = r(1);
+
+        Mat mP = new Mat(rP);
+
+        // result-vector
+        Mat res = mP.mul(mInvImQ).mul(mR);
+        System.err.println("=== [1,0,0..] * ((I - Q) ** -1) * R ===");
+        System.err.println(res);
+
+        // convert to required answer format
+        // reformat to common denominator
+        // and return as last element
+        BigInteger lcm = new BigInteger("1");
+        BigInteger bAns[] = new BigInteger[rsz];
+        for (int i=0; i<rsz; i++) {
+            bAns[i] = res.mm[0][i].n;
+            lcm = R.lcm(lcm, res.mm[0][i].d);
+        }
+        for (int i=0; i<rsz; i++) {
+            bAns[i] = bAns[i].multiply(lcm.divide(res.mm[0][i].d));
+        }
+        int ans[] = new int[rsz+1];
+        for (int i=0; i<rsz; i++) {
+            ans[i] = bAns[i].intValue();
+        }
+        ans[rsz] = lcm.intValue();
+        return ans;
     }
 
     public static void main(String args[]) {
         Test.runTests();
+        Test.runSolution1();
     }
 }
