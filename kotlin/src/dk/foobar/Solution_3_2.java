@@ -1,5 +1,7 @@
 package dk.foobar;
 
+import java.math.BigInteger;
+
 public class Solution_3_2 {
     static void assertMe(Boolean c, String err) throws IllegalStateException {
         if (!c)
@@ -7,26 +9,21 @@ public class Solution_3_2 {
     }
 
     static protected class R {
-        long n, d;
+        BigInteger n, d;
 
-        private static long gcd(long a, long b) {
-            a = Math.abs(a);
-            while (b != 0) {
-                long temp = b;
-                b = a % b;
-                a = temp;
-            }
-            return a;
+        private static BigInteger lcm(BigInteger a, BigInteger b) {
+            BigInteger g = a.gcd(b);
+            return a.divide(g).multiply(b);
         }
 
-        private static long lcm(long a, long b) {
-            long g = gcd(a, b);
-            return a / g * b;
+        public R(BigInteger n, BigInteger d) {
+            this.n = n;
+            this.d = d;
         }
 
         public R(long n, long d) {
-            this.n = n;
-            this.d = d;
+            this.n = new BigInteger(Long.toString(n));
+            this.d = new BigInteger(Long.toString(d));
         }
 
         public R(long n) {
@@ -38,47 +35,55 @@ public class Solution_3_2 {
         }
 
         R simplify() {
-            long g = gcd(n, d);
-            n /= g;
-            d /= g;
+            BigInteger g = n.gcd(d);
+            n = n.divide(g);
+            d = d.divide(g);
             return this;
         }
 
         public R plus(R o) {
-            long nd = lcm(d, o.d);
-            return new R(n * (nd / d) + o.n * (nd / o.d), nd);
+            BigInteger nd = lcm(d, o.d);
+            return new R(n.multiply(nd.divide(d)).add(o.n.multiply(nd.divide(o.d))), nd);
         }
 
         public R minus(R o) {
-            long nd = lcm(d, o.d);
-            return new R(n * (nd / d) - o.n * (nd / o.d), nd);
+            BigInteger nd = lcm(d, o.d);
+            return new R(n.multiply(nd.divide(d)).subtract(o.n.multiply(nd.divide(o.d))), nd);
         }
 
         public R mul(R o) {
-            return new R(n * o.n, d * o.d).simplify();
+            return new R(n.multiply(o.n), d.multiply(o.d)).simplify();
         }
 
         public R div(R o) {
-            int sign = Long.signum(n) * Long.signum(o.n);
-            long nn = Math.abs(n);
-            long on = Math.abs(o.n);
-            return new R(nn * o.d * sign, d * on).simplify();
+            int sign = n.signum() * o.n.signum();
+            BigInteger nn = n.abs();
+            BigInteger on = o.n.abs();
+            BigInteger m = nn.multiply(o.d);
+            if (sign < 0)
+                m = m.negate();
+            return new R(m, d.multiply(on)).simplify();
         }
 
         public R abs() {
-            return new R(Math.abs(n), d);
+            return new R(n.abs(), d);
         }
 
-        public Boolean equals(int i) {
-            return n == i && d == 1 || (n == 0 && i == 0);
+        public boolean isZero() {
+            int i = n.intValue();
+            return i == 0;
         }
 
-        public Boolean equals(R o) {
-            return n == o.n && d == o.d;
+        public boolean isGreaterThanZero() {
+            return n.signum() > 0;
+        }
+
+        public boolean equals(R o) {
+            return n.equals(o.n) && d.equals(o.d);
         }
 
         public String toString() {
-            return Long.toString(n) + "/" + Long.toString(d);
+            return n + "/" + d;
             //return Double.toString(((double) n) / d);
         }
     }
@@ -133,7 +138,7 @@ public class Solution_3_2 {
                 int k = i;
                 for (int j = i + 1; j < sz; j++) {
                     R d = dmat[j][i].abs().minus(dmat[k][i].abs());
-                    if (d.n > 0) // abs(mm[j][i]) > abs(mm[k][i]))
+                    if (d.isGreaterThanZero()) // abs(mm[j][i]) > abs(mm[k][i]))
                         k = j;
                 }
                 if (dmat[k][i].equals(0)) {
@@ -150,7 +155,7 @@ public class Solution_3_2 {
                 for (int j = i + 1; j < sz; j++)
                     dmat[i][j] = dmat[i][j].div(dmat[i][i]);
                 for (int j = 0; j < sz; ++j)
-                    if (j != i && !dmat[j][i].equals(0))
+                    if (j != i && !dmat[j][i].isZero())
                         for (int k2 = i + 1; k2 < sz; k2++)
                             dmat[j][k2] = dmat[j][k2].minus(dmat[i][k2].mul(dmat[j][i]));
             }
@@ -259,7 +264,7 @@ public class Solution_3_2 {
         boolean ans = true;
         for (int i = 0; i < sz; i++)
             for (int j = 0; j < sz; j++)
-                ans &= (i == j && mat.mm[i][j].n == mat.mm[i][j].d) || (i != j && mat.mm[i][j].n == 0);
+                ans &= (i == j && mat.mm[i][j].n.equals(mat.mm[i][j].d)) || (i != j && mat.mm[i][j].isZero());
         return ans;
     }
 
