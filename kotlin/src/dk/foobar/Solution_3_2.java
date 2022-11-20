@@ -125,6 +125,38 @@ public class Solution_3_2 {
             }
         }
 
+        public R gauss_det() {
+            int sz = rows;
+            R dmat[][] = cloneMat();
+            R det = r(1);
+            for (int i = 0; i < sz; i++) {
+                int k = i;
+                for (int j = i + 1; j < sz; j++) {
+                    R d = dmat[j][i].abs().minus(dmat[k][i].abs());
+                    if (d.n > 0) // abs(mm[j][i]) > abs(mm[k][i]))
+                        k = j;
+                }
+                if (dmat[k][i].equals(0)) {
+                    det = r(0);
+                    break;
+                }
+                //swap(mm[i], mm[k]);
+                R tmp[] = dmat[i];
+                dmat[i] = dmat[k];
+                dmat[k] = tmp;
+                if (i != k)
+                    det = det.mul(r(-1));
+                det = det.mul(dmat[i][i]);
+                for (int j = i + 1; j < sz; j++)
+                    dmat[i][j] = dmat[i][j].div(dmat[i][i]);
+                for (int j = 0; j < sz; ++j)
+                    if (j != i && !dmat[j][i].equals(0))
+                        for (int k2 = i + 1; k2 < sz; k2++)
+                            dmat[j][k2] = dmat[j][k2].minus(dmat[i][k2].mul(dmat[j][i]));
+            }
+            return det;
+        }
+
         Mat mat_minor(int r, int c) {
             R[][] res = new R[rows - 1][cols - 1];
             for (int di = 0, si = 0; si < rows; si++) {
@@ -296,6 +328,12 @@ public class Solution_3_2 {
         System.out.println("d6=" + d6);
         assertMe(d6.equals(expD6), "wrong det for matrix 6");
 
+        checkInv(mkRMat(mat0));
+        checkInv(mkRMat(mat1));
+        checkInv(mkRMat(mat2));
+        checkInv(mkRMat(mat3));
+        checkInv(mkRMat(mat5));
+        checkInv(mkRMat(mat6));
         R mat7r[][] = {
                 {r(-3, 2), r(-2, 7), r(-4, 5), r(0, 3), r(-3 / 2)},
                 {r(-2, 5), r(-2, 2), r(-1, 7), r(-1, 2), r(3, 2)},
@@ -308,14 +346,8 @@ public class Solution_3_2 {
         System.out.println(mm7.det());
         System.out.println(mm7.adj());
         checkInv(mm7);
-        checkInv(mkRMat(mat0));
-        checkInv(mkRMat(mat1));
-        checkInv(mkRMat(mat2));
-        checkInv(mkRMat(mat3));
-        checkInv(mkRMat(mat5));
-        checkInv(mkRMat(mat6));
-        for (int sz = 1; sz < 6; sz++) {
-            for (int rep = 0; rep < 1000; rep++) {
+        for (int sz = 7; sz < 8; sz++) {
+            for (int rep = 0; rep < 1; rep++) {
                 Mat m = randMat(sz);
                 R d = m.det();
                 if (!d.equals(0)) // ignore det=0
