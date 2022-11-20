@@ -1,4 +1,18 @@
 package dk.foobar;
+/**
+ * Verifying solution...
+ * Test 1 passed!
+ * Test 2 passed!
+ * Test 3 passed! [Hidden]
+ * Test 4 failed  [Hidden]
+ * Test 5 failed  [Hidden]
+ * Test 6 failed  [Hidden]
+ * Test 7 passed! [Hidden]
+ * Test 8 failed  [Hidden]
+ * Test 9 passed! [Hidden]
+ * Test 10 failed  [Hidden]
+ * Refer a friend: "https://foobar.withgoogle.com/?eid=xPRVz"
+ */
 
 import java.math.BigInteger;
 
