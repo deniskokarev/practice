@@ -428,10 +428,26 @@ public class Solution_3_2 {
             assertMe(equals(expected, result), "test 2");
         }
 
+        static void runSolution3() {
+            int mat[][] = {
+                    {1},  // s0, the initial and final state
+            };
+            int result[] = solution(mat);
+            for (int i = 0; i < result.length; i++)
+                System.out.print(result[i] + " ");
+            System.out.println();
+            int expected[] = {1, 1};
+            assertMe(equals(expected, result), "test 3");
+        }
+
     }
 
     public static int[] solution(int[][] m) {
         int sz = m.length;
+        if (sz == 1) {
+            // minimal case
+            return new int[]{1, 1};
+        }
         int o2n[] = new int[sz];
         int oc = sz - 1;
         for (int r = sz - 1; r >= 0; r--) {
@@ -537,5 +553,6 @@ public class Solution_3_2 {
         Test.runTests();
         Test.runSolution1();
         Test.runSolution2();
+        Test.runSolution3();
     }
 }
