@@ -61,9 +61,9 @@ public class Solution_3_2 {
 
         public R div(R o) {
             int sign = Long.signum(n) * Long.signum(o.n);
-            n = Math.abs(n);
+            long nn = Math.abs(n);
             long on = Math.abs(o.n);
-            return new R(n * o.d * sign, d * on).simplify();
+            return new R(nn * o.d * sign, d * on).simplify();
         }
 
         public R abs() {
@@ -111,32 +111,33 @@ public class Solution_3_2 {
 
         public R det() {
             int sz = rows;
+            R dmat[][] = cloneMat();
             R tmp[] = new R[sz];
             R det = r(1);
-            for (int i = 0; i < sz; ++i) {
+            for (int i = 0; i < sz; i++) {
                 int k = i;
-                for (int j = i + 1; j < sz; ++j) {
-                    R d = mm[j][i].abs().minus(mm[k][i].abs());
+                for (int j = i + 1; j < sz; j++) {
+                    R d = dmat[j][i].abs().minus(dmat[k][i].abs());
                     if (d.n > 0) // abs(mm[j][i]) > abs(mm[k][i]))
                         k = j;
                 }
-                if (mm[k][i].equals(0)) {
+                if (dmat[k][i].equals(0)) {
                     det = r(0);
                     break;
                 }
                 //swap(mm[i], mm[k]);
-                System.arraycopy(mm[i], 0, tmp, 0, sz);
-                System.arraycopy(mm[k], 0, mm[i], 0, sz);
-                System.arraycopy(tmp, 0, mm[k], 0, sz);
+                System.arraycopy(dmat[i], 0, tmp, 0, sz);
+                System.arraycopy(dmat[k], 0, dmat[i], 0, sz);
+                System.arraycopy(tmp, 0, dmat[k], 0, sz);
                 if (i != k)
                     det = det.mul(r(-1));
-                det = det.mul(mm[i][i]);
-                for (int j = i + 1; j < sz; ++j)
-                    mm[i][j] = mm[i][j].div(mm[i][i]);
+                det = det.mul(dmat[i][i]);
+                for (int j = i + 1; j < sz; j++)
+                    dmat[i][j] = dmat[i][j].div(dmat[i][i]);
                 for (int j = 0; j < sz; ++j)
-                    if (j != i && !mm[j][i].equals(0))
-                        for (int k2 = i + 1; k2 < sz; ++k2)
-                            mm[j][k2] = mm[j][k2].minus(mm[i][k2].mul(mm[j][i]));
+                    if (j != i && !dmat[j][i].equals(0))
+                        for (int k2 = i + 1; k2 < sz; k2++)
+                            dmat[j][k2] = dmat[j][k2].minus(dmat[i][k2].mul(dmat[j][i]));
             }
             return det;
         }
@@ -163,8 +164,8 @@ public class Solution_3_2 {
                 int sign = ((r & 1) == 0) ? 1 : -1;
                 for (int c = 0; c < rows; c++) {
                     Mat mr = mat_minor(r, c);
-                    if (false && c == 0 && r == 3) {
-                        System.out.println("Mat minor [3][0]");
+                    if (false && c == 0 && r == 2) {
+                        System.out.println("Mat minor [2][0]");
                         for (int i=0; i<3; i++) {
                             for (int j=0; j<3; j++)
                                 System.out.print(mr.mm[i][j] + " ");
@@ -221,13 +222,21 @@ public class Solution_3_2 {
 //    public static int[] solution(int[][] m) {
 //    }
 
+    static Mat mkRMat(int[][] imat) {
+        int rows = imat.length;
+        int cols = imat[0].length;
+        R mm[][] = new R[rows][cols];
+        for (int i=0; i<rows; i++)
+            for (int j=0; j<cols; j++)
+                mm[i][j] = r(imat[i][j]);
+        return new Mat(mm);
+    }
+
     public static void main(String args[]) {
-        R[][] mat0 = new R[][]{
-                {r(3)},
-        };
-        R[][] mat1 = new R[][]{
-                {r(2), r(-2)},
-                {r(3), r(5)},
+        int mat0[][] = {{1}};
+        int mat1[][] = {
+                {2, -2},
+                {3, 5},
         };
         int mat2[][] = {
                 {1, 0, 2, -3},
@@ -251,44 +260,24 @@ public class Solution_3_2 {
                 {0, 0, 5},
                 {1, 4, -3},
         };
-        R mat2r[][] = new R[4][4];
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++)
-                mat2r[i][j] = r(mat2[i][j]);
-        }
-        R mat3r[][] = new R[3][3];
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++)
-                mat3r[i][j] = r(mat3[i][j]);
-        }
-        R mat5r[][] = new R[4][4];
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++)
-                mat5r[i][j] = r(mat5[i][j]);
-        }
-        R mat6r[][] = new R[3][3];
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++)
-                mat6r[i][j] = r(mat6[i][j]);
-        }
-        Mat mm0 = new Mat(mat0);
+        Mat mm0 = mkRMat(mat0);
         System.out.println("d0=" + mm0.det());
-        Mat mm1 = new Mat(mat1);
+        Mat mm1 = mkRMat(mat1);
         System.out.println("d1=" + mm1.det());
 
-        Mat mm2 = new Mat(mat2r);
+        Mat mm2 = mkRMat(mat2);
         R d2 = mm2.det();
         R expD2 = r(60);
         System.out.println("d2=" + d2);
         assertMe(d2.equals(expD2), "wrong det for matrix 2");
 
-        Mat mm3 = new Mat(mat3r);
+        Mat mm3 = mkRMat(mat3);
         R d3 = mm3.det();
         R expD3 = r(-1);
         System.out.println("d3=" + d3);
         assertMe(d3.equals(expD3), "wrong det for matrix 3");
 
-        Mat mm6 = new Mat(mat6r);
+        Mat mm6 = mkRMat(mat6);
         System.out.println(mm6);
         R d6 = mm6.det();
         R expD6 = r(10);
@@ -296,14 +285,14 @@ public class Solution_3_2 {
         assertMe(d6.equals(expD6), "wrong det for matrix 6");
 
         System.out.println(mm2);
-        //System.out.println(mm2.inv());
-        //System.out.println(mm2.mul(mm2.inv()));
-        System.out.println(mm2.adj());
+        System.out.println(mm2.inv());
+        System.out.println(mm2.mul(mm2.inv()));
+        //System.out.println(mm2.adj());
 
-        Mat mm5 = new Mat(mat5r);
+        Mat mm5 = mkRMat(mat5);
         System.out.println(mm5);
-        System.out.println(mm5.adj());
+        //System.out.println(mm5.adj());
         //System.out.println(mm5.inv());
-        //System.out.println(mm5.mul(mm5.inv()));
+        System.out.println(mm5.mul(mm5.inv()));
     }
 }
