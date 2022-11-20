@@ -5,16 +5,18 @@ public class Solution_3_2 {
         if (!c)
             throw new IllegalStateException(err);
     }
+
     static protected class R {
         long n, d;
 
         private static long gcd(long a, long b) {
+            a = Math.abs(a);
             while (b != 0) {
                 long temp = b;
                 b = a % b;
                 a = temp;
             }
-            return Math.abs(a);
+            return a;
         }
 
         private static long lcm(long a, long b) {
@@ -76,8 +78,8 @@ public class Solution_3_2 {
         }
 
         public String toString() {
-            //return Long.toString(n) + "/" + Long.toString(d);
-            return Double.toString(((double) n) / d);
+            return Long.toString(n) + "/" + Long.toString(d);
+            //return Double.toString(((double) n) / d);
         }
     }
 
@@ -106,36 +108,21 @@ public class Solution_3_2 {
             return clMat;
         }
 
+        // naive method rules, Gauss overflows quickly in R
         public R det() {
             int sz = rows;
-            R dmat[][] = cloneMat();
-            R det = r(1);
-            for (int i = 0; i < sz; i++) {
-                int k = i;
-                for (int j = i + 1; j < sz; j++) {
-                    R d = dmat[j][i].abs().minus(dmat[k][i].abs());
-                    if (d.n > 0) // abs(mm[j][i]) > abs(mm[k][i]))
-                        k = j;
+            if (sz == 1) {
+                return mm[0][0];
+            } else {
+                int sign = 1;
+                R det = new R(0);
+                for (int c=0; c<sz; c++) {
+                    Mat minor = mat_minor(0, c);
+                    det = det.plus(r(sign).mul(mm[0][c].mul(minor.det())));
+                    sign *= -1;
                 }
-                if (dmat[k][i].equals(0)) {
-                    det = r(0);
-                    break;
-                }
-                //swap(mm[i], mm[k]);
-                R tmp[] = dmat[i];
-                dmat[i] = dmat[k];
-                dmat[k] = tmp;
-                if (i != k)
-                    det = det.mul(r(-1));
-                det = det.mul(dmat[i][i]);
-                for (int j = i + 1; j < sz; j++)
-                    dmat[i][j] = dmat[i][j].div(dmat[i][i]);
-                for (int j = 0; j < sz; ++j)
-                    if (j != i && !dmat[j][i].equals(0))
-                        for (int k2 = i + 1; k2 < sz; k2++)
-                            dmat[j][k2] = dmat[j][k2].minus(dmat[i][k2].mul(dmat[j][i]));
+                return det;
             }
-            return det;
         }
 
         Mat mat_minor(int r, int c) {
@@ -217,16 +204,16 @@ public class Solution_3_2 {
         int rows = imat.length;
         int cols = imat[0].length;
         R mm[][] = new R[rows][cols];
-        for (int i=0; i<rows; i++)
-            for (int j=0; j<cols; j++)
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
                 mm[i][j] = r(imat[i][j]);
         return new Mat(mm);
     }
 
     static Mat randMat(int sz) {
         R mm[][] = new R[sz][sz];
-        for (int i=0; i<sz; i++) {
-            for (int j=0; j<sz; j++) {
+        for (int i = 0; i < sz; i++) {
+            for (int j = 0; j < sz; j++) {
                 int n = (int) (Math.random() * 8) - 4;
                 int d = (int) (Math.random() * 7) + 1;
                 mm[i][j] = new R(n, d);
@@ -238,9 +225,9 @@ public class Solution_3_2 {
     static boolean isEye(Mat mat) {
         int sz = mat.rows;
         boolean ans = true;
-        for (int i=0; i<sz; i++)
-            for (int j=0; j<sz; j++)
-                ans &= (i==j && mat.mm[i][j].n == mat.mm[i][j].d) || (i!=j && mat.mm[i][j].n == 0);
+        for (int i = 0; i < sz; i++)
+            for (int j = 0; j < sz; j++)
+                ans &= (i == j && mat.mm[i][j].n == mat.mm[i][j].d) || (i != j && mat.mm[i][j].n == 0);
         return ans;
     }
 
@@ -309,14 +296,26 @@ public class Solution_3_2 {
         System.out.println("d6=" + d6);
         assertMe(d6.equals(expD6), "wrong det for matrix 6");
 
+        R mat7r[][] = {
+                {r(-3, 2), r(-2, 7), r(-4, 5), r(0, 3), r(-3 / 2)},
+                {r(-2, 5), r(-2, 2), r(-1, 7), r(-1, 2), r(3, 2)},
+                {r(-3, 6), r(1, 5), r(-2, 7), r(1, 2), r(3, 1)},
+                {r(2, 7), r(3, 1), r(-1, 1), r(3, 1), r(0, 6)},
+                {r(-2, 5), r(0, 3), r(-3, 3), r(3, 7), r(3, 7)},
+        };
+        Mat mm7 = new Mat(mat7r);
+        System.out.println(mm7);
+        System.out.println(mm7.det());
+        System.out.println(mm7.adj());
+        checkInv(mm7);
         checkInv(mkRMat(mat0));
         checkInv(mkRMat(mat1));
         checkInv(mkRMat(mat2));
         checkInv(mkRMat(mat3));
         checkInv(mkRMat(mat5));
         checkInv(mkRMat(mat6));
-        for (int sz=1; sz<6; sz++) {
-            for (int rep=0; rep<1000; rep++) {
+        for (int sz = 1; sz < 6; sz++) {
+            for (int rep = 0; rep < 1000; rep++) {
                 Mat m = randMat(sz);
                 R d = m.det();
                 if (!d.equals(0)) // ignore det=0
