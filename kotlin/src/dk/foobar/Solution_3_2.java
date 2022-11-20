@@ -1,17 +1,70 @@
 package dk.foobar;
 /**
- * Verifying solution...
- * Test 1 passed!
- * Test 2 passed!
- * Test 3 passed! [Hidden]
- * Test 4 failed  [Hidden]
- * Test 5 failed  [Hidden]
- * Test 6 failed  [Hidden]
- * Test 7 passed! [Hidden]
- * Test 8 failed  [Hidden]
- * Test 9 passed! [Hidden]
- * Test 10 failed  [Hidden]
- * Refer a friend: "https://foobar.withgoogle.com/?eid=xPRVz"
+ * Doomsday Fuel
+ * =============
+ *
+ * Making fuel for the LAMBCHOP's reactor core is a tricky process because of the exotic matter involved. It starts as raw ore, then during processing, begins randomly changing between forms, eventually reaching a stable form. There may be multiple stable forms that a sample could ultimately reach, not all of which are useful as fuel.
+ *
+ * Commander Lambda has tasked you to help the scientists increase fuel creation efficiency by predicting the end state of a given ore sample. You have carefully studied the different structures that the ore can take and which transitions it undergoes. It appears that, while random, the probability of each structure transforming is fixed. That is, each time the ore is in 1 state, it has the same probabilities of entering the next state (which might be the same state).  You have recorded the observed transitions in a matrix. The others in the lab have hypothesized more exotic forms that the ore can become, but you haven't seen all of them.
+ *
+ * Write a function solution(m) that takes an array of array of nonnegative ints representing how many times that state has gone to the next state and return an array of ints for each terminal state giving the exact probabilities of each terminal state, represented as the numerator for each state, then the denominator for all of them at the end and in simplest form. The matrix is at most 10 by 10. It is guaranteed that no matter which state the ore is in, there is a path from that state to a terminal state. That is, the processing will always eventually end in a stable state. The ore starts in state 0. The denominator will fit within a signed 32-bit integer during the calculation, as long as the fraction is simplified regularly.
+ *
+ * For example, consider the matrix m:
+ * [
+ *   [0,1,0,0,0,1],  # s0, the initial state, goes to s1 and s5 with equal probability
+ *   [4,0,0,3,2,0],  # s1 can become s0, s3, or s4, but with different probabilities
+ *   [0,0,0,0,0,0],  # s2 is terminal, and unreachable (never observed in practice)
+ *   [0,0,0,0,0,0],  # s3 is terminal
+ *   [0,0,0,0,0,0],  # s4 is terminal
+ *   [0,0,0,0,0,0],  # s5 is terminal
+ * ]
+ * So, we can consider different paths to terminal states, such as:
+ * s0 -> s1 -> s3
+ * s0 -> s1 -> s0 -> s1 -> s0 -> s1 -> s4
+ * s0 -> s1 -> s0 -> s5
+ * Tracing the probabilities of each, we find that
+ * s2 has probability 0
+ * s3 has probability 3/14
+ * s4 has probability 1/7
+ * s5 has probability 9/14
+ * So, putting that together, and making a common denominator, gives an answer in the form of
+ * [s2.numerator, s3.numerator, s4.numerator, s5.numerator, denominator] which is
+ * [0, 3, 2, 9, 14].
+ *
+ * Languages
+ * =========
+ *
+ * To provide a Java solution, edit Solution.java
+ * To provide a Python solution, edit solution.py
+ *
+ * Test cases
+ * ==========
+ * Your code should pass the following test cases.
+ * Note that it may also be run against hidden test cases not shown here.
+ *
+ * -- Java cases --
+ * Input:
+ * Solution.solution({{0, 2, 1, 0, 0}, {0, 0, 0, 3, 4}, {0, 0, 0, 0, 0}, {0, 0, 0, 0,0}, {0, 0, 0, 0, 0}})
+ * Output:
+ *     [7, 6, 8, 21]
+ *
+ * Input:
+ * Solution.solution({{0, 1, 0, 0, 0, 1}, {4, 0, 0, 3, 2, 0}, {0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}})
+ * Output:
+ *     [0, 3, 2, 9, 14]
+ *
+ * -- Python cases --
+ * Input:
+ * solution.solution([[0, 2, 1, 0, 0], [0, 0, 0, 3, 4], [0, 0, 0, 0, 0], [0, 0, 0, 0,0], [0, 0, 0, 0, 0]])
+ * Output:
+ *     [7, 6, 8, 21]
+ *
+ * Input:
+ * solution.solution([[0, 1, 0, 0, 0, 1], [4, 0, 0, 3, 2, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]])
+ * Output:
+ *     [0, 3, 2, 9, 14]
+ *
+ * Submission: SUCCESSFUL. Completed in: 2 days, 4 hrs, 56 mins, 7 secs.
  */
 
 import java.math.BigInteger;
@@ -22,9 +75,6 @@ public class Solution_3_2 {
 
         private static BigInteger lcm(BigInteger a, BigInteger b) {
             BigInteger g = a.gcd(b);
-            if (g.equals(BigInteger.ZERO)) {
-                System.out.println("WTF");
-            }
             return a.divide(g).multiply(b);
         }
 
@@ -47,9 +97,6 @@ public class Solution_3_2 {
         }
 
         R simplify() {
-            if (d.equals(BigInteger.ZERO)) {
-                System.out.println("WTF");
-            }
             BigInteger g = n.gcd(d);
             n = n.divide(g);
             d = d.divide(g);
@@ -61,9 +108,6 @@ public class Solution_3_2 {
         }
 
         public R plus(R o) {
-            if (o.d.equals(BigInteger.ZERO)) {
-                System.err.println("WTF");
-            }
             BigInteger nd = lcm(d, o.d);
             return new R(n.multiply(nd.divide(d)).add(o.n.multiply(nd.divide(o.d))), nd);
         }
@@ -153,6 +197,7 @@ public class Solution_3_2 {
             }
         }
 
+        // taken from emaxx and adopted from double to R
         public R gauss_det() {
             int sz = rows;
             R dmat[][] = cloneMat();
@@ -455,13 +500,18 @@ public class Solution_3_2 {
 
     }
 
+    // implementing https://math.stackexchange.com/questions/1941244/markov-chain-help
+    // and https://math.dartmouth.edu/archive/m20x06/public_html/Lecture14.pdf
     public static int[] solution(int[][] m) {
         int sz = m.length;
         if (sz == 1) {
             // minimal case
             return new int[]{1, 1};
         }
-        int o2n[] = new int[sz];
+        // "sorting" rows in matrix to make it look like
+        // Q | R
+        // 0 | I
+        int o2n[] = new int[sz]; // old -> new node num
         int oc = sz - 1;
         for (int r = sz - 1; r >= 0; r--) {
             int sm = 0;
@@ -482,6 +532,7 @@ public class Solution_3_2 {
         }
         assertMe(oc == -1, "must account for all rows");
         int rsz = sz - qsz;
+        // our "sorted" matrix in the form
         // Q | R
         // 0 | I
         int iSMat[][] = new int[sz][sz];
@@ -489,28 +540,32 @@ public class Solution_3_2 {
             for (int j = 0; j < sz; j++)
                 iSMat[o2n[i]][o2n[j]] = m[i][j];
         }
+        // sm[row] - sum for row
         int sm[] = new int[qsz];
         for (int i = 0; i < qsz; i++) {
             for (int j = 0; j < sz; j++)
                 sm[i] += iSMat[i][j];
         }
-
+        // Q probability matrix
         R rQ[][] = new R[qsz][qsz];
         for (int i = 0; i < qsz; i++) {
             for (int j = 0; j < qsz; j++)
                 rQ[i][j] = r(iSMat[i][j]).div(r(sm[i]));
         }
+        // R probability matrix
         R rR[][] = new R[qsz][rsz];
         for (int i = 0; i < qsz; i++) {
             for (int j = 0; j < rsz; j++)
                 rR[i][j] = r(iSMat[i][j + qsz]).div(r(sm[i]));
         }
+        // matrices are relatively small, no performance impact for debug output
         Mat mR = new Mat(rR);
         System.err.println("=== Q ===");
         System.err.println(new Mat(rQ));
         System.err.println("=== R ===");
         System.err.println(mR);
 
+        // begin calculation
         // ImQ = I - Q
         R rImQ[][] = new R[qsz][qsz];
         for (int i = 0; i < qsz; i++) {
