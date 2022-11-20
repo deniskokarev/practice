@@ -137,7 +137,6 @@ public class Solution_3_2 {
             return clMat;
         }
 
-        // naive method rules
         public R naive_det() {
             int sz = rows;
             if (sz == 1) {
@@ -165,7 +164,7 @@ public class Solution_3_2 {
                     if (d.isGreaterThanZero()) // abs(mm[j][i]) > abs(mm[k][i]))
                         k = j;
                 }
-                if (dmat[k][i].equals(0)) {
+                if (dmat[k][i].isZero()) {
                     det = r(0);
                     break;
                 }
@@ -187,7 +186,7 @@ public class Solution_3_2 {
         }
 
         public R det() {
-            return naive_det();
+            return gauss_det();
         }
 
         Mat mat_minor(int r, int c) {
@@ -402,8 +401,8 @@ public class Solution_3_2 {
             System.out.println(mm7.det());
             System.out.println(mm7.adj());
             checkInv(mm7);
-            for (int sz = 1; sz < 6; sz++) {
-                for (int rep = 0; rep < 100; rep++) {
+            for (int sz = 1; sz < 11; sz++) {
+                for (int rep = 0; rep < 10; rep++) {
                     Mat m = randMat(sz);
                     R d = m.det();
                     if (!d.isZero()) // ignore det=0
