@@ -228,7 +228,7 @@ public class Solution_3_2 {
         for (int i=0; i<sz; i++) {
             for (int j=0; j<sz; j++) {
                 int n = (int) (Math.random() * 8) - 4;
-                int d = (int) (Math.random() * 8);
+                int d = (int) (Math.random() * 7) + 1;
                 mm[i][j] = new R(n, d);
             }
         }
@@ -315,5 +315,13 @@ public class Solution_3_2 {
         checkInv(mkRMat(mat3));
         checkInv(mkRMat(mat5));
         checkInv(mkRMat(mat6));
+        for (int sz=1; sz<6; sz++) {
+            for (int rep=0; rep<1000; rep++) {
+                Mat m = randMat(sz);
+                R d = m.det();
+                if (!d.equals(0)) // ignore det=0
+                    checkInv(m);
+            }
+        }
     }
 }
