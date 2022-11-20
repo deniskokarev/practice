@@ -294,6 +294,18 @@ public class Solution_3_2 {
             }
         }
 
+        static boolean equals(int a[], int b[]) {
+            int asz = a.length;
+            int bsz = b.length;
+            if (asz != bsz)
+                return false;
+            for (int i = 0; i < asz; i++) {
+                if (a[i] != b[i])
+                    return false;
+            }
+            return true;
+        }
+
         static void runTests() {
             int mat0[][] = {{3}};
             int mat1[][] = {
@@ -399,7 +411,23 @@ public class Solution_3_2 {
             for (int i = 0; i < result.length; i++)
                 System.out.print(result[i] + " ");
             System.out.println();
+            int expected[] = {0, 3, 2, 9, 14};
+            assertMe(equals(expected, result), "test 1");
         }
+
+        static void runSolution2() {
+            int mat[][] = {
+                    {0, 1},  // s0, the initial state, goes to s1
+                    {0, 1},  // s1 only goes to self
+            };
+            int result[] = solution(mat);
+            for (int i = 0; i < result.length; i++)
+                System.out.print(result[i] + " ");
+            System.out.println();
+            int expected[] = {1, 1};
+            assertMe(equals(expected, result), "test 2");
+        }
+
     }
 
     public static int[] solution(int[][] m) {
@@ -433,8 +461,8 @@ public class Solution_3_2 {
                 iSMat[o2n[i]][o2n[j]] = m[i][j];
         }
         int sm[] = new int[qsz];
-        for (int i=0; i<qsz; i++) {
-            for (int j=0; j<sz; j++)
+        for (int i = 0; i < qsz; i++) {
+            for (int j = 0; j < sz; j++)
                 sm[i] += iSMat[i][j];
         }
 
@@ -474,7 +502,7 @@ public class Solution_3_2 {
         System.err.println(mInvImQ);
 
         R rP[][] = new R[1][qsz];
-        for (int i=0; i<qsz; i++)
+        for (int i = 0; i < qsz; i++)
             rP[0][i] = r(0);
         rP[0][0] = r(1);
 
@@ -490,15 +518,15 @@ public class Solution_3_2 {
         // and return as last element
         BigInteger lcm = new BigInteger("1");
         BigInteger bAns[] = new BigInteger[rsz];
-        for (int i=0; i<rsz; i++) {
+        for (int i = 0; i < rsz; i++) {
             bAns[i] = res.mm[0][i].n;
             lcm = R.lcm(lcm, res.mm[0][i].d);
         }
-        for (int i=0; i<rsz; i++) {
+        for (int i = 0; i < rsz; i++) {
             bAns[i] = bAns[i].multiply(lcm.divide(res.mm[0][i].d));
         }
-        int ans[] = new int[rsz+1];
-        for (int i=0; i<rsz; i++) {
+        int ans[] = new int[rsz + 1];
+        for (int i = 0; i < rsz; i++) {
             ans[i] = bAns[i].intValue();
         }
         ans[rsz] = lcm.intValue();
@@ -508,5 +536,6 @@ public class Solution_3_2 {
     public static void main(String args[]) {
         Test.runTests();
         Test.runSolution1();
+        Test.runSolution2();
     }
 }
