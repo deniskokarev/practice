@@ -8,18 +8,15 @@ public class Solution_3_2 {
     static protected class R {
         long n, d;
 
-        // b must be pos
         private static long gcd(long a, long b) {
-            a = Math.abs(a); // make a pos
             while (b != 0) {
                 long temp = b;
                 b = a % b;
                 a = temp;
             }
-            return a;
+            return Math.abs(a);
         }
 
-        // b must be pos
         private static long lcm(long a, long b) {
             long g = gcd(a, b);
             return a / g * b;
@@ -79,8 +76,8 @@ public class Solution_3_2 {
         }
 
         public String toString() {
-            return Long.toString(n) + "/" + Long.toString(d);
-            //return Double.toString(((double) n) / d);
+            //return Long.toString(n) + "/" + Long.toString(d);
+            return Double.toString(((double) n) / d);
         }
     }
 
@@ -112,7 +109,6 @@ public class Solution_3_2 {
         public R det() {
             int sz = rows;
             R dmat[][] = cloneMat();
-            R tmp[] = new R[sz];
             R det = r(1);
             for (int i = 0; i < sz; i++) {
                 int k = i;
@@ -126,9 +122,9 @@ public class Solution_3_2 {
                     break;
                 }
                 //swap(mm[i], mm[k]);
-                System.arraycopy(dmat[i], 0, tmp, 0, sz);
-                System.arraycopy(dmat[k], 0, dmat[i], 0, sz);
-                System.arraycopy(tmp, 0, dmat[k], 0, sz);
+                R tmp[] = dmat[i];
+                dmat[i] = dmat[k];
+                dmat[k] = tmp;
                 if (i != k)
                     det = det.mul(r(-1));
                 det = det.mul(dmat[i][i]);
@@ -159,24 +155,19 @@ public class Solution_3_2 {
         }
 
         Mat adj() {
-            R a[][] = new R[rows][rows];
-            for (int r = 0; r < rows; r++) {
-                int sign = ((r & 1) == 0) ? 1 : -1;
-                for (int c = 0; c < rows; c++) {
-                    Mat mr = mat_minor(r, c);
-                    if (false && c == 0 && r == 2) {
-                        System.out.println("Mat minor [2][0]");
-                        for (int i=0; i<3; i++) {
-                            for (int j=0; j<3; j++)
-                                System.out.print(mr.mm[i][j] + " ");
-                            System.out.println("\n");
-                        }
-                        System.out.println("sign=" + sign);
-                        System.out.println("det=" + mr.det());
-                        System.out.println("out=" + mr.det().mul(r(sign)));
+            R a[][];
+            if (rows < 2) {
+                a = new R[1][1];
+                a[0][0] = r(1);
+            } else {
+                a = new R[rows][rows];
+                for (int r = 0; r < rows; r++) {
+                    int sign = ((r & 1) == 0) ? 1 : -1;
+                    for (int c = 0; c < rows; c++) {
+                        Mat mr = mat_minor(r, c);
+                        a[c][r] = mr.det().mul(r(sign));
+                        sign *= -1;
                     }
-                    a[c][r] = mr.det().mul(r(sign));
-                    sign *= -1;
                 }
             }
             return new Mat(a);
@@ -232,8 +223,42 @@ public class Solution_3_2 {
         return new Mat(mm);
     }
 
+    static Mat randMat(int sz) {
+        R mm[][] = new R[sz][sz];
+        for (int i=0; i<sz; i++) {
+            for (int j=0; j<sz; j++) {
+                int n = (int) (Math.random() * 8) - 4;
+                int d = (int) (Math.random() * 8);
+                mm[i][j] = new R(n, d);
+            }
+        }
+        return new Mat(mm);
+    }
+
+    static boolean isEye(Mat mat) {
+        int sz = mat.rows;
+        boolean ans = true;
+        for (int i=0; i<sz; i++)
+            for (int j=0; j<sz; j++)
+                ans &= (i==j && mat.mm[i][j].n == mat.mm[i][j].d) || (i!=j && mat.mm[i][j].n == 0);
+        return ans;
+    }
+
+    static void checkInv(Mat mat) {
+        Mat inv = mat.inv();
+        Mat res = mat.mul(inv);
+        boolean isCorrect = isEye(res);
+        if (!isCorrect) {
+            System.err.println("=== Mat ===");
+            System.err.println(mat);
+            System.err.println("=== Inv ===");
+            System.err.println(inv);
+            assertMe(false, "incorrect inverse!");
+        }
+    }
+
     public static void main(String args[]) {
-        int mat0[][] = {{1}};
+        int mat0[][] = {{3}};
         int mat1[][] = {
                 {2, -2},
                 {3, 5},
@@ -284,15 +309,11 @@ public class Solution_3_2 {
         System.out.println("d6=" + d6);
         assertMe(d6.equals(expD6), "wrong det for matrix 6");
 
-        System.out.println(mm2);
-        System.out.println(mm2.inv());
-        System.out.println(mm2.mul(mm2.inv()));
-        //System.out.println(mm2.adj());
-
-        Mat mm5 = mkRMat(mat5);
-        System.out.println(mm5);
-        //System.out.println(mm5.adj());
-        //System.out.println(mm5.inv());
-        System.out.println(mm5.mul(mm5.inv()));
+        checkInv(mkRMat(mat0));
+        checkInv(mkRMat(mat1));
+        checkInv(mkRMat(mat2));
+        checkInv(mkRMat(mat3));
+        checkInv(mkRMat(mat5));
+        checkInv(mkRMat(mat6));
     }
 }
