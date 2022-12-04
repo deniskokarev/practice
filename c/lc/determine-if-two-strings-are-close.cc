@@ -1,3 +1,28 @@
+// https://leetcode.com/problems/determine-if-two-strings-are-close/
+constexpr char A = 'a';
+constexpr int ASZ = 26;
+
+class Solution {
+public:
+	static bool closeStrings(const string &word1, const string &word2) {
+		int c1[ASZ]{0};
+		int c2[ASZ]{0};
+		for (unsigned char c: word1)
+			c1[(c - A) % ASZ]++;
+		for (unsigned char c: word2)
+			c2[(c - A) % ASZ]++;
+		bool ans = true;
+		for (int i = 0; i < ASZ; i++)
+			ans &= (c1[i] > 0) == (c2[i] > 0);
+		sort(c1, c1 + ASZ);
+		sort(c2, c2 + ASZ);
+		for (int i = 0; i < ASZ; i++)
+			ans &= c1[i] == c2[i];
+		return ans;
+	}
+};
+
+
 class Solution {
 public:
     bool closeStrings(const string &word1, const string &word2) {
