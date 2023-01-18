@@ -5,6 +5,31 @@
 using namespace std;
 
 class Solution {
+    using M = struct {
+        int mn;
+        int p;
+    };
+public:
+    static int maxSubarraySumCircular(const vector<int>& nums) {
+        int sz = nums.size();
+        deque<M> mn_sm {{INT_MAX/2, -1}};
+        int sm = 0;
+        int ans = INT_MIN;
+        for (int i=0; i < 2*sz; i++) {
+            int p = i % sz;
+            while (mn_sm.front().p + sz < i)
+                mn_sm.pop_front();
+            sm += nums[p];
+            ans = max(ans, sm - mn_sm.front().mn);
+            while (!mn_sm.empty() && mn_sm.back().mn > sm)
+                mn_sm.pop_back();
+            mn_sm.push_back({sm, i});
+        }
+        return ans;
+    }
+};
+
+class Solution_old {
 	struct MN {
 		int mn, pos;
 	};
