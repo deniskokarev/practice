@@ -25,10 +25,10 @@ target_link_libraries(par_test gtest gtest_main)
 add_executable(heap_test alg/heap_test.cc)
 target_link_libraries(heap_test gtest gtest_main)
 
-add_executable(binomial_test alg/binomial_test.cc alg/binomial.hh alg/comb.cc alg/comb.hh)
+add_executable(binomial_test alg/binomial_test.cc alg/comb.cc)
 target_link_libraries(binomial_test gtest gtest_main)
 
-add_executable(segtree_test alg/segtree_test.cc alg/segtree.hh)
+add_executable(segtree_test alg/segtree_test.cc)
 target_link_libraries(segtree_test gtest gtest_main)
 
 add_test(NAME ilog_test COMMAND ilog_test)
