@@ -5,7 +5,7 @@ class Solution {
     }
 public:
     int countOdds(int low, int high) {
-        return (high+(is_odd(high) || is_odd(low)))/2 - low/2;
+        return (high+1)/2 - low/2;
         // ^^^^ from below analysis
         if (is_odd(high)) {
             if (is_odd(low)) {
@@ -21,7 +21,7 @@ public:
                 return (high+1)/2 - low/2;
             } else {
                 // even-even 2,2 2,3,4
-                return high/2 - low/2;
+                return (high+1)/2 - low/2; // either high+1 or not
             }
         }
     }
