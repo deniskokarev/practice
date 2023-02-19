@@ -222,11 +222,13 @@ void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
     unsigned bh = fifo->recs[rh % RECORD_BUF_SZ].ofs;
     while (rh != rt) {
         mconn_fifo_record_t *r = &fifo->recs[rh % RECORD_BUF_SZ];
-        if (packet_sz + r->sz > me->mtu_sz) {
-            // bust
-            break;
-        } else if (r->svc != NULL) {
-            packet_sz += r->sz; // ignore spacer
+        if (r->svc) {
+            // ignore spacers with svc == NULL
+            if (packet_sz + r->sz > me->mtu_sz) {
+                // bust
+                break;
+            }
+            packet_sz += r->sz;
         }
         bh += r->sz;
         rh++;
