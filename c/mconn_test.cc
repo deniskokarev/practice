@@ -260,11 +260,11 @@ static void run_produce_rand_records(mconn_service_obuf_t *obuf_svc, stat_t *sta
             stat->prod_cnt++;
             stat->prod_bytes += strlen(s);
             n--;
-            stat->prod_thread_done = 1;
         } else {
             std::this_thread::yield(); // busy wait
         }
     }
+    stat->prod_thread_done = 1;
 }
 
 static void run_consume(mconn_service_obuf_t *obuf_svc, stat_t *stat) {
@@ -310,10 +310,11 @@ TEST(Parallel, ProduceFew) {
 }
 
 TEST(Parallel, ProduceMany) {
+    mconn_fifo_close(mconn_fifo);
     stat_t stat;
     consumer_svc.stat = &stat;
     mconn_service_ready_to_send = 1;
-    std::thread p(run_produce_rand_records, &producer_svc, &stat, 1000);
+    std::thread p(run_produce_rand_records, &producer_svc, &stat, 100000);
     std::thread c(run_consume, &producer_svc, &stat);
     p.join();
     c.join();
