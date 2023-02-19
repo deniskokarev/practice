@@ -19,7 +19,7 @@ typedef struct {
     int mtu_sz;
 } mconn_service_obuf_t;
 
-void mconn_obuf_senqeue(mconn_service_obuf_t* me, void* src, void* on_send_opt);
+void mconn_obuf_enqeue(mconn_service_obuf_t* me, void* src, void* on_send_opt);
 
 int mconn_obuf_serialize_interval(
         const mconn_service_t *svc,

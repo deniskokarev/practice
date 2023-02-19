@@ -131,7 +131,7 @@ static int mconn_fifo_produce_spacer_if_needed(mconn_fifo_t *me, unsigned mtu_sz
     return MCONN_OK;
 }
 
-void mconn_obuf_senqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
+void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
     mconn_fifo_t *fifo = me->fifo;
     if (mconn_fifo_produce_spacer_if_needed(fifo, me->mtu_sz) != MCONN_OK) {
         me->super.on_send(MCONN_ERR_FULL, on_send_opt);
@@ -194,7 +194,7 @@ void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
     mconn_fifo_t *fifo = me->fifo;
     unsigned cbh = atomic_load_explicit(&fifo->cbparam_head, memory_order_relaxed);
     // could just skip one MTU with warning, but let's make it strict
-    ASSERT(fifo->cbparam_tail + 1 - cbh > BSL_IN_PROGRESS_MAX && "we're sending faster than BSL can take");
+    ASSERT(fifo->cbparam_tail + 1 - cbh <= BSL_IN_PROGRESS_MAX && "we must not send faster than BSL can take");
     // count from..to record numbers to send that'll fit into mtu
     unsigned packet_sz = 0;
     unsigned rt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);

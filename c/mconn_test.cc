@@ -12,24 +12,32 @@ struct hash_t {
         x += (unsigned char) c;
     }
 
+    void operator+=(const char *s) {
+        while (*s) {
+            x *= P;
+            x += (unsigned char) *s;
+            s++;
+        }
+    }
+
     operator unsigned() const {
         return x;
     }
 };
 
 struct stat_t {
-    hash_t cb_hash;
     hash_t prod_hash;
+    hash_t prod_cb_hash;
     hash_t cons_hash;
 };
 
 typedef struct {
     mconn_service_t super;
     stat_t *stat;
-} mconn_service_test_out_t;
+} mconn_service_test_output_t;
 
 // just calculate the output hash and invoke the callbacks with OK
-static void test_send(const mconn_service_test_out_t *me, void *src, void *on_send_opt) {
+static void test_output_send_calc_hash(const mconn_service_test_output_t *me, void *src, void *on_send_opt) {
     char buf[1024*1024]; // >= MTU
     int sz = me->super.serialize(&me->super, buf, sizeof(buf), src);
     if (sz < 0) {
@@ -42,11 +50,11 @@ static void test_send(const mconn_service_test_out_t *me, void *src, void *on_se
     }
 }
 
-static mconn_service_test_out_t test_out_svc = {
+static mconn_service_test_output_t test_out_svc = {
         .super = {
-                .serialize = mconn_obuf_serialize_interval,
-                .send = (mconn_service_send_fn) test_send,
-                .on_send = mconn_obuf_notify_senders
+                .serialize = mconn_obuf_serialize_interval, // serializing input from obuf
+                .send = (mconn_service_send_fn) test_output_send_calc_hash, // calculate cons_hash
+                .on_send = mconn_obuf_notify_senders // notify obuf senders
         },
         .stat = NULL,
 };
@@ -74,7 +82,7 @@ struct on_send_t {
 
 void test_on_send(mconn_error_t status, void* param) {
     on_send_t* arg = (on_send_t*)param;
-
+    arg->stat->prod_cb_hash += arg->s;
     free(arg->s);
     free(arg);
 }
@@ -82,11 +90,12 @@ void test_on_send(mconn_error_t status, void* param) {
 static mconn_service_obuf_t out_buf = {
         .super = {
                 .serialize = test_serialize_string,
-                .send = (mconn_service_send_fn) mconn_obuf_senqeue,
+                .send = (mconn_service_send_fn) mconn_obuf_enqeue,
                 .on_send = test_on_send,
         },
-        .mtu_sz = 1024,
         .fifo = mconn_fifo,
+        .out = (mconn_service_t*)&test_out_svc,
+        .mtu_sz = 1024,
 };
 
 void producer1(mconn_service_obuf_t *out, stat_t *stat) {
@@ -94,6 +103,7 @@ void producer1(mconn_service_obuf_t *out, stat_t *stat) {
     on_send_t *on_send_arg = (on_send_t *)calloc(sizeof(on_send_t), 1);
     on_send_arg->stat = stat;
     on_send_arg->s = strdup(s);
+    stat->prod_hash += s;
     mconn_service_send(&out->super, s, on_send_arg);
 }
 
@@ -104,9 +114,11 @@ void consumer1(mconn_service_obuf_t *out) {
 TEST(Sequential, Once) {
     stat_t stat;
     test_out_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
     producer1(&out_buf, &stat);
     consumer1(&out_buf);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
     mconn_fifo_close(mconn_fifo);
 }
 
