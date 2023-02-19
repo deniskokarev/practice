@@ -119,7 +119,7 @@ static int mconn_fifo_produce_spacer_if_needed(mconn_fifo_t *me, unsigned mtu_sz
         // matter
         unsigned bh = atomic_load_explicit(&me->bytes_head, memory_order_relaxed);
         unsigned rh = atomic_load_explicit(&me->recs_head, memory_order_relaxed);
-        if (me->bytes_tail + till_end - bh <= RECORD_BUF_SZ && me->recs_tail + 1 - rh <= RECORD_BUF_SZ) {
+        if (me->bytes_tail + till_end - bh <= BYTE_BUF_SZ && me->recs_tail + 1 - rh <= RECORD_BUF_SZ) {
             unsigned ofs = atomic_fetch_add(&me->bytes_tail, till_end);
             me->recs[me->recs_tail % RECORD_BUF_SZ] =
                     (mconn_fifo_record_t) {.ofs = ofs, .sz = till_end, .svc = NULL};
@@ -140,7 +140,7 @@ void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
     // get the most conservative remaining space estimate in both buffers, fetch order doesn't matter
     unsigned bh = atomic_load_explicit(&fifo->bytes_head, memory_order_relaxed);
     unsigned rh = atomic_load_explicit(&fifo->recs_head, memory_order_relaxed);
-    if (fifo->bytes_tail + me->mtu_sz - bh <= RECORD_BUF_SZ && fifo->recs_tail + 1 - rh <= RECORD_BUF_SZ) {
+    if (fifo->bytes_tail + me->mtu_sz - bh <= BYTE_BUF_SZ && fifo->recs_tail + 1 - rh <= RECORD_BUF_SZ) {
         int sz = me->super.serialize(&me->super, &fifo->bytes[fifo->bytes_tail % BYTE_BUF_SZ], me->mtu_sz, src);
         if (sz >= 0) {
             unsigned ofs = atomic_fetch_add(&fifo->bytes_tail, sz);
