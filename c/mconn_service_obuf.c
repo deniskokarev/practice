@@ -53,12 +53,13 @@
  *
  */
 
-// 16k - would fit several MTUs
-#define BYTE_BUF_SZ (1 << 14)
+// must be >= 3 MTU - we keep 1 MTU padding at the end of the buff
+// and expect input record to be as large as 1 MTU
+#define BYTE_BUF_SZ (1 << 12)
 // let's assume the average record would be 16 bytes
 #define RECORD_BUF_SZ (BYTE_BUF_SZ / 16)
-// max number of BSL sends we can allow
-#define BSL_IN_PROGRESS_MAX   4
+// how many simultaneous downstream send()s we're waiting callback for
+#define CB_PARAM_BUF_SZ   4
 
 typedef struct {
     unsigned ofs;
@@ -82,8 +83,7 @@ struct mconn_fifo_s {
     mconn_fifo_record_t recs[RECORD_BUF_SZ];
     atomic_uint recs_head;
     atomic_uint recs_tail;
-    // how many simultaneous bsl_send()s we're waiting callback for
-    mconn_fifo_interval_t cbparam[BSL_IN_PROGRESS_MAX];
+    mconn_fifo_interval_t cbparam[CB_PARAM_BUF_SZ];
     atomic_uint cbparam_head;
     atomic_uint cbparam_tail;
 };
@@ -101,7 +101,16 @@ void mconn_fifo_close(mconn_fifo_t* me) {
 }
 
 // one output buffer is enough for 1 L2CAP channel
-static mconn_fifo_t mconn_fifo_def;
+// let's initialize with high values for testing purpose
+// to catch errors sooner
+static mconn_fifo_t mconn_fifo_def = {
+        .bytes_head = UINT32_MAX - 1024,
+        .bytes_tail = UINT32_MAX - 1024,
+        .recs_head = UINT32_MAX - 1024,
+        .recs_tail = UINT32_MAX - 1024,
+        .cbparam_head = UINT32_MAX - 1024,
+        .cbparam_tail = UINT32_MAX - 1024,
+};
 mconn_fifo_t *mconn_fifo = &mconn_fifo_def;
 
 /**
@@ -190,36 +199,49 @@ int mconn_obuf_serialize_interval(
     return sz;
 }
 
+/**
+ * best guess if the fifo is empty
+ * stable result when all writers are down
+ */
+int mconn_obuf_is_empty(mconn_service_obuf_t* me) {
+    mconn_fifo_t *fifo = me->fifo;
+    unsigned cbh = atomic_load_explicit(&fifo->recs_head, memory_order_relaxed);
+    unsigned cbt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);
+    return cbh == cbt;
+}
+
 void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
     mconn_fifo_t *fifo = me->fifo;
     unsigned cbh = atomic_load_explicit(&fifo->cbparam_head, memory_order_relaxed);
     // could just skip one MTU with warning, but let's make it strict
-    ASSERT(fifo->cbparam_tail + 1 - cbh <= BSL_IN_PROGRESS_MAX && "we must not send faster than BSL can take");
+    ASSERT(fifo->cbparam_tail + 1 - cbh <= CB_PARAM_BUF_SZ && "we must not send faster than BSL can take");
     // count from..to record numbers to send that'll fit into mtu
     unsigned packet_sz = 0;
     unsigned rt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);
-    unsigned rh;
-    for (rh = fifo->recs_head; rh != rt; rh++) {
+    unsigned rh = fifo->recs_head;
+    unsigned bh = fifo->recs[rh % RECORD_BUF_SZ].ofs;
+    while (rh != rt) {
         mconn_fifo_record_t *r = &fifo->recs[rh % RECORD_BUF_SZ];
         if (packet_sz + r->sz > me->mtu_sz) {
             // bust
             break;
-        } else if (r->svc == NULL) {
-            continue; // skip spacer
+        } else if (r->svc != NULL) {
+            packet_sz += r->sz; // ignore spacer
         }
-        packet_sz += r->sz;
+        bh += r->sz;
+        rh++;
     }
     if (packet_sz) {
         // there is something to send
-        fifo->cbparam[fifo->cbparam_tail] = (mconn_fifo_interval_t) {
+        fifo->cbparam[fifo->cbparam_tail % CB_PARAM_BUF_SZ] = (mconn_fifo_interval_t) {
                 .fifo = fifo,
                 .id = fifo->cbparam_tail,
                 .from = fifo->recs_head,
                 .to = rh
         };
         unsigned cbt = atomic_fetch_add(&fifo->cbparam_tail, 1);
-        mconn_service_send(me->out, &fifo->cbparam[cbt], &fifo->cbparam[cbt]);
+        mconn_service_send(me->out, &fifo->cbparam[cbt % CB_PARAM_BUF_SZ], &fifo->cbparam[cbt % CB_PARAM_BUF_SZ]);
     }
-    atomic_store(&fifo->bytes_head, fifo->recs[rh % RECORD_BUF_SZ].ofs);
+    atomic_store(&fifo->bytes_head, bh);
     atomic_store(&fifo->recs_head, rh);
 }

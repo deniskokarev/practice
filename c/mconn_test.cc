@@ -26,9 +26,16 @@ struct hash_t {
 };
 
 struct stat_t {
-    hash_t prod_hash;
-    hash_t prod_cb_hash;
-    hash_t cons_hash;
+    uint64_t prod_cnt {};
+    uint64_t prod_bytes {};
+    hash_t prod_hash {};
+    uint64_t prod_cb_cnt {};
+    uint64_t prod_cb_bytes {};
+    uint64_t prod_cb_err {};
+    hash_t prod_cb_hash {};
+    uint64_t cons_mtu_cnt {};
+    uint64_t cons_bytes {};
+    hash_t cons_hash {};
 };
 
 typedef struct {
@@ -46,6 +53,8 @@ static void consume_calc_hash(const mconn_service_consumer_t *me, void *src, voi
         for (int i = 0; i < sz; i++) {
             me->stat->cons_hash += buf[i];
         }
+        me->stat->cons_bytes += sz;
+        me->stat->cons_mtu_cnt++;
         me->super.on_send(MCONN_OK, on_send_opt);
     }
 }
@@ -77,7 +86,12 @@ struct producer_on_send_t {
 
 static void producer_on_tx(mconn_error_t status, void* param) {
     producer_on_send_t* arg = (producer_on_send_t*)param;
+    arg->stat->prod_cb_cnt++;
+    if (status != MCONN_OK) {
+        arg->stat->prod_cb_err++;
+    }
     arg->stat->prod_cb_hash += arg->s;
+    arg->stat->prod_cb_bytes += strlen(arg->s);
     free(arg->s);
     free(arg);
 }
@@ -99,8 +113,10 @@ static void produce_n(mconn_service_obuf_t *obuf_svc, const char *s, stat_t *sta
         producer_on_send_t *on_send_arg = (producer_on_send_t *) calloc(sizeof(producer_on_send_t), 1);
         on_send_arg->stat = stat;
         on_send_arg->s = strdup(s);
-        stat->prod_hash += s;
         mconn_service_send(&obuf_svc->super, s, on_send_arg);
+        stat->prod_hash += s;
+        stat->prod_cnt++;
+        stat->prod_bytes += strlen(s);
     }
 }
 
@@ -133,4 +149,47 @@ TEST(Sequential, ProduceFewConsumeOnce) {
     mconn_fifo_close(mconn_fifo);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
     ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+}
+
+TEST(Sequential, ProduceFewConsumeFew) {
+    stat_t stat;
+    consumer_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
+    auto s = "hello, world";
+    int filln = producer_svc.mtu_sz / strlen(s); // cover almost entire MTU
+    int m = 15;
+    for (int i=0; i<m; i++) {
+        produce_n(&producer_svc, s, &stat, filln);
+        while (!mconn_obuf_is_empty(&producer_svc)) {
+            consume_m(&producer_svc, 1);
+        }
+    }
+    mconn_fifo_close(mconn_fifo);
+    ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+    ASSERT_EQ(stat.prod_bytes, m * filln * strlen(s));
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
+}
+
+TEST(Sequential, ProduceManyConsumeMany) {
+    stat_t stat;
+    consumer_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
+    auto s = "hello, world";
+    int filln = producer_svc.mtu_sz / strlen(s); // cover almost entire MTU
+    int cycles = 10000;
+    for (int i=0; i < cycles; i++) {
+        produce_n(&producer_svc, s, &stat, filln);
+        while (!mconn_obuf_is_empty(&producer_svc)) {
+            consume_m(&producer_svc, 1);
+        }
+    }
+    mconn_fifo_close(mconn_fifo);
+    ASSERT_EQ(stat.prod_cb_err, 0);
+    ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+    ASSERT_EQ(stat.prod_bytes, cycles * filln * strlen(s));
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
 }

@@ -32,6 +32,12 @@ void mconn_obuf_notify_senders(mconn_error_t status, void *opt);
 // to be invoked only by the server process
 void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me);
 
+/**
+ * best guess if the fifo is empty
+ * stable result when all writers are down
+ */
+int mconn_obuf_is_empty(mconn_service_obuf_t* me);
+
 // one output buffer is enough for 1 L2CAP channel
 extern mconn_fifo_t *mconn_fifo;
 
