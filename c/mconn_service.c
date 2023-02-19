@@ -35,7 +35,7 @@ int mconn_service_ready_to_send = 0;
  * \arg param - optional param to be given to the callback, for example to identify the transaction
  * the status will be provided in async fashion via registered mconn_tx callback
  */
-void mconn_service_send(mconn_service_t* svc, void* record, void* param) {
+void mconn_service_send(mconn_service_t* svc, const void* record, void* param) {
     if (mconn_service_ready_to_send) {
         svc->send(svc, record, param);
     } else {
@@ -50,7 +50,7 @@ serialize_not_implemented(const mconn_service_t* svc, void* dst, size_t dst_max_
     return MCONN_ERR_SERIALIZE;
 }
 
-static void send_not_ready(mconn_service_t* me, void* src, void* on_send_opt) {
+static void send_not_ready(mconn_service_t* me, const void* src, void* on_send_opt) {
     me->on_send(MCONN_ERR_NOT_READY, on_send_opt);
 }
 

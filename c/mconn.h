@@ -83,7 +83,7 @@ void mconn_register_serializer(mconn_service_t* svc, mconn_service_serialize_pay
  * \arg param - optional param to be given to the tx callback, for example to identify the
  * transaction the status will be provided in async fashion via registered mconn_tx callback
  */
-void mconn_service_send(mconn_service_t* svc, void* record, void* param);
+void mconn_service_send(mconn_service_t* svc, const void* record, void* param);
 
 /**
  * mconn_handler class identifies a handler for a given AppID and MsgType

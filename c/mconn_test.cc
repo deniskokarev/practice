@@ -94,8 +94,7 @@ static mconn_service_obuf_t producer_svc = {
         .mtu_sz = 1024,
 };
 
-static void produce_n(mconn_service_obuf_t *obuf_svc, stat_t *stat, int n) {
-    char *s = (char*)"hello, world";
+static void produce_n(mconn_service_obuf_t *obuf_svc, const char *s, stat_t *stat, int n) {
     while (n--) {
         producer_on_send_t *on_send_arg = (producer_on_send_t *) calloc(sizeof(producer_on_send_t), 1);
         on_send_arg->stat = stat;
@@ -116,7 +115,7 @@ TEST(Sequential, ProduceOnceConsumeOnce) {
     stat_t stat;
     consumer_svc.stat = &stat;
     mconn_service_ready_to_send = 1;
-    produce_n(&producer_svc, &stat, 1);
+    produce_n(&producer_svc, "hello, world", &stat, 1);
     consume_m(&producer_svc, 1);
     mconn_fifo_close(mconn_fifo);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
@@ -127,11 +126,11 @@ TEST(Sequential, ProduceFewConsumeOnce) {
     stat_t stat;
     consumer_svc.stat = &stat;
     mconn_service_ready_to_send = 1;
-    produce_n(&producer_svc, &stat, 10);
+    auto s = "hello, world";
+    int filln = producer_svc.mtu_sz / strlen(s); // cover almost entire MTU
+    produce_n(&producer_svc, s, &stat, filln);
     consume_m(&producer_svc, 1);
     mconn_fifo_close(mconn_fifo);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
     ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
 }
-
-

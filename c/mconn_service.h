@@ -37,7 +37,7 @@ extern "C" {
  * \arg on_send_opt - an opaque parameter which will be supplied to on_send() callback
  * \return nothing - the app must rely on the callback for status
  */
-typedef void (*mconn_service_send_fn)(mconn_service_t* me, void* src, void* on_send_opt);
+typedef void (*mconn_service_send_fn)(mconn_service_t* me, const void* src, void* on_send_opt);
 
 // all services should be defined statically and shared as extern * pointers
 // to user applications.
