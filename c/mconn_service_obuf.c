@@ -53,13 +53,14 @@
  *
  */
 
-// must be >= 3 MTU - we keep 1 MTU padding at the end of the buff
+// how many simultaneous downstream send()s we're waiting callback for
+#define CB_PARAM_BUF_SZ   1
+// must be >= (CB_PARAM_BUF_SZ + 2) * MTU - we keep few in sending state,
+// 1 MTU padding at the end of the buff
 // and expect input record to be as large as 1 MTU
 #define BYTE_BUF_SZ (1 << 12)
 // let's assume the average record would be 16 bytes
 #define RECORD_BUF_SZ (BYTE_BUF_SZ / 16)
-// how many simultaneous downstream send()s we're waiting callback for
-#define CB_PARAM_BUF_SZ   4
 
 typedef struct {
     unsigned ofs;

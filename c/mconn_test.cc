@@ -120,6 +120,41 @@ static void produce_n(mconn_service_obuf_t *obuf_svc, const char *s, stat_t *sta
     }
 }
 
+std::string rand_str(int mx_len) {
+    static auto randchar = []() -> char
+    {
+        const static char charset[] =
+                "0123456789"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
+    int l = rand() % mx_len;
+    std::string res(l, ' ');
+    std::generate_n( begin(res), l, randchar);
+    return res;
+}
+
+static void produce_rand_to_fill_mtu(mconn_service_obuf_t *obuf_svc, stat_t *stat, int mtu) {
+    int sz = 0;
+    while (true) {
+        std::string str = rand_str(31);
+        sz += str.size();
+        if (sz > mtu) {
+            break;
+        }
+        const char *s = str.c_str();
+        producer_on_send_t *on_send_arg = (producer_on_send_t *) calloc(sizeof(producer_on_send_t), 1);
+        on_send_arg->stat = stat;
+        on_send_arg->s = strdup(s);
+        mconn_service_send(&obuf_svc->super, s, on_send_arg);
+        stat->prod_hash += s;
+        stat->prod_cnt++;
+        stat->prod_bytes += strlen(s);
+    }
+}
+
 // redirects from obuf to consumer_svc
 static void consume_m(mconn_service_obuf_t *obuf_svc, int m) {
     while (m--) {
@@ -146,7 +181,7 @@ TEST(Sequential, ProduceFewConsumeOnce) {
     int filln = producer_svc.mtu_sz / strlen(s); // cover almost entire MTU
     produce_n(&producer_svc, s, &stat, filln);
     consume_m(&producer_svc, 1);
-    mconn_fifo_close(mconn_fifo);
+    //mconn_fifo_close(mconn_fifo);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
     ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
 }
@@ -162,7 +197,7 @@ TEST(Sequential, ProduceFewConsumeFew) {
         produce_n(&producer_svc, s, &stat, filln);
         consume_m(&producer_svc, 1);
     }
-    mconn_fifo_close(mconn_fifo);
+    //mconn_fifo_close(mconn_fifo);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
     ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
     ASSERT_EQ(stat.prod_bytes, cycles * filln * strlen(s));
@@ -182,11 +217,29 @@ TEST(Sequential, ProduceManyConsumeMany) {
         produce_n(&producer_svc, s, &stat, filln);
         consume_m(&producer_svc, 1);
     }
-    mconn_fifo_close(mconn_fifo);
+    //mconn_fifo_close(mconn_fifo);
     ASSERT_EQ(stat.prod_cb_err, 0);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
     ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
     ASSERT_EQ(stat.prod_bytes, cycles * filln * strlen(s));
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
+    ASSERT_EQ(stat.cons_mtu_cnt, cycles);
+}
+
+TEST(Sequential, ProduceRandManyConsumeMany) {
+    stat_t stat;
+    consumer_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
+    int cycles = 10000;
+    for (int i=0; i < cycles; i++) {
+        produce_rand_to_fill_mtu(&producer_svc, &stat, producer_svc.mtu_sz);
+        consume_m(&producer_svc, 1);
+    }
+    //mconn_fifo_close(mconn_fifo);
+    ASSERT_EQ(stat.prod_cb_err, 0);
+    ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
     ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
     ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
     ASSERT_EQ(stat.cons_mtu_cnt, cycles);
