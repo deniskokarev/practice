@@ -10,7 +10,7 @@
 /**
  *
  * Lockless 1-producer / 1-consumer algorithm:
- * If we had an infinite buffer buf[] with infinite indiexes
+ * If we had an infinite buffer buf[] with infinite indexes
  * ------------------------------
  *      ^         ^
  *      H         T
@@ -24,12 +24,12 @@
  * Buffer is empty when H == T. Buffer is full when T - H == S
  *
  * Both H and T may be observed with their last known values, as it gives the most conservative
- * estimate of both constraints. Taking older value may give only false positives.
+ * estimate for both constraints. Taking older value may give only false positives.
  *
  * We can also observe that if the buffer size S is < 2^32 we could just use regular unsigned
  * 32-bit integers for indexes (with some arithmetic care)
  *
- * The logic:
+ * The logic is simple assuming the consumer "sees" the producer changes in same order:
  *
  * record_t buf[S];
  * unsigned H, T;
@@ -202,20 +202,35 @@ int mconn_obuf_serialize_interval(
 
 /**
  * best guess if the fifo is empty
- * stable result when all writers are down
+ * return 0 when there is something to ship in the buffer
+ * (stable result when producer and consumer are down)
  */
 int mconn_obuf_is_empty(mconn_service_obuf_t* me) {
     mconn_fifo_t *fifo = me->fifo;
-    unsigned cbh = atomic_load_explicit(&fifo->recs_head, memory_order_relaxed);
-    unsigned cbt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);
-    return cbh == cbt;
+    unsigned rh = fifo->recs_head;
+    unsigned rt = fifo->recs_tail;
+    return rh == rt;
+}
+
+/**
+ * best guess if fifo has a room for 1 more MTU-size record
+ * return 0 when you cannot add a record at the moment
+ * (stable result when producer and consumer are down)
+ */
+int mconn_obuf_has_room(mconn_service_obuf_t* me) {
+    mconn_fifo_t *fifo = me->fifo;
+    unsigned bh = fifo->bytes_head;
+    unsigned bt = fifo->bytes_tail;
+    unsigned rh = fifo->recs_head;
+    unsigned rt = fifo->recs_tail;
+    return bt + me->mtu_sz - bh <= BYTE_BUF_SZ && rt + 1 - rh <= RECORD_BUF_SZ;
 }
 
 void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
     mconn_fifo_t *fifo = me->fifo;
     unsigned cbh = atomic_load_explicit(&fifo->cbparam_head, memory_order_relaxed);
-    // could just skip one MTU with warning, but let's make it strict
-    ASSERT(fifo->cbparam_tail + 1 - cbh <= CB_PARAM_BUF_SZ && "we must not send faster than BSL can take");
+    // could just skip one MTU with warning, but let's make it strict for now
+    ASSERT(fifo->cbparam_tail + 1 - cbh <= CB_PARAM_BUF_SZ && "we must not ship faster than downstream can take");
     // count from..to record numbers to send that'll fit into mtu
     unsigned packet_sz = 0;
     unsigned rt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);

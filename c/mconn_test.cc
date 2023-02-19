@@ -36,6 +36,7 @@ struct stat_t {
     uint64_t cons_mtu_cnt {};
     uint64_t cons_bytes {};
     hash_t cons_hash {};
+    volatile int prod_thread_done {};
 };
 
 typedef struct {
@@ -44,8 +45,8 @@ typedef struct {
 } mconn_service_consumer_t;
 
 // just calculate the output hash and invoke the callbacks with OK
-static void consume_calc_hash(const mconn_service_consumer_t *me, void *src, void *on_send_opt) {
-    char buf[1024*1024]; // >= MTU
+static void consume_calc_hash(mconn_service_consumer_t *me, void *src, void *on_send_opt) {
+    char buf[16 * 1024]; // >= MTU, but fit into stack
     int sz = me->super.serialize(&me->super, buf, sizeof(buf), src);
     if (sz < 0) {
         me->super.on_send((mconn_error_e) sz, on_send_opt);
@@ -243,4 +244,81 @@ TEST(Sequential, ProduceRandManyConsumeMany) {
     ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
     ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
     ASSERT_EQ(stat.cons_mtu_cnt, cycles);
+}
+
+static void run_produce_rand_records(mconn_service_obuf_t *obuf_svc, stat_t *stat, int n) {
+    int sz = 0;
+    while (n) {
+        if (mconn_obuf_has_room(obuf_svc)) {
+            std::string str = rand_str(31);
+            const char *s = str.c_str();
+            producer_on_send_t *on_send_arg = (producer_on_send_t *) calloc(sizeof(producer_on_send_t), 1);
+            on_send_arg->stat = stat;
+            on_send_arg->s = strdup(s);
+            mconn_service_send(&obuf_svc->super, s, on_send_arg);
+            stat->prod_hash += s;
+            stat->prod_cnt++;
+            stat->prod_bytes += strlen(s);
+            n--;
+            stat->prod_thread_done = 1;
+        } else {
+            std::this_thread::yield(); // busy wait
+        }
+    }
+}
+
+static void run_consume(mconn_service_obuf_t *obuf_svc, stat_t *stat) {
+    int sz = 0;
+    while (!stat->prod_thread_done) {
+        if (!mconn_obuf_is_empty(obuf_svc)) {
+            mconn_obuf_ship_one_mtu(obuf_svc);
+        } else {
+            std::this_thread::yield(); // busy wait
+        }
+    }
+    while (!mconn_obuf_is_empty(obuf_svc)) {
+        mconn_obuf_ship_one_mtu(obuf_svc);
+    }
+}
+
+TEST(Parallel, ProduceOne) {
+    stat_t stat;
+    consumer_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
+    std::thread p(run_produce_rand_records, &producer_svc, &stat, 1);
+    std::thread c(run_consume, &producer_svc, &stat);
+    p.join();
+    c.join();
+    ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
+}
+
+TEST(Parallel, ProduceFew) {
+    stat_t stat;
+    consumer_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
+    std::thread p(run_produce_rand_records, &producer_svc, &stat, 13);
+    std::thread c(run_consume, &producer_svc, &stat);
+    p.join();
+    c.join();
+    ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
+}
+
+TEST(Parallel, ProduceMany) {
+    stat_t stat;
+    consumer_svc.stat = &stat;
+    mconn_service_ready_to_send = 1;
+    std::thread p(run_produce_rand_records, &producer_svc, &stat, 1000);
+    std::thread c(run_consume, &producer_svc, &stat);
+    p.join();
+    c.join();
+    ASSERT_EQ(stat.prod_hash, stat.cons_hash);
+    ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
 }
