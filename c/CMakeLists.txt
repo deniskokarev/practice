@@ -28,6 +28,9 @@ target_link_libraries(heap_test gtest gtest_main)
 add_executable(binomial_test alg/binomial_test.cc alg/comb.cc)
 target_link_libraries(binomial_test gtest gtest_main)
 
+add_executable(mconn_test mconn_test.cc mconn_test.cc mconn_service_obuf.c mconn_service_obuf.h mconn_service.c)
+target_link_libraries(mconn_test gtest gtest_main)
+
 add_executable(segtree_test alg/segtree_test.cc)
 target_link_libraries(segtree_test gtest gtest_main)
 
@@ -36,8 +39,9 @@ add_test(NAME par_test COMMAND par_test)
 add_test(NAME heap_test COMMAND heap_test)
 add_test(NAME binomial_test COMMAND binomial_test)
 add_test(NAME segtree_test COMMAND segtree_test)
+add_test(NAME mconn_test COMMAND mconn_test)
 
-add_executable(a a.cc)
+add_executable(a a.cc mconn_service.h mconn.h)
 add_executable(b b.cc)
 add_executable(c c.cc)
 add_executable(d d.cc)
