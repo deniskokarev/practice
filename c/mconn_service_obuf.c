@@ -141,8 +141,8 @@ void mconn_fifo_reinit(mconn_fifo_t *me) {
 }
 
 /**
- * Declare one static fifo buffer to be used for all services.
- * If we have only 1 L2CAP channel that's sufficient
+ * Define one static fifo buffer to be used for all
+ * mconn_service_obuf_t services on 1 L2CAP channel
  */
 static mconn_fifo_t mconn_fifo_def;
 
@@ -181,8 +181,8 @@ static int mconn_fifo_produce_spacer_if_needed(mconn_fifo_t *me, unsigned mtu_sz
  * The consumption from fifo and sending downstream will be done by
  * mconn_obuf_ship_one_mtu()
  * @param me
- * @param src
- * @param on_send_opt
+ * @param src - source record that has to be serialized by me->serialize()
+ * @param on_send_opt - the me->on_send() callback will be invoked with this on_send_opt
  */
 void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
     mconn_fifo_t *fifo = me->fifo;
@@ -211,8 +211,8 @@ void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
 /**
  * The downstream service must use this on_send() callback in order to
  * trigger all callbacks enqueued in the fifo
- * @param status
- * @param opt
+ * @param status downstream's send status
+ * @param opt echoed-back interval that was given by mconn_obuf_ship_one_mtu()
  */
 void mconn_obuf_notify_senders(mconn_error_t status, void *opt) {
     mconn_fifo_interval_t *interval = (mconn_fifo_interval_t *) opt;
@@ -230,6 +230,11 @@ void mconn_obuf_notify_senders(mconn_error_t status, void *opt) {
 /**
  * The downstream service must use this serializer() in order to
  * ship the set of records from fifo
+ * @param svc - will be downstream service that ships data from obuf
+ * @param dst - downstream's output buffer
+ * @param dst_max_sz - max record size
+ * @param src - mconn_fifo_interval_t* that will be given by obuf to send
+ * @return populated downstream buffer size - no error expected
  */
 int mconn_obuf_serialize_interval(
         const mconn_service_t *svc,
@@ -245,9 +250,10 @@ int mconn_obuf_serialize_interval(
         if (rec->svc) {
             // we already made sure that the total volume of records in the
             // interval fits into mtu
+            sz += rec->sz;
+            ASSERT(sz <= dst_max_sz && "the downstream service must accept MTU-size buffer");
             memcpy(out, fifo->bytes + (rec->ofs % BYTE_BUF_SZ), rec->sz);
             out += rec->sz;
-            sz += rec->sz;
         }
     }
     return sz;
