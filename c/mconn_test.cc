@@ -324,8 +324,7 @@ TEST(Sequential, ProduceRandManyConsumeMany) {
  ************************************************************/
 
 struct done_produce_t {
-    std::mutex mx{};
-    bool done{};
+    volatile bool done{};
 };
 
 static void run_produce_rand_records(mconn_service_obuf_t *obuf_svc, stat_t *stat, int n, done_produce_t *done) {
@@ -345,14 +344,10 @@ static void run_produce_rand_records(mconn_service_obuf_t *obuf_svc, stat_t *sta
             std::this_thread::yield(); // busy wait
         }
     }
-    {
-        std::lock_guard<std::mutex> lk{done->mx};
-        done->done = true;
-    }
+    done->done = true;
 }
 
 static bool is_done(done_produce_t *done) {
-    std::lock_guard<std::mutex> lk{done->mx};
     return done->done;
 }
 
@@ -378,11 +373,12 @@ static void parallel_test(int records) {
     std::thread c(run_consume, &producer_svc, &stat, &is_done);
     p.join();
     c.join();
-    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
-    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
-    //ASSERT_EQ(stat.prod_cb_cnt, records);
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
     ASSERT_EQ(stat.prod_hash, stat.prod_cb_hash);
+    ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
+    ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
+    ASSERT_EQ(stat.prod_cb_err, 0);
+    ASSERT_EQ(stat.prod_cnt, stat.prod_cb_cnt);
 }
 
 TEST(Parallel, Once) {
