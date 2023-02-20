@@ -3,6 +3,11 @@
 #include <memory.h>
 #include "mconn_service_obuf.h"
 
+/**
+ * One-producer, one-consumer lockless fifo buffer for variable size records.
+ * If you have multiple producers they'll have to be sequentialized somehow else.
+ */
+
 #ifndef ASSERT
 #define ASSERT(X)   assert(X)
 #endif
@@ -53,22 +58,40 @@
  *
  */
 
-// how many simultaneous downstream send()s we're waiting callback for
-#define CB_PARAM_BUF_SZ   1
-// must be >= (CB_PARAM_BUF_SZ + 2) * MTU - we keep few in sending state,
-// 1 MTU padding at the end of the buff
-// and expect input record to be as large as 1 MTU
-#define BYTE_BUF_SZ (1 << 12)
-// let's assume the average record would be 16 bytes
+/**
+ * The reality is a bit more complicated. The records that we produce/consume are not
+ * of equal size. Thus we'll have to have 2 fifo queues. Secondary buffer for byte content
+ * and primary buffer for record sizes/offsets and user callbacks. We synchronize on
+ * primary record-level queue.
+ * Additionally need room for downstream callback params. One downstream transmission
+ * corresponds to a range of recs. Once the downstream gives us status on the transmission
+ * we invoke all recs callbacks in the range
+ */
+// How many simultaneous downstream send()s are allowed
+#define CB_PARAM_BUF_SZ   2
+// Content buffer must be >= (CB_PARAM_BUF_SZ + 2) * MTU:
+// - we keep few in sending state,
+// - 1 MTU padding at the end of the buff
+// - and expect input record to be as large as 1 MTU
+#define BYTE_BUF_SZ (1 << 14)
+// Let's assume the average record would be 16 bytes
+// it's ok to guess wrong - in that case we may be
+// choking on records buffer vs content buffer
 #define RECORD_BUF_SZ (BYTE_BUF_SZ / 16)
 
+/**
+ * Each record has
+ */
 typedef struct {
     unsigned ofs;
     unsigned sz;
-    mconn_service_t* svc; // NULL means skip record
-    void* on_tx_cb_param;
+    mconn_service_t *svc; // NULL means skip record
+    void *on_tx_cb_param;
 } mconn_fifo_record_t;
 
+/**
+ * Records interval for serializer and callback
+ */
 typedef struct {
     mconn_fifo_t *fifo;
     unsigned id;
@@ -76,7 +99,21 @@ typedef struct {
     unsigned to;
 } mconn_fifo_interval_t;
 
-// memory buffer represending the fifo
+/**
+ * We have three fifo queues
+ * - bytes: record contents
+ * - recs: record sizes/offsets/callbacks
+ * - cbparam: arguments for downstream serializer and on_tx callback
+ * head == tail - queue empty
+ * tail-head == SZ - queue full
+ *
+ * head and tail are only incremented maintaining
+ * H <= T <= H + SZ constraint
+ * 1 producer thread increments T, 1 consumer thread increments H.
+ * H and T are incremented in atomic fashion to guarantee a memory fence:
+ * all memory changes before atomic add are "flushed" and become
+ * visible to another thread
+ */
 struct mconn_fifo_s {
     char bytes[BYTE_BUF_SZ];
     atomic_uint bytes_head;
@@ -89,9 +126,11 @@ struct mconn_fifo_s {
     atomic_uint cbparam_tail;
 };
 
-// when we don't expect any more callbacks and
-// want to close and start over
-void mconn_fifo_close(mconn_fifo_t* me) {
+/**
+ * Close the queue and force-fail all the callbacks still in the queue.
+ * Fifo is ready for immediate use after - no need to open()
+ */
+void mconn_fifo_reinit(mconn_fifo_t *me) {
     for (unsigned i = me->recs_head; i != me->recs_tail; i++) {
         mconn_fifo_record_t *rec = &me->recs[i % RECORD_BUF_SZ];
         if (rec->svc) {
@@ -101,27 +140,31 @@ void mconn_fifo_close(mconn_fifo_t* me) {
     memset(me, 0, sizeof(*me));
 }
 
-// one output buffer is enough for 1 L2CAP channel
-// let's initialize with high values for testing purpose
-// to catch errors sooner
+/**
+ * Declare one static fifo buffer to be used for all services.
+ * If we have only 1 L2CAP channel that's sufficient
+ */
 static mconn_fifo_t mconn_fifo_def = {
-        .bytes_head = UINT32_MAX - 1024,
-        .bytes_tail = UINT32_MAX - 1024,
-        .recs_head = UINT32_MAX - 1024,
-        .recs_tail = UINT32_MAX - 1024,
-        .cbparam_head = UINT32_MAX - 1024,
-        .cbparam_tail = UINT32_MAX - 1024,
+        /** let's initialize the counters to ensure quick wraparound to fail quicker in tests */
+        .bytes_head = UINT32_MAX - 100 * 1024,
+        .bytes_tail = UINT32_MAX - 100 * 1024,
+        .recs_head = UINT32_MAX - 100 * 1024,
+        .recs_tail = UINT32_MAX - 100 * 1024,
+        .cbparam_head = UINT32_MAX - 100 * 1024,
+        .cbparam_tail = UINT32_MAX - 100 * 1024,
 };
+
 mconn_fifo_t *mconn_fifo = &mconn_fifo_def;
 
-/**
- * The reality will be more complicated. The records that we produce/consume are not
- * of equal sizes. Thus we'll have to have 2 fifo queues. Secondary buffer for byte content
- * and primary buffer for record sizes/offsets and user callbacks. We synchronize on
- * primary record-level queue.
- */
 
-// ERR_FULL when there is not enough room to place even a spacer
+/**
+ * We cannot allow one record content to wrap around the buffer. Otherwise we won't be able to
+ * send() the record directly. Since we know the maximum record size is mtu_sz we must
+ * pad the and of the buffer with unused record if remaining tail is < mtu_sz
+ * @param me
+ * @param mtu_sz
+ * @return MCONN_ERR_FULL when we don't have enough room to pad the buffer
+ */
 static int mconn_fifo_produce_spacer_if_needed(mconn_fifo_t *me, unsigned mtu_sz) {
     size_t till_end = BYTE_BUF_SZ - (me->bytes_tail % BYTE_BUF_SZ);
     if (till_end && till_end < mtu_sz) {
@@ -141,6 +184,16 @@ static int mconn_fifo_produce_spacer_if_needed(mconn_fifo_t *me, unsigned mtu_sz
     return MCONN_OK;
 }
 
+/**
+ * Primary producer function compatible with mconn_service.send()
+ * Will serialize the record and store the content into the bytes[] fifo.
+ * The content ofs, sz and relative callbacks go into recs[] fifo.
+ * The consumption from fifo and sending downstream will be done by
+ * mconn_obuf_ship_one_mtu()
+ * @param me
+ * @param src
+ * @param on_send_opt
+ */
 void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
     mconn_fifo_t *fifo = me->fifo;
     if (mconn_fifo_produce_spacer_if_needed(fifo, me->mtu_sz) != MCONN_OK) {
@@ -156,7 +209,7 @@ void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
             unsigned ofs = atomic_fetch_add(&fifo->bytes_tail, sz);
             fifo->recs[fifo->recs_tail % RECORD_BUF_SZ] =
                     (mconn_fifo_record_t) {.ofs = ofs, .sz = sz, .svc = &me->super, .on_tx_cb_param = on_send_opt};
-            (void) atomic_fetch_add(&fifo->recs_tail, 1);
+            (void) atomic_fetch_add(&fifo->recs_tail, 1); // write fence: consumer thread "sees" all updates before
         } else {
             me->super.on_send(MCONN_ERR_SERIALIZE, on_send_opt);
         }
@@ -165,6 +218,12 @@ void mconn_obuf_enqeue(mconn_service_obuf_t *me, void *src, void *on_send_opt) {
     }
 }
 
+/**
+ * The downstream service must use this on_send() callback in order to
+ * trigger all callbacks enqueued in the fifo
+ * @param status
+ * @param opt
+ */
 void mconn_obuf_notify_senders(mconn_error_t status, void *opt) {
     mconn_fifo_interval_t *interval = (mconn_fifo_interval_t *) opt;
     mconn_fifo_t *fifo = interval->fifo;
@@ -178,6 +237,10 @@ void mconn_obuf_notify_senders(mconn_error_t status, void *opt) {
     }
 }
 
+/**
+ * The downstream service must use this serializer() in order to
+ * ship the set of records from fifo
+ */
 int mconn_obuf_serialize_interval(
         const mconn_service_t *svc,
         void *dst,
@@ -201,11 +264,10 @@ int mconn_obuf_serialize_interval(
 }
 
 /**
- * best guess if the fifo is empty
- * return 0 when there is something to ship in the buffer
- * (stable result when producer and consumer are down)
+ * Consumer can use this best guess if the fifo is empty.
+ * Returns 1 when there is nothing to ship at the moment.
  */
-int mconn_obuf_is_empty(mconn_service_obuf_t* me) {
+int mconn_obuf_is_empty(mconn_service_obuf_t *me) {
     mconn_fifo_t *fifo = me->fifo;
     unsigned rh = fifo->recs_head;
     unsigned rt = fifo->recs_tail;
@@ -213,11 +275,10 @@ int mconn_obuf_is_empty(mconn_service_obuf_t* me) {
 }
 
 /**
- * best guess if fifo has a room for 1 more MTU-size record
- * return 0 when you cannot add a record at the moment
- * (stable result when producer and consumer are down)
+ * Producer can check if the fifo has a room for 1 more record.
+ * Return 1 when you can definitely add one more record.
  */
-int mconn_obuf_has_room(mconn_service_obuf_t* me) {
+int mconn_obuf_has_room(mconn_service_obuf_t *me) {
     mconn_fifo_t *fifo = me->fifo;
     unsigned bh = fifo->bytes_head;
     unsigned bt = fifo->bytes_tail;
@@ -227,11 +288,19 @@ int mconn_obuf_has_room(mconn_service_obuf_t* me) {
     return bt + 2 * me->mtu_sz - bh <= BYTE_BUF_SZ && rt + 1 - rh <= RECORD_BUF_SZ;
 }
 
-void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
+/**
+ * Ship one MTU data window via downstream service. No action if there is nothing to ship
+ * @param me
+ * @return MCONN_ERR_FULL is we're already waiting for CB_PARAM_BUF_SZ on_tx callbacks
+ * from downstream service. I.e. trying to ship too fast.
+ */
+mconn_error_t mconn_obuf_ship_one_mtu(mconn_service_obuf_t *me) {
     mconn_fifo_t *fifo = me->fifo;
     unsigned cbh = atomic_load_explicit(&fifo->cbparam_head, memory_order_relaxed);
-    // could just skip one MTU with warning, but let's make it strict for now
-    ASSERT(fifo->cbparam_tail + 1 - cbh <= CB_PARAM_BUF_SZ && "we must not ship faster than downstream can take");
+    if (fifo->cbparam_tail + 1 - cbh > CB_PARAM_BUF_SZ) {
+        // cannot ship at the moment - we're already waiting for CB_PARAM_BUF_SZ callbacks from downstream
+        return MCONN_ERR_FULL;
+    }
     // count from..to record numbers to send that'll fit into mtu
     unsigned packet_sz = 0;
     unsigned rt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);
@@ -251,7 +320,7 @@ void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
         rh++;
     }
     if (packet_sz) {
-        // there is something to send
+        // there is something to send, let's prepare the interval
         fifo->cbparam[fifo->cbparam_tail % CB_PARAM_BUF_SZ] = (mconn_fifo_interval_t) {
                 .fifo = fifo,
                 .id = fifo->cbparam_tail,
@@ -259,8 +328,10 @@ void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
                 .to = rh
         };
         unsigned cbt = atomic_fetch_add(&fifo->cbparam_tail, 1);
-        mconn_service_send(me->downstream, &fifo->cbparam[cbt % CB_PARAM_BUF_SZ], &fifo->cbparam[cbt % CB_PARAM_BUF_SZ]);
+        mconn_service_send(me->downstream, &fifo->cbparam[cbt % CB_PARAM_BUF_SZ],
+                           &fifo->cbparam[cbt % CB_PARAM_BUF_SZ]);
     }
     atomic_store(&fifo->bytes_head, bh);
     atomic_store(&fifo->recs_head, rh);
+    return MCONN_OK;
 }

@@ -182,7 +182,7 @@ std::string rand_str(int mx_len) {
         const size_t max_index = (sizeof(charset) - 1);
         return charset[rand() % max_index];
     };
-    int l = rand() % mx_len;
+    int l = rand() % mx_len + 1;
     std::string res(l, ' ');
     std::generate_n(begin(res), l, randchar);
     return res;
