@@ -223,7 +223,8 @@ int mconn_obuf_has_room(mconn_service_obuf_t* me) {
     unsigned bt = fifo->bytes_tail;
     unsigned rh = fifo->recs_head;
     unsigned rt = fifo->recs_tail;
-    return bt + me->mtu_sz - bh <= BYTE_BUF_SZ && rt + 1 - rh <= RECORD_BUF_SZ;
+    // expecting one MTU size record and one ~MTU size spacer
+    return bt + 2 * me->mtu_sz - bh <= BYTE_BUF_SZ && rt + 1 - rh <= RECORD_BUF_SZ;
 }
 
 void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
