@@ -259,7 +259,7 @@ void mconn_obuf_ship_one_mtu(mconn_service_obuf_t* me) {
                 .to = rh
         };
         unsigned cbt = atomic_fetch_add(&fifo->cbparam_tail, 1);
-        mconn_service_send(me->out, &fifo->cbparam[cbt % CB_PARAM_BUF_SZ], &fifo->cbparam[cbt % CB_PARAM_BUF_SZ]);
+        mconn_service_send(me->downstream, &fifo->cbparam[cbt % CB_PARAM_BUF_SZ], &fifo->cbparam[cbt % CB_PARAM_BUF_SZ]);
     }
     atomic_store(&fifo->bytes_head, bh);
     atomic_store(&fifo->recs_head, rh);

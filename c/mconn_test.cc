@@ -3,7 +3,9 @@
 #include <string>
 #include "mconn_service_obuf.h"
 
-
+/**
+ * compute hash function for a sequence of bytes
+ */
 struct hash_t {
     static constexpr unsigned BASE = 13;
 
@@ -25,6 +27,9 @@ struct hash_t {
     }
 };
 
+/**
+ * Each test will be collecting the following counters
+ */
 struct stat_t {
     uint64_t prod_cnt{};
     uint64_t prod_bytes{};
@@ -38,12 +43,21 @@ struct stat_t {
     hash_t cons_hash{};
 };
 
+/**
+ * Test consumer to take the input from fifo
+ * It'll invoke callbacks and update stats
+ */
 typedef struct {
     mconn_service_t super;
     stat_t *stat;
 } mconn_service_consumer_t;
 
-// just calculate the output hash and invoke the callbacks with OK
+/**
+ * Test consumer just calculates the hash and updates the stats
+ * @param me
+ * @param src
+ * @param on_send_opt
+ */
 static void consume_calc_hash(mconn_service_consumer_t *me, void *src, void *on_send_opt) {
     char buf[16 * 1024]; // >= MTU, but fit into stack
     int sz = me->super.serialize(&me->super, buf, sizeof(buf), src);
@@ -59,7 +73,9 @@ static void consume_calc_hash(mconn_service_consumer_t *me, void *src, void *on_
     }
 }
 
-// can be created once and shared between tests, except stat has to be cleaned up
+/**
+ * Test consumer can be created once and reused between tests, except stat has to be cleaned up
+ */
 static mconn_service_consumer_t consumer_svc = {
         .super = {
                 .serialize = mconn_obuf_serialize_interval, // serializing input from obuf
@@ -69,6 +85,14 @@ static mconn_service_consumer_t consumer_svc = {
         .stat = NULL,
 };
 
+/**
+ * Our test fifo producer will be getting regular strings
+ * @param svc
+ * @param dst
+ * @param dst_max_sz
+ * @param src
+ * @return
+ */
 static int producer_serialize_string(const mconn_service_t *svc, void *dst, size_t dst_max_sz, void *src) {
     char *str = (char *) src;
     size_t sz = strlen(str);
@@ -79,11 +103,20 @@ static int producer_serialize_string(const mconn_service_t *svc, void *dst, size
     return sz;
 }
 
+/**
+ * We need to test the producer callbacks invoked by test consumer
+ * This will be a callback param
+ */
 struct producer_on_send_t {
     stat_t *stat;
     char *s;
 };
 
+/**
+ * Producer callback to be updating cb stats
+ * @param status
+ * @param param
+ */
 static void producer_on_tx(mconn_error_t status, void *param) {
     producer_on_send_t *arg = (producer_on_send_t *) param;
     arg->stat->prod_cb_cnt++;
@@ -96,18 +129,29 @@ static void producer_on_tx(mconn_error_t status, void *param) {
     free(arg);
 }
 
-// can be created once and shared between tests, except fifo has to be closed
+/**
+ * Test buffered service. Ready to be used immediately
+ * and may be reused between tests.
+ */
 static mconn_service_obuf_t producer_svc = {
         .super = {
-                .serialize = producer_serialize_string,
+                .serialize = producer_serialize_string, // this is input data format
                 .send = (mconn_service_send_fn) mconn_obuf_enqeue,
-                .on_send = producer_on_tx,
+                .on_send = producer_on_tx, // calculate callback stats
         },
-        .fifo = mconn_fifo,
-        .out = (mconn_service_t *) &consumer_svc,
+        .fifo = mconn_fifo, // underlying fifo
+        .downstream = (mconn_service_t *) &consumer_svc, // where to redirect the input
         .mtu_sz = 1024,
 };
 
+/**
+ * Send so many fixed-size strings into buffered service.
+ * @param obuf_svc
+ * @param s
+ * @param stat
+ * @param n
+ * @return
+ */
 static size_t produce_n(mconn_service_obuf_t *obuf_svc, const char *s, stat_t *stat, int n) {
     size_t sz = 0;
     while (n--) {
@@ -124,6 +168,11 @@ static size_t produce_n(mconn_service_obuf_t *obuf_svc, const char *s, stat_t *s
     return sz;
 }
 
+/**
+ * Generate random string size upto max_len
+ * @param mx_len
+ * @return
+ */
 std::string rand_str(int mx_len) {
     static auto randchar = []() -> char {
         const static char charset[] =
@@ -139,6 +188,13 @@ std::string rand_str(int mx_len) {
     return res;
 }
 
+/**
+ * Send so many random strings into the buffered service to fit within one MTU
+ * @param obuf_svc
+ * @param stat
+ * @param mtu
+ * @return
+ */
 static size_t produce_rand_to_fill_mtu(mconn_service_obuf_t *obuf_svc, stat_t *stat, int mtu) {
     int sz = 0;
     while (true) {
@@ -159,7 +215,11 @@ static size_t produce_rand_to_fill_mtu(mconn_service_obuf_t *obuf_svc, stat_t *s
     return sz;
 }
 
-// redirects from obuf to consumer_svc
+/**
+ * Consume few MTUs and redirect the data from buffer to downstream service
+ * @param obuf_svc
+ * @param m
+ */
 static void consume_m(mconn_service_obuf_t *obuf_svc, int m) {
     while (m--) {
         mconn_obuf_ship_one_mtu(obuf_svc);
@@ -175,7 +235,7 @@ struct produce_consume_sequential_t {
     stat_t stat;
 
     // produce upto MTU
-    produce_consume_sequential_t(mconn_service_obuf_t &s) : obuf_svc{s}, stat {} {}
+    produce_consume_sequential_t(mconn_service_obuf_t &s) : obuf_svc{s}, stat{} {}
 
     virtual size_t produce_mtu() = 0;
 
@@ -192,25 +252,38 @@ struct produce_consume_sequential_t {
         ASSERT_EQ(stat.prod_bytes, sz);
         ASSERT_EQ(stat.prod_bytes, stat.cons_bytes);
         ASSERT_EQ(stat.prod_bytes, stat.prod_cb_bytes);
+        ASSERT_EQ(stat.prod_cnt, stat.prod_cb_cnt);
+        ASSERT_EQ(stat.prod_cb_err, 0);
         ASSERT_EQ(stat.cons_mtu_cnt, cycles);
     }
 };
 
-struct produce_consume_one_hello_t: produce_consume_sequential_t {
+/**
+ * Produce one fixes string and consume it
+ */
+struct produce_consume_one_hello_t : produce_consume_sequential_t {
     using produce_consume_sequential_t::produce_consume_sequential_t;
+
     size_t produce_mtu() {
         static constexpr char s[] = "hello, world ";
         return produce_n(&obuf_svc, s, &stat, 1);
     }
 };
 
+/*************************************************************
+ *********************** Sequential *************************
+ ************************************************************/
 TEST(Sequential, ProduceOnceConsumeOnce) {
     produce_consume_one_hello_t test(producer_svc);
     test(1);
 }
 
-struct produce_consume_mtu_filled_hello_t: produce_consume_sequential_t {
+/**
+ * Produce a batch of fixes string to fill MTU and consume it
+ */
+struct produce_consume_mtu_filled_hello_t : produce_consume_sequential_t {
     using produce_consume_sequential_t::produce_consume_sequential_t;
+
     size_t produce_mtu() {
         static constexpr char s[] = "hello, world ";
         int filln = obuf_svc.mtu_sz / strlen(s); // cover almost entire MTU
@@ -233,8 +306,9 @@ TEST(Sequential, ProduceManyConsumeMany) {
     test(10'000);
 }
 
-struct produce_consume_mtu_rand_t: produce_consume_sequential_t {
+struct produce_consume_mtu_rand_t : produce_consume_sequential_t {
     using produce_consume_sequential_t::produce_consume_sequential_t;
+
     size_t produce_mtu() {
         return produce_rand_to_fill_mtu(&producer_svc, &stat, obuf_svc.mtu_sz);
     }
@@ -244,6 +318,10 @@ TEST(Sequential, ProduceRandManyConsumeMany) {
     produce_consume_mtu_rand_t test(producer_svc);
     test(10'000);
 }
+
+/*************************************************************
+ ************************* Parallel **************************
+ ************************************************************/
 
 struct done_produce_t {
     std::mutex mx{};
@@ -319,9 +397,6 @@ TEST(Parallel, Many) {
     parallel_test(1'000'000);
 }
 
-/*
-
 TEST(Parallel, ALot) {
-    parallel_test(100'000'000);
+    parallel_test(10'000'000);
 }
-*/

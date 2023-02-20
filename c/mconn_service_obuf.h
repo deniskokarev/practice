@@ -15,7 +15,7 @@ void mconn_fifo_close(mconn_fifo_t* me);
 typedef struct {
     mconn_service_t super;
     mconn_fifo_t *fifo;
-    mconn_service_t *out; // downstream
+    mconn_service_t *downstream;
     int mtu_sz;
 } mconn_service_obuf_t;
 
