@@ -144,15 +144,7 @@ void mconn_fifo_reinit(mconn_fifo_t *me) {
  * Declare one static fifo buffer to be used for all services.
  * If we have only 1 L2CAP channel that's sufficient
  */
-static mconn_fifo_t mconn_fifo_def = {
-        /** let's initialize the counters to ensure quick wraparound to fail quicker in tests */
-        .bytes_head = UINT32_MAX - 100 * 1024,
-        .bytes_tail = UINT32_MAX - 100 * 1024,
-        .recs_head = UINT32_MAX - 100 * 1024,
-        .recs_tail = UINT32_MAX - 100 * 1024,
-        .cbparam_head = UINT32_MAX - 100 * 1024,
-        .cbparam_tail = UINT32_MAX - 100 * 1024,
-};
+static mconn_fifo_t mconn_fifo_def;
 
 mconn_fifo_t *mconn_fifo = &mconn_fifo_def;
 
@@ -306,6 +298,7 @@ mconn_error_t mconn_obuf_ship_one_mtu(mconn_service_obuf_t *me) {
     unsigned rt = atomic_load_explicit(&fifo->recs_tail, memory_order_relaxed);
     unsigned rh = fifo->recs_head;
     unsigned bh = fifo->recs[rh % RECORD_BUF_SZ].ofs;
+    int sending = 0;
     while (rh != rt) {
         mconn_fifo_record_t *r = &fifo->recs[rh % RECORD_BUF_SZ];
         if (r->svc) {
@@ -314,12 +307,13 @@ mconn_error_t mconn_obuf_ship_one_mtu(mconn_service_obuf_t *me) {
                 // bust
                 break;
             }
+            sending = 1; // the record size(s) may be 0, but we still need to send them
             packet_sz += r->sz;
         }
         bh += r->sz;
         rh++;
     }
-    if (packet_sz) {
+    if (sending) {
         // there is something to send, let's prepare the interval
         fifo->cbparam[fifo->cbparam_tail % CB_PARAM_BUF_SZ] = (mconn_fifo_interval_t) {
                 .fifo = fifo,

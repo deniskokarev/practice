@@ -182,7 +182,7 @@ std::string rand_str(int mx_len) {
         const size_t max_index = (sizeof(charset) - 1);
         return charset[rand() % max_index];
     };
-    int l = rand() % mx_len + 1;
+    int l = rand() % mx_len;
     std::string res(l, ' ');
     std::generate_n(begin(res), l, randchar);
     return res;
@@ -351,7 +351,7 @@ static bool is_done(done_produce_t *done) {
     return done->done;
 }
 
-static void run_consume(mconn_service_obuf_t *obuf_svc, stat_t *stat, done_produce_t *done) {
+static void run_consume(mconn_service_obuf_t *obuf_svc, done_produce_t *done) {
     while (!is_done(done)) {
         if (!mconn_obuf_is_empty(obuf_svc)) {
             mconn_obuf_ship_one_mtu(obuf_svc);
@@ -365,12 +365,12 @@ static void run_consume(mconn_service_obuf_t *obuf_svc, stat_t *stat, done_produ
 }
 
 static void parallel_test(int records) {
-    stat_t stat{};
+    stat_t stat;
     consumer_svc.stat = &stat;
     mconn_service_ready_to_send = 1;
     done_produce_t is_done;
     std::thread p(run_produce_rand_records, &producer_svc, &stat, records, &is_done);
-    std::thread c(run_consume, &producer_svc, &stat, &is_done);
+    std::thread c(run_consume, &producer_svc, &is_done);
     p.join();
     c.join();
     ASSERT_EQ(stat.prod_hash, stat.cons_hash);
