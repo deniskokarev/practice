@@ -26,6 +26,35 @@
 extern "C" {
 #endif
 
+#pragma pack(push, 1)
+typedef struct {
+    uint8_t app_id; // pocr_AppId
+    uint8_t msg_type; // pocr_MsgType
+    uint16_t msg_size;
+} stream_header_t;
+#pragma pack(pop)
+
+/**
+ * In order to minimize memory consumption and improve performance the service is
+ * parameterized by the serializer fn. The serializer will be populating the payload content
+ * limited by dst_max_sz bytes. It must never populate more than dst_max_sz bytes and must return
+ * the volume populated. If the provided dst buffer is insufficient must return
+ * MCONN_ERR_FULL.
+ * Serializer is reposnsible for populating stream_header separator as well.
+ * NB: The sender may retry to serialize into a bigger buffer if MCONN_ERR_FULL
+ * happened. I.e the streaming functoin must be idempotent to handle theretry with the same `src`.
+ * \arg svc - which service we're serializing, it's meant for internal use
+ * \arg dst - byte stream destination
+ * \arg dst_max_sz - absolute maximum payload size to populate
+ * \arg src - a service-specific structure
+ * \return populated payload size or negative value on error
+ */
+typedef int (*mconn_service_serialize_payload_fn)(
+        const mconn_service_t* svc,
+        void* dst,
+        size_t dst_max_sz,
+        const void* src);
+
 /**
  * The service sending function that will be doing actual sending.
  *

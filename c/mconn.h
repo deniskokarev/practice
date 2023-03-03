@@ -6,6 +6,10 @@
 extern "C" {
 #endif
 
+/**********************************************
+************* Mconn service API ***************
+**********************************************/
+
 /**
  * mconn_service class sends a payload enveloped with AppID and MsgType header.
  *
@@ -25,6 +29,8 @@ typedef enum mconn_error_e {
     MCONN_ERR_FULL = -2,
     MCONN_ERR_SERIALIZE = -3,
     MCONN_ERR_SEND = -4,
+    MCONN_ERR_MSG_PARSE = -5,
+    MCONN_ERR_MSG_UNKNOWN = -6,
 } mconn_error_t;
 
 /**
@@ -37,41 +43,11 @@ typedef enum mconn_error_e {
 typedef void (*mconn_on_transmit_cb)(mconn_error_t status, void* param);
 
 /**
- * In the unlikely event that you have to define your own record serialization you can rely on
- * custom serialization hook below.
- *
- * In order to minimize memory consumption and improve performance the service is
- * parameterized by the serializer fn. The serializer will be populating the payload content
- * limited by dst_max_sz bytes. It must never populate more than dst_max_sz bytes and must return
- * the volume populated. If the provided dst buffer is insufficient must return
- * MCONN_ERR_FULL.
- * NB: The sender may retry to serialize into a bigger buffer if MCONN_ERR_FULL
- * happened. I.e the streaming functoin must be idempotent to handle theretry with the same `src`.
- * \arg svc - which service we're serializing, it's meant for internal use
- * \arg dst - byte stream destination
- * \arg dst_max_sz - absolute maximum payload size to populate
- * \arg src - a service-specific structure
- * \return populated payload size or negative value on error
- */
-typedef int (*mconn_service_serialize_payload_fn)(
-        const mconn_service_t* svc,
-        void* dst,
-        size_t dst_max_sz,
-        void* src);
-
-/**
  * The user must register tx callback before sending attempts
  * \arg svc - service to be used for transmission
  * \arg tx_cb - a callback that will be triggered on transmission
  */
 void mconn_register_on_transmit_cb(mconn_service_t* svc, mconn_on_transmit_cb tx_cb);
-
-/**
- * In the unlikely event that you need a custom record serializer you can register one
- * \arg svc - service to send the data
- * \arg serializer_fn - custom serializer
- */
-void mconn_register_serializer(mconn_service_t* svc, mconn_service_serialize_payload_fn serializer);
 
 /**
  * Send a record by using serivce data serializer for the given `record`,
@@ -94,44 +70,48 @@ typedef struct mconn_handler_s mconn_handler_t;
  * The raw-data receive callback. The data pointer is scoped only to the callback.
  * You can either reply to the received data within the callback using mconn_service_send()
  * or do it later.
+ * \arg handler - the handler which received the payload
  * \arg data - pointer to data (without the header)
  * \arg size - data size
- * \arg param - optional parameter provided at registration for flexibility and callbacks reuse
+ * \arg param - an extra handler parameter given at registration
+ * \return MCONN_OK when no errors, otherwise it may be MCONN_ERR_MSG_PARSE on protobuf parsing
+ * error, or MCONN_ERR_MSG_UNKNOWN when we're trying to handle an unknown message
  */
-typedef void (*mconn_on_receive_cb)(const void* data, size_t size, void* param);
+typedef mconn_error_t (
+        *mconn_handle_fn)(mconn_handler_t* handler, const void* data, size_t size, void* param);
 
 /**
  * It is not expected that users will be handling raw data, but it's possible.
  * \arg handler - which handler to attach to
- * \arg rx_cb - raw data callback function
- * \arg param - an optional param given to the callback function for flexibility
+ * \arg handle_fn - the user function to be executed when message arrives
+ * \arg param - an extra parameter given to handler function
  */
-void mconn_register_on_receive_cb(mconn_handler_t* hander, mconn_on_receive_cb rx_cb, void* param);
+void mconn_register_handler(mconn_handler_t* hander, mconn_handle_fn handle_fn, void* param);
 
 /**********************************************
 *************** Provided services *************
 **********************************************/
 
-// /dev/null service
-extern mconn_service_t* mconn_service_dev_null;
+// for RPC services look at mconn_rpc.h
+
+/**
+ * You can use dev_null service if you want to drop the data
+ */
+extern mconn_service_t mconn_dev_null_svc;
 
 /**
  * Service that sends a null-terminated string payload to app_id=0, msg_type=0
  * for EMG app testing
- * TODO: remove after testing
  */
+// taken by emg_streaming app
+// TODO: remove after testing
 extern mconn_service_t* mconn_service_emg_test;
 
 /**********************************************
 *************** Provided handlers *************
 **********************************************/
 
-/**
- * Handler that receives plain string payloads to app_id=0, msg_type=0
- * for EMG app testing
- * TODO: remove after testing
- */
-extern mconn_handler_t* mconn_handler_emg_test;
+// for RPC handlers look at mconn_rpc.h
 
 #ifdef __cplusplus
 }
