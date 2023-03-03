@@ -111,9 +111,9 @@ static mconn_service_consumer_t consumer_svc = {
                 {
                         .super =
                                 {
-                                        .serialize = mconn_obuf_serialize_interval, // serializing input from obuf
+                                        .serialize = mconn_ship_serialize_interval, // serializing input from obuf
                                         .send = (mconn_service_send_fn)consume_calc_hash, // calculate cons_hash
-                                        .on_send = mconn_obuf_notify_senders // notify obuf senders
+                                        .on_send = mconn_ship_notify_senders // downstream notifies obuf senders
                                 },
                         .fifo = &mconn_fifo, // underlying fifo
                 },

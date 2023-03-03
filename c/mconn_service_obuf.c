@@ -264,7 +264,7 @@ void mconn_obuf_enqeue(mconn_service_obuf_t* me, const void* src, void* on_send_
  * @param status downstream's send status
  * @param opt echoed-back interval that was given by mconn_obuf_ship_one_mtu()
  */
-void mconn_obuf_notify_senders(mconn_error_t status, void* opt) {
+void mconn_ship_notify_senders(mconn_error_t status, void* opt) {
     mconn_fifo_interval_t* interval = (mconn_fifo_interval_t*)opt;
     mconn_fifo_t* fifo = interval->fifo;
     fifo->stat.downstream_cb++;
@@ -296,7 +296,7 @@ void mconn_obuf_notify_senders(mconn_error_t status, void* opt) {
  * @param src - mconn_fifo_interval_t* that will be given by obuf to send
  * @return populated downstream buffer size - no error expected
  */
-int mconn_obuf_serialize_interval(
+int mconn_ship_serialize_interval(
         const mconn_service_t* svc,
         void* dst,
         size_t dst_max_sz,

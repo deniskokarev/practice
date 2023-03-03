@@ -11,6 +11,8 @@ extern "C" {
 /**
  * One-producer, one-consumer lockless fifo buffer for variable size records.
  * If you have multiple producers they'll have to be sequentialized somehow else.
+ *
+ * FIFO is populated by mconn_service_obuf_t and consumed by mconn_service_ship_t
  */
 typedef struct mconn_fifo_s mconn_fifo_t;
 
@@ -97,7 +99,7 @@ void mconn_obuf_enqeue(mconn_service_obuf_t* me, const void* src, void* on_send_
  * @param src - the interval that will be given by obuf to send
  * @return populated downstream buffer size - no error expected
  */
-int mconn_obuf_serialize_interval(
+int mconn_ship_serialize_interval(
         const mconn_service_t* svc,
         void* out,
         size_t dst_max_sz,
@@ -109,7 +111,7 @@ int mconn_obuf_serialize_interval(
  * @param status downstream's send status
  * @param opt echoed-back interval that was given by mconn_obuf_ship_one_mtu()
  */
-void mconn_obuf_notify_senders(mconn_error_t status, void* opt);
+void mconn_ship_notify_senders(mconn_error_t status, void* opt);
 
 /**
  * Ship one MTU data window via downstream service. No action if there is nothing to ship
