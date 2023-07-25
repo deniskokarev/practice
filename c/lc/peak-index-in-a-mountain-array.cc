@@ -5,6 +5,24 @@ using namespace std;
 
 class Solution {
 public:
+    static inline int peakIndexInMountainArray(const vector<int> &arr) {
+        int sz = arr.size();
+        int f = 1, t = sz;
+        while (f < t) {
+            int m = (f + t) / 2;
+            if (arr[m - 1] < arr[m]) {
+                f = m + 1;
+            } else {
+                t = m;
+            }
+        }
+        return f - 1;
+    }
+};
+
+
+class Solution {
+public:
 	static int peakIndexInMountainArray(const vector<int>& A) {
 		int f=1, t=A.size()-2;
 		while (f < t) {
