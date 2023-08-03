@@ -24,3 +24,29 @@ public:
         return out;
     }
 };
+
+class Solution {
+    static void comb(vector<string> &res, char *s, const string &digits, int p) {
+        static const vector<string> let = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+        if (p == digits.size()) {
+            res.push_back(s);
+        } else {
+            for (char c: let[digits[p] - '0']) {
+                s[p] = c;
+                comb(res, s, digits, p + 1);
+            }
+        }
+    }
+public:
+    static vector<string> letterCombinations(const string &digits) {
+        vector<string> res;
+        int sz = digits.size();
+        if (sz) {
+            char s[sz+1];
+            s[sz] = 0;
+            comb(res, s, digits, 0);
+        }
+        return res;
+    }
+};
+
