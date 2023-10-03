@@ -1,3 +1,17 @@
+// https://leetcode.com/problems/number-of-good-pairs/
+class Solution {
+public:
+    int numIdenticalPairs(const vector<int>& nums) {
+        int hh[101]{};
+        int a = 0;
+        for (auto n: nums) {
+            a += hh[n];
+            hh[n]++;
+        }
+        return a;
+    }
+};
+
 class Solution {
 public:
     int numIdenticalPairs(vector<int>& nums) {
