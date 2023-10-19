@@ -1,6 +1,6 @@
 // https://leetcode.com/problems/backspace-string-compare
 class Solution {
-    static void bs(string &s) {
+    static inline string& bs(string &s) {
         auto b = begin(s), i = b;
         for (auto j = b; j != end(s); ++j) {
             if (*j == '#') {
@@ -12,13 +12,11 @@ class Solution {
             }
         }
         s.resize(i - b);
+        return s;
     }
 
 public:
     static bool backspaceCompare(string &s, string &t) {
-        bs(s);
-        bs(t);
-        return s == t;
+        return bs(s) == bs(t);
     }
 };
-
