@@ -1,3 +1,18 @@
+// https://leetcode.com/problems/sort-integers-by-the-number-of-1-bits
+class Solution {
+    static inline bool lt(int a, int b) {
+        bitset<16> ma(a), mb(b);
+        int ca = ma.count(), cb = mb.count();
+        return ca < cb || ca == cb && a < b;
+    }
+
+public:
+    static vector<int> sortByBits(vector<int> &arr) {
+        sort(begin(arr), end(arr), lt);
+        return arr;
+    }
+};
+
 class Solution {
 public:
     vector<int> sortByBits(vector<int>& arr) {
