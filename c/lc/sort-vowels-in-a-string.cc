@@ -1,7 +1,12 @@
 // https://leetcode.com/problems/sort-vowels-in-a-string
 class Solution {
     static inline bool isv(char c) {
-        switch (tolower(c)) {
+        switch (c) {
+            case 'A':
+            case 'E':
+            case 'I':
+            case 'O':
+            case 'U':
             case 'a':
             case 'e':
             case 'i':
@@ -15,19 +20,19 @@ class Solution {
 
 public:
     static string &sortVowels(string &s) {
-        vector<int> pp;
         int cnt[256]{};
         for (int i = 0; i < s.size(); i++) {
-            unsigned char c = s[i];
-            if (isv(c)) {
-                pp.push_back(i);
-                cnt[c]++;
-            }
+            cnt[s[i]]++;
         }
         int p = 0;
-        for (unsigned char c: "AEIOUaeiou") {
-            while (cnt[c]--) {
-                s[pp[p++]] = c;
+        const string vv {"AEIOUaeiou"};
+        for (auto &c:s) {
+            if (isv(c)) {
+                while (!cnt[vv[p]]) {
+                    p++;
+                }
+                c = vv[p];
+                cnt[vv[p]]--;
             }
         }
         return s;
