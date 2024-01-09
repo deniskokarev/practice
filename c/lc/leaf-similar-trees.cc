@@ -1,5 +1,61 @@
 // https://leetcode.com/problems/leaf-similar-trees/
 class Solution {
+    class TreeIter {
+        vector<TreeNode *> stack;
+
+        void push_left(TreeNode *n) {
+            while (n) {
+                stack.push_back(n);
+                n = n->left;
+            }
+        }
+
+    public:
+        TreeIter(TreeNode *r) {
+            push_left(r);
+        }
+
+        TreeNode *next() {
+            if (!stack.empty()) {
+                auto r = stack.back();
+                stack.pop_back();
+                push_left(r->right);
+                return r;
+            } else {
+                return nullptr;
+            }
+        }
+    };
+
+    class LeafIter : public TreeIter {
+    public:
+        LeafIter(TreeNode *r) : TreeIter(r) {}
+
+        TreeNode *next() {
+            auto n = TreeIter::next();
+            while (n && (n->left || n->right)) {
+                n = TreeIter::next();
+            }
+            return n;
+        }
+    };
+
+public:
+    static bool leafSimilar(TreeNode *root1, TreeNode *root2) {
+        LeafIter it1(root1), it2(root2);
+        auto n1 = it1.next();
+        auto n2 = it2.next();
+        while (n1 && n2 && n1->val == n2->val) {
+            n1 = it1.next();
+            n2 = it2.next();
+        }
+        return n1 == nullptr && n2 == nullptr;
+    }
+};
+
+
+
+class Solution2 {
     using N = const TreeNode*;
 
     struct Triter {
