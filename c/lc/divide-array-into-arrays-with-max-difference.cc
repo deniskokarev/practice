@@ -11,9 +11,7 @@ public:
             int mn = nums[i];
             int mx = nums[i + 2];
             if (mx - mn <= k) {
-                for (int j = 0; j < 3; j++) {
-                    ans[i3][j] = nums[i + j];
-                }
+                copy(begin(nums) + i, begin(nums) + i + 3, begin(ans[i3]));
             } else {
                 return {};
             }
