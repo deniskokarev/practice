@@ -7,6 +7,27 @@ using namespace std;
 
 class Solution {
 public:
+    static int equalSubstring(const string &s, const string &t, int cost) {
+        int sz = s.size();
+        int mx = 0;
+        int prev_l = 1, prev_d = 0;
+        for (int p = 0; p < sz; p++) {
+            cost += prev_d;
+            int l = prev_l - 1;
+            for (int i = p + l; i < sz && abs(s[i] - t[i]) <= cost; i++) {
+                l++;
+                cost -= abs(s[i] - t[i]);
+            }
+            prev_l = l;
+            prev_d = abs(s[p] - t[p]);
+            mx = max(mx, l);
+        }
+        return mx;
+    }
+};
+
+class Solution {
+public:
 	static int equalSubstring(const string &s, const string &t, int maxCost) {
 		vector<int> cost(s.size()+1);
 		for (int i=1; i<cost.size(); i++)
