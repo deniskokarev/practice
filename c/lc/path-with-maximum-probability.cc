@@ -1,3 +1,47 @@
+// https://leetcode.com/problems/path-with-maximum-probability
+class Solution {
+    struct E {
+        int t;
+        double w;
+
+        bool operator<(const E &o) const {
+            return w < o.w;
+        }
+    };
+
+    using G = vector<vector<E>>;
+public:
+    static double
+    maxProbability(int n, const vector<vector<int>> &edges, const vector<double> &succProb, int start_node,
+                   int end_node) {
+        G gg(n);
+        int sz = edges.size();
+        for (int i = 0; i < sz; i++) {
+            auto pl = log(succProb[i]);
+            gg[edges[i][0]].push_back({edges[i][1], pl});
+            gg[edges[i][1]].push_back({edges[i][0], pl});
+        }
+        vector<bool> seen(n);
+        priority_queue<E> qq;
+        qq.push({start_node, 0});
+        while (!qq.empty()) {
+            E pos = qq.top();
+            qq.pop();
+            if (pos.t == end_node) {
+                return exp(pos.w);
+            }
+            if (!seen[pos.t]) {
+                seen[pos.t] = true;
+                for (auto &e: gg[pos.t]) {
+                    qq.push({e.t, pos.w + e.w});
+                }
+            }
+        }
+        return 0;
+    }
+};
+
+
 class Solution {
     struct E {
         int t;
