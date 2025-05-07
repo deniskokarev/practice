@@ -9,7 +9,7 @@ class Solution {
 		int b = nn[p];
 		int p0 = p + 1;
 		int p1 = nn[p0 - 1];
-		while (p1 > 0 && nn[p1 - 1] > 0) {
+		while (p1 != p + 1) {
 			nn[p0 - 1] = -nn[p1 - 1];
 			p0 = p1;
 			p1 = nn[p0 - 1];
@@ -24,11 +24,11 @@ public:
 		transform(begin(nn), end(nn), begin(nn), [](int n) { return n + 1; });
 		for (int i = 0; i < sz; i++) {
 			if (nn[i] > 0) {
-				// * -1 and shift that loop
+				// shift and * -1 that loop
 				tour_shift_once(nn, i);
 			}
 		}
-		// restore orig values
+		// recover orig values
 		transform(begin(nn), end(nn), begin(nn), [](int n) { return -n - 1; });
 		return nn;
 	}
