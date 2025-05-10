@@ -10,7 +10,7 @@ public:
 	}
 };
 
-TEST(TC, TC0) {
+TEST(TC_TEST, TC0) {
 	string expected = "real answer";
 	EXPECT_EQ(expected, MyClass::myMethod());
 }
