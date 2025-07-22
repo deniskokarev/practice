@@ -1,3 +1,31 @@
+// https://leetcode.com/problems/maximum-erasure-value
+
+class Solution {
+public:
+	static int maximumUniqueSubarray(const vector<int> &nums) {
+		static constexpr int MX = 1e4;
+		int sz = nums.size();
+		int f = 0, t = 0;
+		vector<bool> s(MX + 1);
+		int sm = 0, mx = 0;
+		while (t < sz) {
+			int el = nums[t++];
+			if (s[el]) {
+				while (nums[f] != el) {
+					s[nums[f]] = false;
+					sm -= nums[f++];
+				}
+				s[nums[f]] = false;
+				sm -= nums[f++];
+			}
+			s[el] = true;
+			sm += el;
+			mx = max(mx, sm);
+		}
+		return mx;
+	}
+};
+
 class Solution {
 public:
 	static int maximumUniqueSubarray(const vector<int>& nums) {
